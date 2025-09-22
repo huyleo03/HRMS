@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+// const routes = require('./src/routes');
 
 
 // Import routes
@@ -45,6 +46,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 
 // API routes
+// routes(app);
 
 
 // Root endpoint
