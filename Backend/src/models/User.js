@@ -39,7 +39,6 @@ const userSchema = new mongoose.Schema(
     gender: {
       type: String,
       enum: ["Male", "Female"],
-      required: true,
     },
     role: {
       type: String,
@@ -77,10 +76,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["Active", "Inactive", "Suspended"],
       default: "Active",
-    }
+    },
+    profileCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
-    timestamps: { createdAt: "created_at", updatedAt: "updated_at" }, 
+    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
   }
 );
 
