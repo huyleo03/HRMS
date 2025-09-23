@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const authController = require("../controllers/auth.controller");
+const authController = require("../controller/AuthController");
 const auth = require("../middlewares/auth");
 
 // Forgot password (gửi OTP)
