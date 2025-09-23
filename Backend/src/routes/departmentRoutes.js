@@ -1,0 +1,12 @@
+const express = require("express");
+const router = express.Router();
+const departmentController = require("../controller/DepartmentController");
+
+// CRUD + business logic
+router.post("/", departmentController.createDepartment);
+router.get("/", departmentController.getDepartments);
+router.get("/:id", departmentController.getDepartmentById);
+router.get("/search/query", departmentController.searchDepartments);
+router.post("/add-employee", departmentController.addEmployeeToDepartment);
+
+module.exports = router;
