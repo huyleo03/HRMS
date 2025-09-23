@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import ForgotPass from './pages/ForgotPass';
 import OtpPage from './pages/OtpPage';
+import ResetPass from './pages/ResetPass';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPass />} />
         <Route path="/otp-page" element={<OtpPage />} />
+        <Route path="/reset-password" element={<ResetPass />} />
       </Routes>
     </BrowserRouter>
   );

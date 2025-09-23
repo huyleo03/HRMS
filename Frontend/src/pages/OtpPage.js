@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function OtpPage() {
-  const [otp, setOtp] = useState(Array(4).fill(""));
+  const [otp, setOtp] = useState(Array(5).fill(""));
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const email = location?.state?.email || "";
 
   const handleChange = (value, index) => {
     if (/^[0-9]?$/.test(value)) {
@@ -20,6 +24,12 @@ export default function OtpPage() {
   const handleVerify = () => {
     const code = otp.join("");
     console.log("OTP nhập vào:", code);
+
+    if (otp.includes("") || code.length < otp.length) {
+    alert("Vui lòng nhập đầy đủ mã OTP");
+    return;
+  }
+    navigate("/reset-password", { state: { email } });
   };
 
   return (
@@ -47,7 +57,7 @@ export default function OtpPage() {
           <p style={{ color: "#7d7d7d" }}>
             We have shared a code to your registered email address
             <br />
-            <b>robertallen@example.com</b>
+            <b>{email || "your email"}</b>
           </p>
         </div>
 

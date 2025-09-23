@@ -13,7 +13,7 @@ function ForgotPassword() {
       return;
     }
     alert("Đã gửi OTP đến " + email);
-    navigate('/otp-page');
+    navigate('/otp-page', { state: { email } });
   };
 
   return (
