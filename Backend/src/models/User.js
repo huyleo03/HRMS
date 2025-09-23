@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: "https://i.pravatar.cc/150", // Ảnh đại diện mặc định
+      default: "https://i.pravatar.cc/150",
     },
     address: {
       type: String,
@@ -80,6 +80,15 @@ const userSchema = new mongoose.Schema(
     profileCompleted: {
       type: Boolean,
       default: false,
+    },
+    // ===== Thêm 2 trường cho OTP =====
+    otp: {
+      type: String,
+      select: false,
+    },
+    otpExpires: { 
+      type: Date,
+      select: false,
     },
   },
   {

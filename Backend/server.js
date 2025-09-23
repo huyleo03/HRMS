@@ -21,7 +21,6 @@ const server = app.listen(PORT, () => {
   console.log(`🌐 API URL: http://localhost:${PORT}`);
 });
 
-
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM RECEIVED. Shutting down gracefully');
