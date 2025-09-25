@@ -6,14 +6,31 @@ function ForgotPassword() {
   const [isFocused, setIsFocused] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) {
       alert("Vui lòng nhập email");
       return;
     }
+<<<<<<< Updated upstream
     alert("Đã gửi OTP đến " + email);
     navigate('/otp-page');
+=======
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gửi OTP thất bại');
+      alert("Đã gửi OTP đến " + normalizedEmail);
+      navigate('/otp-page', { state: { email: normalizedEmail, resetToken: data.resetToken } });
+    } catch (err) {
+      alert(err.message || 'Có lỗi xảy ra');
+    }
+>>>>>>> Stashed changes
   };
 
   return (

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from "react-router-dom";
+import apiService from '../services/api';
 
 
 function Login() {
@@ -24,20 +25,10 @@ function Login() {
 
     try {
       setIsSubmitting(true);
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, rememberMe })
-      });
-
-      if (!response.ok) {
-        const message = (await response.json().catch(() => ({}))).message || 'Đăng nhập thất bại';
-        throw new Error(message);
-      }
-
-      const data = await response.json();
+      const data = await apiService.login(email, password, rememberMe);
+      
       if (data && data.token) {
-        localStorage.setItem('auth_token', data.token);
+        apiService.setToken(data.token);
 
         // nếu có rememberMe thì lưu thêm email
         if (rememberMe) {

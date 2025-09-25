@@ -1,8 +1,21 @@
 import { useState } from "react";
+<<<<<<< Updated upstream
 import { Link } from "react-router-dom";
 
 export default function OtpPage() {
   const [otp, setOtp] = useState(Array(4).fill(""));
+=======
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import apiService from '../services/api';
+
+export default function OtpPage() {
+  const [otp, setOtp] = useState(Array(5).fill(""));
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const email = location?.state?.email || "";
+  const resetToken = location?.state?.resetToken || "";
+>>>>>>> Stashed changes
 
   const handleChange = (value, index) => {
     if (/^[0-9]?$/.test(value)) {
@@ -17,9 +30,23 @@ export default function OtpPage() {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const code = otp.join("");
     console.log("OTP nhập vào:", code);
+<<<<<<< Updated upstream
+=======
+
+    if (otp.includes("") || code.length < otp.length) {
+      alert("Vui lòng nhập đầy đủ mã OTP");
+      return;
+    }
+    try {
+      const data = await apiService.verifyOtp(code, resetToken);
+      navigate("/reset-password", { state: { email, resetToken: data.resetToken } });
+    } catch (err) {
+      alert(err.message || 'Có lỗi xảy ra');
+    }
+>>>>>>> Stashed changes
   };
 
   return (
