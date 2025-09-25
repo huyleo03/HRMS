@@ -121,37 +121,90 @@ exports.searchDepartments = async (req, res) => {
   }
 };
 
-// 5. Thêm nhân viên mới vào phòng ban
+// 5. Thêm nhân viên có sẵn vào phòng ban
 exports.addEmployeeToDepartment = async (req, res) => {
   try {
-    const { departmentId, full_name, email, password, gender, jobTitle, role } = req.body;
+    const { departmentId, employeeId } = req.body;
 
     const department = await Department.findById(departmentId);
     if (!department) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy phòng ban" });
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy phòng ban",
+      });
     }
 
-    const user = new User({
-      email,
-      passwordHash: password,
-      full_name,
-      gender,
-      role: role || "Employee",
-      jobTitle,
-      department: {
-        department_id: department._id,
-        department_name: department.department_name,
-      },
-    });
+    const user = await User.findById(employeeId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy nhân viên",
+      });
+    }
+
+    if (user.department && user.department.department_id) {
+      return res.status(400).json({
+        success: false,
+        message: `Nhân viên này đã thuộc phòng ban: ${user.department.department_name}`,
+      });
+    }
+    user.department = {
+      department_id: department._id,
+      department_name: department.department_name,
+    };
 
     await user.save();
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Thêm nhân viên vào phòng ban thành công",
       data: user,
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
+
+// 6. Xóa nhân viên khỏi phòng ban
+exports.removeEmployeeFromDepartment = async (req, res) => {
+  try {
+    const { employeeId } = req.body;
+
+
+    const user = await User.findById(employeeId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy nhân viên",
+      });
+    }
+
+    if (!user.department || !user.department.department_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Nhân viên này chưa thuộc phòng ban nào",
+      });
+    }
+
+    const oldDepartment = user.department.department_name;
+
+    user.department = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Đã xóa nhân viên khỏi phòng ban: ${oldDepartment}`,
+      data: user,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
