@@ -1,0 +1,233 @@
+.header {
+  width: 100%;
+  height: 82px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(162, 161, 168, 0.10);
+}
+
+.header-background {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: #ffffff;
+  z-index: -1;
+}
+
+.header-title-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.header-right-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-title {
+  color: #16151C;
+  font-size: 20px;
+  font-family: 'Lexend', sans-serif;
+  font-weight: 600;
+  line-height: 30px;
+  word-wrap: break-word;
+}
+
+.header-description {
+  color: #A2A1A8;
+  font-size: 14px;
+  font-family: 'Lexend', sans-serif;
+  font-weight: 300;
+  line-height: 22px;
+  word-wrap: break-word;
+}
+
+.header-notification {
+  width: 50px;
+  height: 50px;
+  padding: 13px;
+  background: rgba(162, 161, 168, 0.10);
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.header-notification:hover {
+  background: rgba(162, 161, 168, 0.15);
+}
+
+.header-profile {
+  position: relative;
+  cursor: pointer;
+}
+
+.profile-container {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(162, 161, 168, 0.20);
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-container:hover {
+  border-color: rgba(162, 161, 168, 0.30);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-right: 12px;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-right: 12px;
+}
+
+.profile-name {
+  color: #16151C;
+  font-size: 16px;
+  font-family: 'Lexend', sans-serif;
+  font-weight: 600;
+  line-height: 24px;
+  word-wrap: break-word;
+}
+
+.profile-role {
+  color: #A2A1A8;
+  font-size: 12px;
+  font-family: 'Lexend', sans-serif;
+  font-weight: 300;
+  line-height: 18px;
+  word-wrap: break-word;
+}
+
+.profile-dropdown-icon {
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.header-profile:hover .profile-dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(162, 161, 168, 0.20);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+  z-index: 1000;
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  color: #16151C;
+  font-size: 14px;
+  font-family: 'Lexend', sans-serif;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-item:hover {
+  background: rgba(113, 82, 243, 0.05);
+  color: #7152F3;
+}
+
+.dropdown-item:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.dropdown-item:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.dropdown-item:only-child {
+  border-radius: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 20px;
+  }
+  
+  .header-title {
+    font-size: 18px;
+    line-height: 24px;
+  }
+  
+  .header-description {
+    font-size: 12px;
+    line-height: 18px;
+  }
+  
+  .header-right-section {
+    gap: 12px;
+  }
+  
+  .profile-info {
+    display: none;
+  }
+  
+  .profile-container {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 0 15px;
+    height: 70px;
+  }
+  
+  .header-notification {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+  }
+  
+  .profile-avatar {
+    width: 32px;
+    height: 32px;
+  }
+}
