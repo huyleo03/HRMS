@@ -25,7 +25,6 @@ Vai trò cao nhất, có toàn quyền quản trị hệ thống.
 #### UC-4: Cấu hình Hệ thống Chấm công
 - **Đặt giờ làm việc:** Admin xác định thời gian bắt đầu và kết thúc của ngày làm việc cho từng phòng ban. Dữ liệu này là cơ sở để xác định đi trễ và tính giờ làm thêm.
 - **Cấu hình địa điểm chấm công:** Admin tạo một danh sách các tên mạng Wi-Fi (SSID) hợp lệ. Hệ thống sẽ xác minh nhân viên đã kết nối với một trong các mạng này khi chấm công để đảm bảo họ đang ở đúng địa điểm làm việc.
-- **Thiết lập thời gian ân hạn:** Cấu hình số phút đi trễ được cho phép trước khi bị tính là đi muộn.
 
 #### UC-5: Xem Báo cáo & Thống kê
 - **Báo cáo Chấm công Tổng thể:** Xem tóm tắt tình trạng chấm công của toàn công ty hoặc từng phòng ban (số lượng có mặt, đi muộn, vắng).

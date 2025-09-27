@@ -4,11 +4,37 @@ const userController = require("../controller/UserController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
 router.post(
-  "/create-user",
-  authenticate,
-  authorize("Admin"),
+  "/create",
+  // authenticate,
+  // authorize("Admin"),
   userController.createUserByAdmin
 );
-router.put("/profile", authenticate, userController.updateProfile);
+router.get(
+  "/", 
+  // authenticate, 
+  // authorize("Admin"), 
+  userController.getAllUsers
+);
+
+router.put(
+  "/status/:id",
+  // authenticate,
+  // authorize("Admin"),
+  userController.changeUserStatus
+);
+
+router.put(
+  "/role/:id",
+  // authenticate,
+  // authorize("Admin"),
+  userController.changeUserRole
+);
+
+router.delete(
+  "/:id",
+  // authenticate,
+  // authorize("Admin"),
+  userController.deleteUser
+);
 
 module.exports = router;

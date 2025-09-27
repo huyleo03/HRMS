@@ -3,6 +3,12 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
+    employeeId : {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
     email: {
       type: String,
       required: [true, "Email là bắt buộc"],
@@ -95,6 +101,14 @@ const userSchema = new mongoose.Schema(
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
   }
 );
+
+// Hook để tự động tạo employeeId trước khi lưu
+userSchema.pre("save", function (next) {
+  if (this.isNew && !this.employeeId) {
+    this.employeeId = crypto.randomUUID().split('-')[0].toUpperCase();
+  }
+  next();
+});
 
 // Middleware để hash mật khẩu trước khi lưu
 userSchema.pre("save", async function (next) {

@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const crypto = require("crypto");
+const sendEmail = require("../utils/email");
 
 // Create a new user by Admin
 exports.createUserByAdmin = async (req, res) => {
@@ -27,6 +28,32 @@ exports.createUserByAdmin = async (req, res) => {
     const userResponse = savedUser.toObject();
     delete userResponse.passwordHash;
 
+    try {
+      const loginUrl = `http://your-frontend-url/login`;
+      const html = `
+        <h1>Chào mừng bạn đến với hệ thống HRMS</h1>
+        <p>Xin chào ${full_name},</p>
+        <p>Tài khoản của bạn đã được tạo thành công. Dưới đây là thông tin đăng nhập tạm thời:</p>
+        <ul>
+          <li><strong>Email:</strong> ${email}</li>
+          <li><strong>Mật khẩu tạm thời:</strong> ${temporaryPassword}</li>
+        </ul>
+        <p>Vui lòng đăng nhập và đổi mật khẩu ngay lập tức.</p>
+        <a href="${loginUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Đăng nhập ngay</a>
+        <p>Trân trọng,</p>
+        <p>Phòng Nhân sự</p>
+      `;
+
+      await sendEmail({
+        email: savedUser.email,
+        subject: "Thông tin tài khoản HRMS của bạn",
+        html: html,
+      });
+    } catch (emailError) {
+      console.error("Lỗi gửi email:", emailError);
+    }
+    // ------------------------------------------------
+
     res.status(201).json({
       message: "Tạo người dùng thành công.",
       user: userResponse,
@@ -40,36 +67,239 @@ exports.createUserByAdmin = async (req, res) => {
   }
 };
 
-// Update user profile
-exports.updateProfile = async (req, res) => {
-  const userId = req.user._id;
-  const { full_name, phone, address, gender, avatar } = req.body;
-
+// List all users with pagination (for Admin)
+exports.getAllUsers = async (req, res) => {
   try {
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      {
-        full_name,
-        phone,
-        address,
-        gender,
-        avatar,
-        profileCompleted: true, 
-      },
-      { new: true, runValidators: true }
-    ).select("-passwordHash");
+    // Lấy tất cả các tham số từ query
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = "created_at",
+      sortOrder = "asc",
+      name,
+      role,
+      status,
+      department,
+    } = req.query;
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng." });
-    }
+    const query = {};
+    if (name) query.full_name = { $regex: name.trim(), $options: "i" };
+    if (role) query.role = role;
+    if (status) query.status = status;
+    if (department)
+      query["department.department_name"] = {
+        $regex: department.trim(),
+        $options: "i",
+      };
+
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+    const users = await User.find(query)
+      .select("-passwordHash")
+      .sort(sortOptions)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const total = await User.countDocuments(query);
 
     res.status(200).json({
-      message: "Cập nhật profile thành công.",
-      user: updatedUser,
+      users,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / limit),
     });
   } catch (error) {
     res.status(500).json({
-      message: "Lỗi server khi cập nhật profile.",
+      message: "Lỗi server khi lấy danh sách người dùng.",
+      error: error.message,
+    });
+  }
+};
+
+// Change user status (Active, Inactive, Suspended) by Admin
+exports.changeUserStatus = async (req, res) => {
+  const userId = req.params.id;
+  const { status } = req.body;
+  const validStatuses = ["Active", "Inactive", "Suspended"];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ message: "Trạng thái không hợp lệ." });
+  }
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    }
+    user.status = status;
+    await user.save();
+    res.status(200).json({ message: "Cập nhật trạng thái thành công.", user });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi server khi cập nhật trạng thái người dùng.",
+      error: error.message,
+    });
+  }
+};
+
+// Change user role by Admin
+exports.changeUserRole = async (req, res) => {
+  const userId = req.params.id;
+  const { role } = req.body;
+  const validRoles = ["Manager", "Employee"];
+
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ message: "Vai trò không hợp lệ." });
+  }
+
+  try {
+    const userToUpdate = await User.findById(userId);
+    if (!userToUpdate) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    }
+    if (role === "Manager") {
+      if (!userToUpdate.department || !userToUpdate.department.department_id) {
+        return res.status(400).json({
+          message:
+            "Không thể gán vai trò Manager cho người dùng chưa thuộc phòng ban nào.",
+        });
+      }
+
+      const existingManager = await User.findOne({
+        "department.department_id": userToUpdate.department.department_id,
+        role: "Manager",
+        _id: { $ne: userId },
+      });
+
+      if (existingManager) {
+        return res.status(400).json({
+          message: `Phòng ban "${userToUpdate.department.department_name}" đã có Manager là "${existingManager.full_name}".`,
+        });
+      }
+    }
+    userToUpdate.role = role;
+    await userToUpdate.save();
+    res
+      .status(200)
+      .json({ message: "Cập nhật vai trò thành công.", user: userToUpdate });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi server khi cập nhật vai trò người dùng.",
+      error: error.message,
+    });
+  }
+};
+
+// Get user details by ID (for Admin and Manager)
+exports.getUserById = async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const user = await User.findById(userId).select(
+      "-passwordHash -otp -otpExpires"
+    );
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    }
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi server khi lấy thông tin người dùng.",
+      error: error.message,
+    });
+  }
+};
+
+// Delete user by Admin
+exports.deleteUser = async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    }
+    res.status(200).json({ message: "Xóa người dùng thành công." });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi server khi xóa người dùng.",
+      error: error.message,
+    });
+  }
+};
+
+// Update own profile (for all roles)
+exports.updateOwnProfile = async (req, res) => {
+  const userId = req.user._id;
+  const { full_name, phone, address, avatar, gender } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    }
+
+    if (full_name) user.full_name = full_name;
+    if (phone) user.phone = phone;
+    if (address) user.address = address;
+    if (avatar) user.avatar = avatar; 
+    if (gender) user.gender = gender; 
+
+    user.profileCompleted = true;
+
+    const updatedUser = await user.save();
+
+    const userResponse = updatedUser.toObject();
+    delete userResponse.passwordHash;
+
+    res
+      .status(200)
+      .json({ message: "Cập nhật hồ sơ thành công.", user: userResponse });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: "Dữ liệu không hợp lệ.", errors: error.errors });
+    }
+    res.status(500).json({
+      message: "Lỗi server khi cập nhật hồ sơ.",
+      error: error.message,
+    });
+  }
+};
+
+
+// Change own password (for all roles)
+exports.changeOwnPassword = async (req, res) => {
+  const userId = req.user._id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: "Cần cung cấp mật khẩu hiện tại và mật khẩu mới." });
+  }
+  const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/;
+  if (!passwordRegex.test(newPassword)) {
+    return res.status(400).json({
+      message:
+        "Mật khẩu mới không đủ mạnh. Mật khẩu phải dài ít nhất 8 ký tự, chứa ít nhất một chữ hoa và một ký tự đặc biệt (!@#$%^&*).",
+    });
+  }
+
+  try {
+    const user = await User.findById(userId).select("+passwordHash");
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Mật khẩu hiện tại không đúng." });
+    }
+
+    user.passwordHash = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: "Đổi mật khẩu thành công." });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi server khi đổi mật khẩu.",
       error: error.message,
     });
   }
