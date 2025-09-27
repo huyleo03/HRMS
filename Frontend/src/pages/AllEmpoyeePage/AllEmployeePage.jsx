@@ -1,22 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./Employees.css";
+import { getUsers, deleteUser as apiDeleteUser } from "../../service/UserService";
 
-/** --- Demo data ---------------------------------------------------------- */
-const SEED = [
-  { id: "345321231", name: "Darlene Robertson", dept: "Design", title: "UI/UX Designer", type: "Office", status: "Permanent", skills: ["React JS"], avatar: "https://i.pravatar.cc/40?img=1" },
-  { id: "987890345", name: "Floyd Miles", dept: "Developement", title: "PHP Developer", type: "Office", status: "Permanent", skills: ["PHP"], avatar: "https://i.pravatar.cc/40?img=2" },
-  { id: "453367122", name: "Cody Fisher", dept: "Sales", title: "Sales Manager", type: "Office", status: "Permanent", skills: ["Account"], avatar: "https://i.pravatar.cc/40?img=3" },
-  { id: "345321231", name: "Dianne Russell", dept: "Sales", title: "BDM", type: "Remote", status: "Permanent", skills: ["Account"], avatar: "https://i.pravatar.cc/40?img=4" },
-  { id: "453677881", name: "Savannah Nguyen", dept: "Design", title: "Design Lead", type: "Office", status: "Permanent", skills: ["React JS"], avatar: "https://i.pravatar.cc/40?img=5" },
-  { id: "009918765", name: "Jacob Jones", dept: "Developement", title: "Python Developer", type: "Remote", status: "Permanent", skills: ["Python"], avatar: "https://i.pravatar.cc/40?img=6" },
-  { id: "238870122", name: "Marvin McKinney", dept: "Developement", title: "Sr. UI Developer", type: "Remote", status: "Permanent", skills: ["Node JS", "React JS"], avatar: "https://i.pravatar.cc/40?img=7" },
-  { id: "124335111", name: "Brooklyn Simmons", dept: "PM", title: "Project Manager", type: "Office", status: "Permanent", skills: ["Java"], avatar: "https://i.pravatar.cc/40?img=8" },
-  { id: "435540099", name: "Kristin Watson", dept: "HR", title: "HR Executive", type: "Office", status: "Permanent", skills: [], avatar: "https://i.pravatar.cc/40?img=9" },
-  { id: "009812890", name: "Kathryn Murphy", dept: "Developement", title: "React JS Developer", type: "Office", status: "Permanent", skills: ["React JS"], avatar: "https://i.pravatar.cc/40?img=10" },
-  { id: "671190345", name: "Arlene McCoy", dept: "Developement", title: "Node JS", type: "Office", status: "Permanent", skills: ["Node JS"], avatar: "https://i.pravatar.cc/40?img=11" },
-  { id: "091233412", name: "Devon Lane", dept: "BA", title: "Business Analyst", type: "Remote", status: "Permanent", skills: ["Account"], avatar: "https://i.pravatar.cc/40?img=12" },
-];
-
+/** ----------------- Icon ----------------- */
 function Icon({ name }) {
   const paths = {
     eye: "M1 12s4.5-7 11-7 11 7 11 7-4.5 7-11 7S1 12 1 12zm11 4a4 4 0 100-8 4 4 0 000 8z",
@@ -36,34 +22,22 @@ function Icon({ name }) {
   );
 }
 
-/** --- Filter Modal ------------------------------------------------------- */
-function FilterModal({
-  open,
-  onClose,
-  initial,
-  allDepartments,
-  allSkills,
-  onApply,
-  onSearchSync,
-}) {
+/** --------------- Filter Modal ---------------- */
+function FilterModal({ open, onClose, initial, allDepartments, onApply, onSearchSync }) {
   const [localDepartments, setLocalDepartments] = useState(new Set(initial.departments));
-  const [localSkills, setLocalSkills] = useState(new Set(initial.skills));
-  const [localType, setLocalType] = useState(initial.type);
   const [localQuery, setLocalQuery] = useState(initial.query || "");
 
   React.useEffect(() => {
     if (open) {
       setLocalDepartments(new Set(initial.departments));
-      setLocalSkills(new Set(initial.skills));
-      setLocalType(initial.type);
       setLocalQuery(initial.query || "");
     }
   }, [open, initial]);
 
-  function toggle(setter, currentSet, value) {
-    const next = new Set(currentSet);
+  function toggleDepartment(value) {
+    const next = new Set(localDepartments);
     next.has(value) ? next.delete(value) : next.add(value);
-    setter(next);
+    setLocalDepartments(next);
   }
 
   if (!open) return null;
@@ -75,76 +49,25 @@ function FilterModal({
         <div className="modal__search">
           <span className="icon"><Icon name="search" /></span>
           <input
-            placeholder="Search Employee"
+            placeholder="Search Employee (by name)"
             value={localQuery}
             onChange={(e) => setLocalQuery(e.target.value)}
           />
         </div>
 
-        <div className="modal__grid">
-          <div className="modal__group">
-            <div className="group__title">Department</div>
-            <div className="group__list">
-              {allDepartments.map((d) => (
-                <label key={d} className="chk">
-                  <input
-                    type="checkbox"
-                    checked={localDepartments.has(d)}
-                    onChange={() => toggle(setLocalDepartments, localDepartments, d)}
-                  />
-                  <span>{d}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="modal__group">
-            <div className="group__title no-label">&nbsp;</div>
-            <div className="group__list">
-              {allSkills.map((s) => (
-                <label key={s} className="chk">
-                  <input
-                    type="checkbox"
-                    checked={localSkills.has(s)}
-                    onChange={() => toggle(setLocalSkills, localSkills, s)}
-                  />
-                  <span>{s}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-
         <div className="modal__group">
-          <div className="group__title">Select Type</div>
-          <div className="group__row">
-            <label className="radio">
-              <input
-                type="radio"
-                name="type"
-                checked={localType === "Office"}
-                onChange={() => setLocalType("Office")}
-              />
-              <span>Office</span>
-            </label>
-            <label className="radio">
-              <input
-                type="radio"
-                name="type"
-                checked={localType === "Remote"}
-                onChange={() => setLocalType("Remote")}
-              />
-              <span>Work from Home</span>
-            </label>
-            <label className="radio">
-              <input
-                type="radio"
-                name="type"
-                checked={localType === null}
-                onChange={() => setLocalType(null)}
-              />
-              <span>All</span>
-            </label>
+          <div className="group__title">Department</div>
+          <div className="group__list">
+            {allDepartments.map((d) => (
+              <label key={d || "unknown"} className="chk">
+                <input
+                  type="checkbox"
+                  checked={localDepartments.has(d)}
+                  onChange={() => toggleDepartment(d)}
+                />
+                <span>{d || "—"}</span>
+              </label>
+            ))}
           </div>
         </div>
 
@@ -153,12 +76,7 @@ function FilterModal({
           <button
             className="btn btn--primary"
             onClick={() => {
-              onApply({
-                departments: Array.from(localDepartments),
-                skills: Array.from(localSkills),
-                type: localType,
-                query: localQuery,
-              });
+              onApply({ departments: Array.from(localDepartments), query: localQuery });
               onSearchSync?.(localQuery);
             }}
           >
@@ -170,90 +88,161 @@ function FilterModal({
   );
 }
 
-/** --- Main Page ---------------------------------------------------------- */
+/** ---------------------- Helpers ---------------------- */
+function getInitials(name) {
+  if (!name) return "U";
+  return name.split(" ").map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+}
+
+/** ---------------------- Main Page ---------------------- */
 export default function Employees() {
+  // Search (debounce -> gọi backend)
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+
+  // Paging & sort
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState("asc");
 
-  // filter state
-  const [filters, setFilters] = useState({
-    departments: [],
-    skills: [],
-    type: null, 
-    query: "",
-  });
+  // Filters khớp backend
+  const [filters, setFilters] = useState({ departments: [], query: "" });
   const [isFilterOpen, setFilterOpen] = useState(false);
 
-  const allDepartments = useMemo(
-    () => Array.from(new Set(SEED.map((e) => e.dept))),
-    []
-  );
-  const allSkills = useMemo(
-    () => Array.from(new Set(SEED.flatMap((e) => e.skills))).concat(["Java","Python","React JS","Account","Node JS"]).filter(Boolean)
-      .filter((v, i, arr) => arr.indexOf(v) === i),
-    []
-  );
+  // Data
+  const [users, setUsers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
-  const filtered = useMemo(() => {
-    const qMerged = (q || filters.query || "").toLowerCase().trim();
-    return SEED.filter((e) => {
-      const textOk =
-        !qMerged ||
-        [e.name, e.id, e.dept, e.title, e.type].some((v) =>
-          String(v).toLowerCase().includes(qMerged)
+  const token = localStorage.getItem("token");
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQ(q.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  // Fetch users (backend only)
+  useEffect(() => {
+    let abort = false;
+    (async () => {
+      setLoading(true);
+      setErr("");
+      try {
+        const nameQuery = (debouncedQ || filters.query || "").trim();
+        const dept = filters.departments[0];
+        const data = await getUsers(
+          { page, limit: pageSize, sortBy, sortOrder, name: nameQuery || undefined, department: dept || undefined },
+          token
         );
+        if (abort) return;
+        setUsers(Array.isArray(data.users) ? data.users : []);
+        setTotal(typeof data.total === "number" ? data.total : 0);
+      } catch (e) {
+        if (!abort) setErr(e.message || "Fetch failed");
+      } finally {
+        if (!abort) setLoading(false);
+      }
+    })();
+    return () => { abort = true; };
+  }, [page, pageSize, sortBy, sortOrder, debouncedQ, filters, token]);
 
-      const deptOk =
-        !filters.departments?.length || filters.departments.includes(e.dept);
+  // Departments cho filter
+  const allDepartments = useMemo(() => {
+    const set = new Set(users.map(u => u?.department?.department_name || u?.department || ""));
+    return Array.from(set);
+  }, [users]);
 
-      const typeOk = !filters.type || e.type === filters.type;
-
-      const skillOk =
-        !filters.skills?.length ||
-        e.skills?.some((s) => filters.skills.includes(s));
-
-      return textOk && deptOk && typeOk && skillOk;
-    });
-  }, [q, filters]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const current = Math.min(page, totalPages);
-  const start = (current - 1) * pageSize;
-  const rows = filtered.slice(start, start + pageSize);
+
+  function renderAvatar(u) {
+    const url = u?.avatar;
+    const name = u?.full_name || u?.name || "User";
+    if (url) return <img className="emp-person__avatar" src={url} alt={name} />;
+    return (
+      <div className="emp-person__avatar" style={{ background: "#eef", color: "#334", display: "grid", placeItems: "center", fontWeight: 600 }}>
+        {getInitials(name)}
+      </div>
+    );
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm("Bạn có chắc muốn xóa người dùng này?")) return;
+    try {
+      await apiDeleteUser(id, token);
+      if (users.length === 1 && page > 1) {
+        setPage((p) => p - 1);
+      } else {
+        setUsers((prev) => prev.filter((u) => u._id !== id));
+        setTotal((t) => Math.max(0, t - 1));
+      }
+    } catch (e) {
+      alert(`Xóa thất bại: ${e.message}`);
+    }
+  }
 
   return (
     <div className="emp">
-      <header className="emp__header">
-        <div>
-          <h1 className="emp__title">All Employees</h1>
-          <p className="emp__subtitle">All Employee Information</p>
-        </div>
-
-        <div className="emp__controls">
-          <div className="emp-search">
+      {/* Card */}
+      <section className="emp-card">
+        {/* Card Header: search left + actions right (giống ảnh 2) */}
+        <div className="emp-card__head">
+          <div className="emp-search emp-search--compact">
             <span className="emp-search__icon"><Icon name="search" /></span>
             <input
-              className="emp-search__input"
+              className="emp-search__input emp-search__input--compact"
               placeholder="Search"
               value={q}
-              onChange={(e) => { setQ(e.target.value); setPage(1); }}
+              onChange={(e) => setQ(e.target.value)}
             />
           </div>
 
-          <button className="btn btn--primary" onClick={() => alert("Add new employee")}>
-            <span className="btn__icon"><Icon name="plus" /></span>
-            Add New Employee
-          </button>
-
-          <button className="btn" onClick={() => setFilterOpen(true)}>
-            <span className="btn__icon"><Icon name="filter" /></span>
-            Filter
-          </button>
+          <div className="emp__actions">
+            <button className="btn btn--primary" onClick={() => alert("Đi tới form tạo mới")}>
+              <span className="btn__icon"><Icon name="plus" /></span>
+              Add New Employee
+            </button>
+            <button className="btn" onClick={() => setFilterOpen(true)}>
+              <span className="btn__icon"><Icon name="filter" /></span>
+              Filter
+            </button>
+          </div>
         </div>
-      </header>
 
-      <section className="emp-card">
+        {/* Sort bar */}
+        <div className="emp-table__toolbar">
+          <div className="toolbar__group">
+            <label>
+              Sort by:&nbsp;
+              <select
+                value={sortBy}
+                onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+              >
+                <option value="created_at">Created</option>
+                <option value="full_name">Name</option>
+                <option value="status">Status</option>
+              </select>
+            </label>
+            <label>
+              &nbsp;Order:&nbsp;
+              <select
+                value={sortOrder}
+                onChange={(e) => { setSortOrder(e.target.value); setPage(1); }}
+              >
+                <option value="asc">ASC</option>
+                <option value="desc">DESC</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        {/* Table */}
         <div className="emp-table__scroll">
           <table className="emp-table">
             <thead>
@@ -261,50 +250,75 @@ export default function Employees() {
                 <th>Employee Name</th>
                 <th>Employee ID</th>
                 <th>Department</th>
-                <th>Designation</th>
-                <th>Type</th>
+                <th>Job</th>
                 <th>Status</th>
-                <th>Action</th>
+                <th style={{ width: 120 }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((e, i) => (
-                <tr key={i}>
-                  <td>
-                    <div className="emp-person">
-                      <img className="emp-person__avatar" src={e.avatar} alt={e.name} />
-                      <span className="emp-person__name">{e.name}</span>
-                    </div>
-                  </td>
-                  <td>{e.id}</td>
-                  <td>{e.dept}</td>
-                  <td>{e.title}</td>
-                  <td>{e.type}</td>
-                  <td><span className="badge">Permanent</span></td>
-                  <td>
-                    <div className="emp-actions">
-                      <button title="View"><Icon name="eye" /></button>
-                      <button title="Edit"><Icon name="edit" /></button>
-                      <button title="Delete" className="danger"><Icon name="trash" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="emp-empty">No employees found.</td>
-                </tr>
+              {loading && (
+                <tr><td colSpan="6" className="emp-empty">Đang tải dữ liệu...</td></tr>
+              )}
+
+              {!loading && err && (
+                <tr><td colSpan="6" className="emp-empty">Lỗi tải dữ liệu: {err}</td></tr>
+              )}
+
+              {!loading && !err && users.map((u) => {
+                const name = u?.full_name || u?.name || "—";
+                const id = u?.employeeId || u?._id || "—";
+                const dept = u?.department?.department_name || u?.department || "—";
+                const title = u?.jobTitle || "—";
+                const status = u?.status || "Active";
+                return (
+                  <tr key={u._id || id}>
+                    <td>
+                      <div className="emp-person">
+                        {renderAvatar(u)}
+                        <span className="emp-person__name">{name}</span>
+                      </div>
+                    </td>
+                    <td>{id}</td>
+                    <td>{dept}</td>
+                    <td>{title}</td>
+                    <td><span className="badge">{status}</span></td>
+                    <td>
+                      <div className="emp-actions">
+                        <button title="View" onClick={() => alert("Xem chi tiết")}><Icon name="eye" /></button>
+                        <button title="Edit" onClick={() => alert("Sửa thông tin")}><Icon name="edit" /></button>
+                        <button title="Delete" className="danger" onClick={() => handleDelete(u._id)}><Icon name="trash" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {!loading && !err && users.length === 0 && (
+                <tr><td colSpan="6" className="emp-empty">No employees found.</td></tr>
               )}
             </tbody>
           </table>
         </div>
 
-        <div className="emp-foot">
-          <div className="emp-foot__count">
-            Showing {rows.length ? start + 1 : 0} to {Math.min(start + pageSize, filtered.length)} out of {filtered.length} records
+        {/* Footer giống ảnh 2: trái Show select, giữa count, phải pagination */}
+        <div className="emp-foot emp-foot--v2">
+          <div className="emp-foot__left">
+            <label>Showing</label>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setPage(1); }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+            </select>
           </div>
 
-          <div className="emp-foot__pager">
+          <div className="emp-foot__center">
+            Showing {users.length ? (current - 1) * pageSize + 1 : 0} to {Math.min(current * pageSize, total)} out of {total} records
+          </div>
+
+          <div className="emp-foot__right emp-foot__pager">
             <button
               className="circle"
               disabled={current === 1}
@@ -312,10 +326,14 @@ export default function Employees() {
               aria-label="Prev"
             ><Icon name="chevL" /></button>
 
-            {Array.from({ length: totalPages }).slice(0, Math.min(5, totalPages)).map((_, i) => {
+            {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
               const n = i + 1;
               return (
-                <button key={n} className={`page ${n === current ? "is-active" : ""}`} onClick={() => setPage(n)}>
+                <button
+                  key={n}
+                  className={`page ${n === current ? "is-active" : ""}`}
+                  onClick={() => setPage(n)}
+                >
                   {n}
                 </button>
               );
@@ -328,15 +346,6 @@ export default function Employees() {
               aria-label="Next"
             ><Icon name="chevR" /></button>
           </div>
-
-          <div className="emp-foot__size">
-            <label>Show</label>
-            <select value={pageSize} onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setPage(1); }}>
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-            </select>
-          </div>
         </div>
       </section>
 
@@ -346,7 +355,6 @@ export default function Employees() {
         onClose={() => setFilterOpen(false)}
         initial={filters}
         allDepartments={allDepartments}
-        allSkills={allSkills}
         onApply={(f) => { setFilters(f); setFilterOpen(false); setPage(1); }}
         onSearchSync={(val) => setQ(val)}
       />
