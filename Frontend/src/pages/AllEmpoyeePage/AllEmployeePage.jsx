@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Employees.css";
 import { getUsers, deleteUser as apiDeleteUser } from "../../service/UserService";
 
@@ -96,6 +97,8 @@ function getInitials(name) {
 
 /** ---------------------- Main Page ---------------------- */
 export default function Employees() {
+  const navigate = useNavigate();
+  
   // Search (debounce -> gọi backend)
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
@@ -204,7 +207,7 @@ export default function Employees() {
           </div>
 
           <div className="emp__actions">
-            <button className="btn btn--primary" onClick={() => alert("Đi tới form tạo mới")}>
+            <button className="btn btn--primary" onClick={() => navigate('/employees/add')}>
               <span className="btn__icon"><Icon name="plus" /></span>
               Add New Employee
             </button>
