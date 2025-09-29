@@ -51,6 +51,7 @@ function Login() {
           role: decodedToken.role,
           name: decodedToken.name,
           avatar: decodedToken.avatar,
+          email: decodedToken.email,
           profileCompleted: decodedToken.profileCompleted,
         };
 

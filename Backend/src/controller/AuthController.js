@@ -137,6 +137,7 @@ module.exports = {
         role: user.role,
         name: user.full_name,
         avatar: user.avatar,
+        email: user.email,
         profileCompleted: user.profileCompleted,
       };
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
