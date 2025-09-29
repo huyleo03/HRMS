@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
-    employeeId : {
+    employeeId: {
       type: String,
       unique: true,
       sparse: true,
@@ -45,6 +45,11 @@ const userSchema = new mongoose.Schema(
     gender: {
       type: String,
       enum: ["Male", "Female"],
+    },
+    manager_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
     },
     role: {
       type: String,
@@ -92,7 +97,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false,
     },
-    otpExpires: { 
+    otpExpires: {
       type: Date,
       select: false,
     },
@@ -105,7 +110,7 @@ const userSchema = new mongoose.Schema(
 // Hook để tự động tạo employeeId trước khi lưu
 userSchema.pre("save", function (next) {
   if (this.isNew && !this.employeeId) {
-    this.employeeId = crypto.randomUUID().split('-')[0].toUpperCase();
+    this.employeeId = crypto.randomUUID().split("-")[0].toUpperCase();
   }
   next();
 });
