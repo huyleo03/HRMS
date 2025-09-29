@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
@@ -7,18 +10,93 @@ export default function ResetPasswordPage() {
   const [isConfirmFocused, setIsConfirmFocused] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleReset = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const email =
+    location.state?.email ||
+    searchParams.get("email") ||
+    localStorage.getItem("reset_email");
+  const otp =
+    location.state?.otp ||
+    searchParams.get("otp") ||
+    localStorage.getItem("reset_otp");
+
+  useEffect(() => {
+    if (email) localStorage.setItem("reset_email", email);
+    if (otp) localStorage.setItem("reset_otp", otp);
+
+    if (!email || !otp) {
+      toast.error("Quy trình đặt lại mật khẩu không hợp lệ");
+      navigate("/forgot-password");
+    }
+  }, [email, otp, navigate]);
+
+  const handleReset = async () => {
     if (!newPassword || !confirmPassword) {
-      alert("Vui lòng nhập đầy đủ mật khẩu");
+      toast.warn("Vui lòng nhập đầy đủ mật khẩu");
       return;
     }
+
     if (newPassword !== confirmPassword) {
-      alert("Mật khẩu không khớp");
+      toast.error("Mật khẩu không khớp");
       return;
     }
-    console.log("Mật khẩu mới:", newPassword);
-    // Gọi API reset password ở đây
+
+    if (newPassword.length < 8) {
+      toast.warn("Mật khẩu phải có ít nhất 8 ký tự");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Lấy reset token từ localStorage
+      const resetToken = localStorage.getItem("reset_token");
+
+      if (!resetToken) {
+        toast.error("Phiên làm việc đã hết hạn");
+        navigate("/forgot-password");
+        return;
+      }
+
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL_BACKEND}/api/auth/reset-password`,
+        {
+          email,
+          otp,
+          newPassword,
+          confirmPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${resetToken}`,
+          },
+        }
+      );
+
+      // Xoá reset token vì không cần nữa
+      localStorage.removeItem("reset_token");
+
+      toast.success("Đặt lại mật khẩu thành công!");
+
+      // Chuyển hướng đến trang đăng nhập sau 1.5 giây
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể đặt lại mật khẩu";
+
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -33,7 +111,9 @@ export default function ResetPasswordPage() {
       }}
     >
       <div style={{ maxWidth: 430, width: "100%" }}>
-        <h1 style={{ textAlign: "center", marginBottom: 40 }}>Reset Password</h1>
+        <h1 style={{ textAlign: "center", marginBottom: 40 }}>
+          Reset Password
+        </h1>
 
         {/* New Password */}
         <div style={{ position: "relative", marginBottom: 16 }}>
@@ -138,6 +218,7 @@ export default function ResetPasswordPage() {
         {/* Button */}
         <button
           onClick={handleReset}
+          disabled={isSubmitting}
           style={{
             width: "100%",
             height: 55,
@@ -147,11 +228,12 @@ export default function ResetPasswordPage() {
             borderRadius: 12,
             fontSize: 16,
             fontWeight: 500,
-            cursor: "pointer",
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.7 : 1,
             display: "block",
           }}
         >
-          Reset Password
+          {isSubmitting ? "Đang xử lý..." : "Reset Password"}
         </button>
       </div>
     </div>

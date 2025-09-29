@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { jwtDecode } from "jwt-decode";
+import { useAuth } from "../../contexts/AuthContext";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -13,6 +15,7 @@ function Login() {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     const rememberedEmail = localStorage.getItem("remember_email");
@@ -36,16 +39,21 @@ function Login() {
         {
           email,
           password,
-          rememberMe,
         }
       );
       const data = response.data;
       if (data && data.token) {
         localStorage.setItem("auth_token", data.token);
-        if (data.user) {
-          localStorage.setItem("user_info", JSON.stringify(data.user));
-        }
+        const decodedToken = jwtDecode(data.token);
+        const userInfo = {
+          id: decodedToken.sub,
+          role: decodedToken.role,
+          name: decodedToken.name,
+          avatar: decodedToken.avatar,
+          profileCompleted: decodedToken.profileCompleted,
+        };
 
+        login(data.token, userInfo);
         if (rememberMe) {
           localStorage.setItem("remember_email", email);
         } else {

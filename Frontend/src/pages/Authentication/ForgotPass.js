@@ -1,19 +1,46 @@
 import React, { useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-function ForgotPassword() {
+import { toast } from "react-toastify";
+import axios from "axios";
+
+const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!email) {
-      alert("Vui lòng nhập email");
+      toast.warn("Vui lòng nhập email");
       return;
     }
-    alert("Đã gửi OTP đến " + email);
-    navigate('/otp-page', { state: { email } });
+
+    try {
+      setIsSubmitting(true);
+
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL_BACKEND}/api/auth/forgot-password`,
+        { email }
+      );
+      localStorage.setItem("reset_token", response.data.resetToken);
+
+      toast.success("OTP đã được gửi đến email của bạn");
+
+      setTimeout(() => {
+        navigate("/otp-page", { state: { email } });
+      }, 1500);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể gửi OTP, vui lòng thử lại";
+
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -28,22 +55,28 @@ function ForgotPassword() {
       }}
     >
       <div style={{ maxWidth: 430, width: "100%" }}>
-        <div style={{ marginBottom: 24, color: "#333", cursor: "pointer", fontSize: 16 }}>
-            <Link to="/" style={{ textDecoration: 'none', color: "#333" }}>
-                &#60; Back
-            </Link>
+        <div
+          style={{
+            marginBottom: 24,
+            color: "#333",
+            cursor: "pointer",
+            fontSize: 16,
+          }}
+        >
+          <Link to="/" style={{ textDecoration: "none", color: "#333" }}>
+            &#60; Back
+          </Link>
         </div>
 
-        <div style={{margin: "30px 0" }}>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
-                Forgot Password
-            </h1>
-            <p style={{ color: "#7d7d7d"}}>
-                Enter your registered email address. We’ll send you a code to reset
-                your password.
-            </p>
+        <div style={{ margin: "30px 0" }}>
+          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
+            Forgot Password
+          </h1>
+          <p style={{ color: "#7d7d7d" }}>
+            Enter your registered email address. We’ll send you a code to reset
+            your password.
+          </p>
         </div>
-        
 
         <form onSubmit={handleSubmit}>
           <div style={{ position: "relative", marginBottom: 24 }}>
@@ -61,7 +94,7 @@ function ForgotPassword() {
                 height: 55,
                 fontSize: 16,
                 outline: "none",
-                boxSizing: 'border-box'
+                boxSizing: "border-box",
               }}
             />
             <label
@@ -93,8 +126,8 @@ function ForgotPassword() {
               fontSize: 16,
               fontWeight: 500,
               cursor: "pointer",
-              boxSizing: 'border-box',
-              display: 'block'
+              boxSizing: "border-box",
+              display: "block",
             }}
           >
             Send OTP
@@ -103,6 +136,6 @@ function ForgotPassword() {
       </div>
     </div>
   );
-}
+};
 
 export default ForgotPassword;

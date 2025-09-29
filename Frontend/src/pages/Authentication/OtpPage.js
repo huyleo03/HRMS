@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
+import { toast } from "react-toastify";
 export default function OtpPage() {
   const [otp, setOtp] = useState(Array(5).fill(""));
   const location = useLocation();
@@ -26,10 +26,13 @@ export default function OtpPage() {
     console.log("OTP nhập vào:", code);
 
     if (otp.includes("") || code.length < otp.length) {
-    alert("Vui lòng nhập đầy đủ mã OTP");
-    return;
-  }
-    navigate("/reset-password", { state: { email } });
+      toast.warn("Vui lòng nhập đầy đủ mã OTP");
+      return;
+    }
+
+    localStorage.setItem("reset_email", email);
+    localStorage.setItem("reset_otp", code);
+    navigate("/reset-password");
   };
 
   return (
@@ -45,15 +48,27 @@ export default function OtpPage() {
     >
       <div style={{ maxWidth: 430, width: "100%" }}>
         {/* Back */}
-        <div style={{ marginBottom: 24, color: "#333", cursor: "pointer", fontSize: 16 }}>
-          <Link to="/forgot-password" style={{ textDecoration: "none", color: "#333" }}>
+        <div
+          style={{
+            marginBottom: 24,
+            color: "#333",
+            cursor: "pointer",
+            fontSize: 16,
+          }}
+        >
+          <Link
+            to="/forgot-password"
+            style={{ textDecoration: "none", color: "#333" }}
+          >
             &#60; Back
           </Link>
         </div>
 
         {/* Title */}
         <div style={{ margin: "30px 0" }}>
-          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>Enter OTP</h1>
+          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>
+            Enter OTP
+          </h1>
           <p style={{ color: "#7d7d7d" }}>
             We have shared a code to your registered email address
             <br />
@@ -62,7 +77,14 @@ export default function OtpPage() {
         </div>
 
         {/* OTP inputs */}
-        <div style={{ display: "flex", justifyContent: "center", gap: "12px", margin: "20px 0" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "12px",
+            margin: "20px 0",
+          }}
+        >
           {otp.map((digit, i) => (
             <input
               key={i}
