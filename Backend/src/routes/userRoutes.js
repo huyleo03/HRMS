@@ -30,11 +30,10 @@ router.put(
   userController.changeUserRole
 );
 
-router.delete(
+router.get(
   "/:id",
   authenticate,
-  authorize("Admin"),
-  userController.deleteUser
+  userController.getOwnProfile
 );
 
 module.exports = router;

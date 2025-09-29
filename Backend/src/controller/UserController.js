@@ -210,6 +210,7 @@ exports.getUserById = async (req, res) => {
   }
 };
 
+
 // Delete user by Admin
 exports.deleteUser = async (req, res) => {
   const userId = req.params.id;
@@ -226,6 +227,23 @@ exports.deleteUser = async (req, res) => {
     });
   }
 };
+
+// Get own profile (for all roles)
+exports.getOwnProfile = async (req, res) => {
+  const userId = req.user._id;
+  try {
+    const user = await User.findById(userId).select("-passwordHash -otp -otpExpires");
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    }
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi server khi lấy thông tin hồ sơ.",
+      error: error.message,
+    });
+  }
+  
 
 // Update own profile (for all roles)
 exports.updateOwnProfile = async (req, res) => {
@@ -266,6 +284,7 @@ exports.updateOwnProfile = async (req, res) => {
     });
   }
 };
+
 
 // Change own password (for all roles)
 exports.changeOwnPassword = async (req, res) => {
