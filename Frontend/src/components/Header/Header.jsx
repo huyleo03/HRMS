@@ -33,6 +33,11 @@ const Header = () => {
           title: 'Add New Employee',
           description: 'Create a new employee account'
         };
+      case "/profile":
+        return {
+          title: "My Profile",
+          description: "Manage your personal information",
+        };
       case "/departments":
         return {
           title: "All Departments",
@@ -74,6 +79,11 @@ const Header = () => {
   const handleLogout = () => {
     logout();
     navigate("/login");
+    setIsDropdownOpen(false);
+  };
+
+  const handleMyProfile = () => {
+    navigate("/profile");
     setIsDropdownOpen(false);
   };
 
@@ -154,6 +164,31 @@ const Header = () => {
             {/* Dropdown Menu */}
             {isDropdownOpen && (
               <div className="profile-dropdown">
+                <button className="dropdown-item" onClick={handleMyProfile}>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+                      stroke="#16151C"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M20.5899 22C20.5899 18.13 16.7399 15 11.9999 15C7.25991 15 3.40991 18.13 3.40991 22"
+                      stroke="#16151C"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  My Profile
+                </button>
                 <button className="dropdown-item" onClick={handleLogout}>
                   <svg
                     width="16"

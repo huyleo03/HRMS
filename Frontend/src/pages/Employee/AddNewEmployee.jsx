@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { apiCall, API_CONFIG } from '../../utils/api';
-import Layout from '../../components/Layout/Layout';
 import './AddNewEmployee.css';
 
 const AddNewEmployee = () => {
@@ -148,19 +147,18 @@ const AddNewEmployee = () => {
   };
 
   return (
-    <Layout>
-      <div className="add-employee-container">
-        {/* Breadcrumb */}
-        <div className="breadcrumb">
-          <span 
-            className="breadcrumb-link" 
-            onClick={() => navigate('/employees')}
-          >
-            All Employee
-          </span>
-          <span className="breadcrumb-separator"> &gt; </span>
-          <span className="breadcrumb-current">Add new employee</span>
-        </div>
+    <div className="add-employee-container">
+      {/* Breadcrumb */}
+      <div className="breadcrumb">
+        <span 
+          className="breadcrumb-link" 
+          onClick={() => navigate('/employees')}
+        >
+          All Employee
+        </span>
+        <span className="breadcrumb-separator"> &gt; </span>
+        <span className="breadcrumb-current">Add new employee</span>
+      </div>
 
         <div className="add-employee-card">
           <div className="tab-navigation">
@@ -321,7 +319,6 @@ const AddNewEmployee = () => {
           </form>
         </div>
       </div>
-    </Layout>
   );
 };
 

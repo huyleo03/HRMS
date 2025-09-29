@@ -2,7 +2,6 @@ import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Layout from "./components/Layout/Layout";
 import Login from "./pages/Authentication/Login";
 import ForgotPass from "./pages/Authentication/ForgotPass";
 import OtpPage from "./pages/Authentication/OtpPage";
@@ -41,6 +40,15 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/add" element={<AddNewEmployee />} />
+            <Route
+              path="/profile"
+              element={
+                <div style={{ padding: "24px" }}>
+                  <h1>My Profile</h1>
+                  <p>This page is under development</p>
+                </div>
+              }
+            />
             <Route
               path="/departments"
               element={
