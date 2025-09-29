@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
 import Login from "./pages/Authentication/Login";
 import ForgotPass from "./pages/Authentication/ForgotPass";
@@ -10,6 +10,7 @@ import Employees from "./pages/AllEmpoyeePage/AllEmployeePage.jsx";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute.js";
 
 function App() {
   return (
@@ -28,103 +29,72 @@ function App() {
           theme="light"
         />
         <Routes>
-          {/* Authentication Routes - No Layout */}
+          {/* --- Public Routes --- */}
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPass />} />
           <Route path="/otp-page" element={<OtpPage />} />
           <Route path="/reset-password" element={<ResetPass />} />
 
-          {/* Application Routes - With Layout */}
-          <Route
-            path="/"
-            element={
-              <Layout>
-                <Dashboard />
-              </Layout>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <Layout>
-                <Dashboard />
-              </Layout>
-            }
-          />
-          <Route
-            path="/employees"
-            element={
-              <Layout>
-                <Employees />
-              </Layout>
-            }
-          />
-          <Route
-            path="/departments"
-            element={
-              <Layout>
+          {/* --- Protected Routes --- */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/employees" element={<Employees />} />
+            <Route
+              path="/departments"
+              element={
                 <div style={{ padding: "24px" }}>
                   <h1>Departments Page</h1>
                   <p>This page is under development</p>
                 </div>
-              </Layout>
-            }
-          />
-          <Route
-            path="/attendance"
-            element={
-              <Layout>
+              }
+            />
+            <Route
+              path="/attendance"
+              element={
                 <div style={{ padding: "24px" }}>
                   <h1>Attendance Page</h1>
                   <p>This page is under development</p>
                 </div>
-              </Layout>
-            }
-          />
-          <Route
-            path="/payroll"
-            element={
-              <Layout>
+              }
+            />
+            <Route
+              path="/payroll"
+              element={
                 <div style={{ padding: "24px" }}>
                   <h1>Payroll Page</h1>
                   <p>This page is under development</p>
                 </div>
-              </Layout>
-            }
-          />
-          <Route
-            path="/leaves"
-            element={
-              <Layout>
+              }
+            />
+            <Route
+              path="/leaves"
+              element={
                 <div style={{ padding: "24px" }}>
                   <h1>Leaves Page</h1>
                   <p>This page is under development</p>
                 </div>
-              </Layout>
-            }
-          />
-          <Route
-            path="/holidays"
-            element={
-              <Layout>
+              }
+            />
+            <Route
+              path="/holidays"
+              element={
                 <div style={{ padding: "24px" }}>
                   <h1>Holidays Page</h1>
                   <p>This page is under development</p>
                 </div>
-              </Layout>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <Layout>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
                 <div style={{ padding: "24px" }}>
                   <h1>Settings Page</h1>
                   <p>This page is under development</p>
                 </div>
-              </Layout>
-            }
-          />
+              }
+            />
+          </Route>
+          <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

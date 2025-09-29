@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./Employees.css";
-import { getUsers, deleteUser as apiDeleteUser } from "../../service/UserService";
+import {
+  getUsers,
+  deleteUser as apiDeleteUser,
+} from "../../service/UserService";
+import { useAuth } from "../../contexts/AuthContext";
 
 /** ----------------- Icon ----------------- */
 function Icon({ name }) {
@@ -15,16 +19,33 @@ function Icon({ name }) {
     chevR: "M9 6l6 6-6 6",
   };
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d={paths[name]} />
     </svg>
   );
 }
 
 /** --------------- Filter Modal ---------------- */
-function FilterModal({ open, onClose, initial, allDepartments, onApply, onSearchSync }) {
-  const [localDepartments, setLocalDepartments] = useState(new Set(initial.departments));
+function FilterModal({
+  open,
+  onClose,
+  initial,
+  allDepartments,
+  onApply,
+  onSearchSync,
+}) {
+  const [localDepartments, setLocalDepartments] = useState(
+    new Set(initial.departments)
+  );
   const [localQuery, setLocalQuery] = useState(initial.query || "");
 
   React.useEffect(() => {
@@ -47,7 +68,9 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply, onSearch
         <h3 className="modal__title">Filter</h3>
 
         <div className="modal__search">
-          <span className="icon"><Icon name="search" /></span>
+          <span className="icon">
+            <Icon name="search" />
+          </span>
           <input
             placeholder="Search Employee (by name)"
             value={localQuery}
@@ -72,11 +95,16 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply, onSearch
         </div>
 
         <div className="modal__footer">
-          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn" onClick={onClose}>
+            Cancel
+          </button>
           <button
             className="btn btn--primary"
             onClick={() => {
-              onApply({ departments: Array.from(localDepartments), query: localQuery });
+              onApply({
+                departments: Array.from(localDepartments),
+                query: localQuery,
+              });
               onSearchSync?.(localQuery);
             }}
           >
@@ -91,7 +119,13 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply, onSearch
 /** ---------------------- Helpers ---------------------- */
 function getInitials(name) {
   if (!name) return "U";
-  return name.split(" ").map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 /** ---------------------- Main Page ---------------------- */
@@ -116,7 +150,7 @@ export default function Employees() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  const token = localStorage.getItem("token");
+  const { token } = useAuth();
 
   // Debounce search
   useEffect(() => {
@@ -137,7 +171,14 @@ export default function Employees() {
         const nameQuery = (debouncedQ || filters.query || "").trim();
         const dept = filters.departments[0];
         const data = await getUsers(
-          { page, limit: pageSize, sortBy, sortOrder, name: nameQuery || undefined, department: dept || undefined },
+          {
+            page,
+            limit: pageSize,
+            sortBy,
+            sortOrder,
+            name: nameQuery || undefined,
+            department: dept || undefined,
+          },
           token
         );
         if (abort) return;
@@ -149,12 +190,16 @@ export default function Employees() {
         if (!abort) setLoading(false);
       }
     })();
-    return () => { abort = true; };
+    return () => {
+      abort = true;
+    };
   }, [page, pageSize, sortBy, sortOrder, debouncedQ, filters, token]);
 
   // Departments cho filter
   const allDepartments = useMemo(() => {
-    const set = new Set(users.map(u => u?.department?.department_name || u?.department || ""));
+    const set = new Set(
+      users.map((u) => u?.department?.department_name || u?.department || "")
+    );
     return Array.from(set);
   }, [users]);
 
@@ -166,7 +211,16 @@ export default function Employees() {
     const name = u?.full_name || u?.name || "User";
     if (url) return <img className="emp-person__avatar" src={url} alt={name} />;
     return (
-      <div className="emp-person__avatar" style={{ background: "#eef", color: "#334", display: "grid", placeItems: "center", fontWeight: 600 }}>
+      <div
+        className="emp-person__avatar"
+        style={{
+          background: "#eef",
+          color: "#334",
+          display: "grid",
+          placeItems: "center",
+          fontWeight: 600,
+        }}
+      >
         {getInitials(name)}
       </div>
     );
@@ -194,7 +248,9 @@ export default function Employees() {
         {/* Card Header: search left + actions right (giống ảnh 2) */}
         <div className="emp-card__head">
           <div className="emp-search emp-search--compact">
-            <span className="emp-search__icon"><Icon name="search" /></span>
+            <span className="emp-search__icon">
+              <Icon name="search" />
+            </span>
             <input
               className="emp-search__input emp-search__input--compact"
               placeholder="Search"
@@ -204,12 +260,19 @@ export default function Employees() {
           </div>
 
           <div className="emp__actions">
-            <button className="btn btn--primary" onClick={() => alert("Đi tới form tạo mới")}>
-              <span className="btn__icon"><Icon name="plus" /></span>
+            <button
+              className="btn btn--primary"
+              onClick={() => alert("Đi tới form tạo mới")}
+            >
+              <span className="btn__icon">
+                <Icon name="plus" />
+              </span>
               Add New Employee
             </button>
             <button className="btn" onClick={() => setFilterOpen(true)}>
-              <span className="btn__icon"><Icon name="filter" /></span>
+              <span className="btn__icon">
+                <Icon name="filter" />
+              </span>
               Filter
             </button>
           </div>
@@ -222,7 +285,10 @@ export default function Employees() {
               Sort by:&nbsp;
               <select
                 value={sortBy}
-                onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setPage(1);
+                }}
               >
                 <option value="created_at">Created</option>
                 <option value="full_name">Name</option>
@@ -233,7 +299,10 @@ export default function Employees() {
               &nbsp;Order:&nbsp;
               <select
                 value={sortOrder}
-                onChange={(e) => { setSortOrder(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setSortOrder(e.target.value);
+                  setPage(1);
+                }}
               >
                 <option value="asc">ASC</option>
                 <option value="desc">DESC</option>
@@ -257,44 +326,77 @@ export default function Employees() {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan="6" className="emp-empty">Đang tải dữ liệu...</td></tr>
+                <tr>
+                  <td colSpan="6" className="emp-empty">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
               )}
 
               {!loading && err && (
-                <tr><td colSpan="6" className="emp-empty">Lỗi tải dữ liệu: {err}</td></tr>
+                <tr>
+                  <td colSpan="6" className="emp-empty">
+                    Lỗi tải dữ liệu: {err}
+                  </td>
+                </tr>
               )}
 
-              {!loading && !err && users.map((u) => {
-                const name = u?.full_name || u?.name || "—";
-                const id = u?.employeeId || u?._id || "—";
-                const dept = u?.department?.department_name || u?.department || "—";
-                const title = u?.jobTitle || "—";
-                const status = u?.status || "Active";
-                return (
-                  <tr key={u._id || id}>
-                    <td>
-                      <div className="emp-person">
-                        {renderAvatar(u)}
-                        <span className="emp-person__name">{name}</span>
-                      </div>
-                    </td>
-                    <td>{id}</td>
-                    <td>{dept}</td>
-                    <td>{title}</td>
-                    <td><span className="badge">{status}</span></td>
-                    <td>
-                      <div className="emp-actions">
-                        <button title="View" onClick={() => alert("Xem chi tiết")}><Icon name="eye" /></button>
-                        <button title="Edit" onClick={() => alert("Sửa thông tin")}><Icon name="edit" /></button>
-                        <button title="Delete" className="danger" onClick={() => handleDelete(u._id)}><Icon name="trash" /></button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {!loading &&
+                !err &&
+                users.map((u) => {
+                  const name = u?.full_name || u?.name || "—";
+                  const id = u?.employeeId || u?._id || "—";
+                  const dept =
+                    u?.department?.department_name || u?.department || "—";
+                  const title = u?.jobTitle || "—";
+                  const status = u?.status || "Active";
+                  return (
+                    <tr key={u._id || id}>
+                      <td>
+                        <div className="emp-person">
+                          {renderAvatar(u)}
+                          <span className="emp-person__name">{name}</span>
+                        </div>
+                      </td>
+                      <td>{id}</td>
+                      <td>{dept}</td>
+                      <td>{title}</td>
+                      <td>
+                        <span className="badge">{status}</span>
+                      </td>
+                      <td>
+                        <div className="emp-actions">
+                          <button
+                            title="View"
+                            onClick={() => alert("Xem chi tiết")}
+                          >
+                            <Icon name="eye" />
+                          </button>
+                          <button
+                            title="Edit"
+                            onClick={() => alert("Sửa thông tin")}
+                          >
+                            <Icon name="edit" />
+                          </button>
+                          <button
+                            title="Delete"
+                            className="danger"
+                            onClick={() => handleDelete(u._id)}
+                          >
+                            <Icon name="trash" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
 
               {!loading && !err && users.length === 0 && (
-                <tr><td colSpan="6" className="emp-empty">No employees found.</td></tr>
+                <tr>
+                  <td colSpan="6" className="emp-empty">
+                    No employees found.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -306,7 +408,10 @@ export default function Employees() {
             <label>Showing</label>
             <select
               value={pageSize}
-              onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setPage(1); }}
+              onChange={(e) => {
+                setPageSize(parseInt(e.target.value, 10));
+                setPage(1);
+              }}
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -315,7 +420,8 @@ export default function Employees() {
           </div>
 
           <div className="emp-foot__center">
-            Showing {users.length ? (current - 1) * pageSize + 1 : 0} to {Math.min(current * pageSize, total)} out of {total} records
+            Showing {users.length ? (current - 1) * pageSize + 1 : 0} to{" "}
+            {Math.min(current * pageSize, total)} out of {total} records
           </div>
 
           <div className="emp-foot__right emp-foot__pager">
@@ -324,7 +430,9 @@ export default function Employees() {
               disabled={current === 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               aria-label="Prev"
-            ><Icon name="chevL" /></button>
+            >
+              <Icon name="chevL" />
+            </button>
 
             {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
               const n = i + 1;
@@ -344,7 +452,9 @@ export default function Employees() {
               disabled={current === totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               aria-label="Next"
-            ><Icon name="chevR" /></button>
+            >
+              <Icon name="chevR" />
+            </button>
           </div>
         </div>
       </section>
@@ -355,7 +465,11 @@ export default function Employees() {
         onClose={() => setFilterOpen(false)}
         initial={filters}
         allDepartments={allDepartments}
-        onApply={(f) => { setFilters(f); setFilterOpen(false); setPage(1); }}
+        onApply={(f) => {
+          setFilters(f);
+          setFilterOpen(false);
+          setPage(1);
+        }}
         onSearchSync={(val) => setQ(val)}
       />
     </div>

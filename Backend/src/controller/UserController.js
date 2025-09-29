@@ -82,7 +82,9 @@ exports.getAllUsers = async (req, res) => {
       department,
     } = req.query;
 
-    const query = {};
+    const query = {
+      role: { $in: ["Manager", "Employee"] },
+    };
     if (name) query.full_name = { $regex: name.trim(), $options: "i" };
     if (role) query.role = role;
     if (status) query.status = status;
@@ -239,8 +241,8 @@ exports.updateOwnProfile = async (req, res) => {
     if (full_name) user.full_name = full_name;
     if (phone) user.phone = phone;
     if (address) user.address = address;
-    if (avatar) user.avatar = avatar; 
-    if (gender) user.gender = gender; 
+    if (avatar) user.avatar = avatar;
+    if (gender) user.gender = gender;
 
     user.profileCompleted = true;
 
@@ -253,8 +255,10 @@ exports.updateOwnProfile = async (req, res) => {
       .status(200)
       .json({ message: "Cập nhật hồ sơ thành công.", user: userResponse });
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: "Dữ liệu không hợp lệ.", errors: error.errors });
+    if (error.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Dữ liệu không hợp lệ.", errors: error.errors });
     }
     res.status(500).json({
       message: "Lỗi server khi cập nhật hồ sơ.",
@@ -262,7 +266,6 @@ exports.updateOwnProfile = async (req, res) => {
     });
   }
 };
-
 
 // Change own password (for all roles)
 exports.changeOwnPassword = async (req, res) => {

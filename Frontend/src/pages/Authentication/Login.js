@@ -42,6 +42,7 @@ function Login() {
         }
       );
       const data = response.data;
+      console.log("Received Token:", data.token);
       if (data && data.token) {
         localStorage.setItem("auth_token", data.token);
         const decodedToken = jwtDecode(data.token);
