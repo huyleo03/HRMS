@@ -243,6 +243,7 @@ exports.getOwnProfile = async (req, res) => {
       error: error.message,
     });
   }
+};
   
 
 // Update own profile (for all roles)
