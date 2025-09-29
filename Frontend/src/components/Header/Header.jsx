@@ -28,6 +28,11 @@ const Header = () => {
           title: "All Employees",
           description: "All Employee Information",
         };
+      case '/employees/add':
+        return {
+          title: 'Add New Employee',
+          description: 'Create a new employee account'
+        };
       case "/departments":
         return {
           title: "All Departments",
@@ -85,7 +90,9 @@ const Header = () => {
       {/* Page Title and Description */}
       <div className="header-title-section">
         <div className="header-title">{title}</div>
-        <div className="header-description">{description}</div>
+        <div className="header-description">
+          {description}
+        </div>
       </div>
 
       {/* Right Section: Notification + User Profile */}

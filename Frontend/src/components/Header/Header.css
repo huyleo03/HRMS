@@ -51,6 +51,18 @@
   word-wrap: break-word;
 }
 
+.header-description.clickable {
+  color: #7152F3;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.header-description.clickable:hover {
+  color: #5d3ecc;
+  text-decoration: underline;
+}
+
 .header-notification {
   width: 50px;
   height: 50px;
