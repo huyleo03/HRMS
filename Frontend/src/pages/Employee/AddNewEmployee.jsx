@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { apiCall, API_CONFIG } from '../../utils/api';
 import Layout from '../../components/Layout/Layout';
 import './AddNewEmployee.css';
 
@@ -17,34 +18,21 @@ const AddNewEmployee = () => {
     salary: ''
   });
 
-  const [departments, setDepartments] = useState([]);
+  const [departments] = useState([
+    // Mock departments for now - you can remove this when you have real API
+    { _id: '1', department_name: 'IT Department' },
+    { _id: '2', department_name: 'HR Department' },
+    { _id: '3', department_name: 'Finance Department' },
+    { _id: '4', department_name: 'Marketing Department' }
+  ]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState('personal');
 
-  // Load departments from DepartmentController
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-
-  const fetchDepartments = async () => {
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/departments', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setDepartments(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-    }
-  };
+  // Remove departments API call for now since you don't have it
+  // useEffect(() => {
+  //   fetchDepartments();
+  // }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -68,8 +56,7 @@ const AddNewEmployee = () => {
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.full_name.trim()) newErrors.full_name = 'Full name is required';
     if (!formData.role) newErrors.role = 'Role is required';
-    // Department is now optional
-    // if (!formData.department) newErrors.department = 'Department is required';
+    if (!formData.department) newErrors.department = 'Department is required';
     if (!formData.jobTitle.trim()) newErrors.jobTitle = 'Job title is required';
     if (!formData.salary.trim()) newErrors.salary = 'Salary is required';
     
@@ -98,39 +85,28 @@ const AddNewEmployee = () => {
     setIsLoading(true);
     
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      // Find selected department details
-      const selectedDept = departments.find(dept => dept._id === formData.department);
-      
       const submitData = {
         email: formData.email,
         full_name: formData.full_name,
         role: formData.role,
-        department: selectedDept ? {
-          department_id: selectedDept._id,
-          department_name: selectedDept.department_name
-        } : null,
+        department: formData.department, // Send selected department ID
         jobTitle: formData.jobTitle,
-        salary: parseFloat(formData.salary)
+        salary: formData.salary ? parseFloat(formData.salary) : null
       };
+
+      console.log('Submitting data:', submitData); // Debug log
       
-      const response = await fetch('/api/users/create', {
+      const result = await apiCall(API_CONFIG.ENDPOINTS.CREATE_USER, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(submitData)
       });
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success(`Employee created successfully! Temporary password: ${data.temporaryPassword}`, {
+      if (result.success) {
+        toast.success('Employee created successfully!', {
           position: "top-right",
-          autoClose: 5000,
+          autoClose: 2000,
         });
+        
         // Reset form
         setFormData({
           email: '',
@@ -140,14 +116,23 @@ const AddNewEmployee = () => {
           jobTitle: '',
           salary: ''
         });
+        setErrors({});
+        
+        // Auto redirect to all employees page after 2.5 seconds
+        setTimeout(() => {
+          navigate('/employees');
+        }, 2500);
       } else {
-        toast.error(data.message || 'Error creating employee', {
+        // Handle API error response
+        console.error('API Error:', result);
+        const errorMessage = result.data?.message || result.error || `Error: ${result.status}`;
+        toast.error(errorMessage, {
           position: "top-right",
         });
       }
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error creating employee', {
+      console.error('Network Error:', error);
+      toast.error(`Network error: ${error.message}. Check if backend is running on correct port.`, {
         position: "top-right",
       });
     } finally {
@@ -211,9 +196,11 @@ const AddNewEmployee = () => {
               <div className="form-content">
                 <div className="avatar-section">
                   <div className="avatar-placeholder">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M15 13.5C15 15.1569 13.6569 16.5 12 16.5C10.3431 16.5 9 15.1569 9 13.5C9 11.8431 10.3431 10.5 12 10.5C13.6569 10.5 15 11.8431 15 13.5Z" stroke="#16151C" strokeWidth="1.5"/>
-                      <path d="M21 15.5V11.5C21 8.73858 18.7614 6.5 16 6.5H15.874C15.4299 4.77477 13.8638 3.5 12 3.5C10.1362 3.5 8.57006 4.77477 8.12602 6.5H8C5.23858 6.5 3 8.73858 3 11.5V15.5C3 18.2614 5.23858 20.5 8 20.5H16C18.7614 20.5 21 18.2614 21 15.5Z" stroke="#16151C" strokeWidth="1.5"/>
+                    {/* Facebook-style default avatar */}
+                    <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+                      <circle cx="50" cy="50" r="50" fill="#E4E6EA"/>
+                      <circle cx="50" cy="35" r="12" fill="#BCC0C4"/>
+                      <path d="M23 75C23 61 35 50 50 50C65 50 77 61 77 75" fill="#BCC0C4"/>
                     </svg>
                   </div>
                 </div>
@@ -267,7 +254,7 @@ const AddNewEmployee = () => {
                         onChange={handleInputChange}
                         className={errors.department ? 'error' : ''}
                       >
-                        <option value="">Select Department (Optional)</option>
+                        <option value="">Select Department</option>
                         {departments.map(dept => (
                           <option key={dept._id} value={dept._id}>
                             {dept.department_name}

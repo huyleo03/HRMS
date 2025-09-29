@@ -145,24 +145,25 @@
 .avatar-placeholder {
   width: 100px;
   height: 100px;
-  background: rgba(162, 161, 168, 0.05);
-  border-radius: 10px;
-  border: 1px solid rgba(162, 161, 168, 0.20);
+  background: #F0F2F5;
+  border-radius: 50%;
+  border: 3px solid #E4E6EA;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-bottom: 10px;
 }
 
 .avatar-placeholder:hover {
-  background: rgba(162, 161, 168, 0.1);
+  background: #E4E6EA;
+  border-color: #BCC0C4;
 }
 
 .avatar-placeholder svg {
-  width: 24px;
-  height: 24px;
-  color: #16151C;
+  width: 100px;
+  height: 100px;
 }
 
 /* Form Rows */

@@ -26,7 +26,7 @@ const Header = () => {
       case '/employees/add':
         return {
           title: 'Add New Employee',
-          description: 'Fill in the form below to create a new employee account'
+          description: 'Create a new employee account'
         };
       case '/departments':
         return {
@@ -83,13 +83,6 @@ const Header = () => {
   };
 
   const { title, description } = getHeaderContent();
-  const isAddEmployeePage = location.pathname === '/employees/add';
-
-  const handleDescriptionClick = () => {
-    if (isAddEmployeePage) {
-      navigate('/employees');
-    }
-  };
 
   return (
     <div className="header">
@@ -98,10 +91,7 @@ const Header = () => {
       {/* Page Title and Description */}
       <div className="header-title-section">
         <div className="header-title">{title}</div>
-        <div 
-          className={`header-description ${isAddEmployeePage ? 'clickable' : ''}`}
-          onClick={handleDescriptionClick}
-        >
+        <div className="header-description">
           {description}
         </div>
       </div>
