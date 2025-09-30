@@ -5,10 +5,19 @@ import axios from "axios";
 
 export default function OtpPage() {
   const [otp, setOtp] = useState(new Array(5).fill(""));
-  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState(60);
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown((prevCountdown) => prevCountdown - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const handleChange = (value, index) => {
     if (/^[0-9]?$/.test(value)) {
@@ -20,6 +29,25 @@ export default function OtpPage() {
         const nextInput = document.getElementById(`otp-${index + 1}`);
         nextInput?.focus();
       }
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
+
+    try {
+      await axios.post(
+        `${process.env.REACT_APP_API_URL_BACKEND}/auth/forgot-password`,
+        { email }
+      );
+      toast.success("Một mã OTP mới đã được gửi đến email của bạn.");
+      setCountdown(60);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể gửi lại OTP";
+      toast.error(errorMessage);
     }
   };
 
@@ -138,6 +166,7 @@ export default function OtpPage() {
         {/* Verify button */}
         <button
           onClick={handleVerify}
+          disabled={isSubmitting}
           style={{
             width: "100%",
             height: 55,
@@ -147,13 +176,33 @@ export default function OtpPage() {
             borderRadius: 12,
             fontSize: 16,
             fontWeight: 500,
-            cursor: "pointer",
+            cursor: isSubmitting ? "not-allowed" : "pointer",
             boxSizing: "border-box",
             display: "block",
+            opacity: isSubmitting ? 0.7 : 1,
           }}
         >
-          Verify
+          {isSubmitting ? "Đang xác thực..." : "Verify"}
         </button>
+
+        <div style={{ marginTop: 24, textAlign: "center", color: "#7d7d7d" }}>
+          Không nhận được mã?{" "}
+          {countdown > 0 ? (
+            <span style={{ color: "#333" }}>Gửi lại sau {countdown}s</span>
+          ) : (
+            <span
+              onClick={handleResendOtp}
+              style={{
+                color: "#7152F3",
+                fontWeight: 500,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Gửi lại mã
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
