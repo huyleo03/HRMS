@@ -110,10 +110,7 @@
   border-bottom: 1px solid #f1f5f9;
 }
 .emp-empty {
-  text-align: center;
-  padding: 48px 24px; 
-  color: #6b7280; 
-  font-size: 1rem;
+  padding: 32px 0; /* Chỉ cần padding trên dưới là đủ */
 }
 .toolbar__group select {
   height: 34px;

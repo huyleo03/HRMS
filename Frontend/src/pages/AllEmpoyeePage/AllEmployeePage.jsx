@@ -369,10 +369,10 @@ export default function Employees() {
           <table className="emp-table">
             <thead>
               <tr>
-                <th>Employee Name</th>
                 <th>Employee ID</th>
+                <th>Employee Name</th>
                 <th>Department</th>
-                <th>Job</th>
+                <th>Job Title</th>
                 <th>Status</th>
                 <th style={{ width: 120 }}>Action</th>
               </tr>
@@ -405,13 +405,13 @@ export default function Employees() {
                   const status = u?.status || "Active";
                   return (
                     <tr key={u._id || id}>
+                      <td>{id}</td>
                       <td>
                         <div className="emp-person">
                           {renderAvatar(u)}
                           <span className="emp-person__name">{name}</span>
                         </div>
                       </td>
-                      <td>{id}</td>
                       <td>{dept}</td>
                       <td>{title}</td>
                       <td>
