@@ -1,12 +1,14 @@
-import { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-export default function OtpPage() {
-  const [otp, setOtp] = useState(Array(5).fill(""));
-  const location = useLocation();
-  const navigate = useNavigate();
+import axios from "axios";
 
-  const email = location?.state?.email || "";
+export default function OtpPage() {
+  const [otp, setOtp] = useState(new Array(5).fill(""));
+  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email;
 
   const handleChange = (value, index) => {
     if (/^[0-9]?$/.test(value)) {
@@ -21,18 +23,45 @@ export default function OtpPage() {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const code = otp.join("");
-    console.log("OTP nhập vào:", code);
-
     if (otp.includes("") || code.length < otp.length) {
       toast.warn("Vui lòng nhập đầy đủ mã OTP");
       return;
     }
 
-    localStorage.setItem("reset_email", email);
-    localStorage.setItem("reset_otp", code);
-    navigate("/reset-password");
+    try {
+      setIsSubmitting(true);
+      // Gọi API verify-otp của backend
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL_BACKEND}/auth/verify-otp`,
+        {
+          email: email,
+          otp: code,
+        }
+      );
+
+      // Lấy resetToken từ response và lưu vào localStorage
+      const { resetToken } = response.data;
+      if (resetToken) {
+        localStorage.setItem("reset_token", resetToken);
+        toast.success("Xác thực OTP thành công!");
+
+        setTimeout(() => {
+          navigate("/reset-password", { state: { email } });
+        }, 1500);
+      } else {
+        toast.error("Không nhận được token xác thực. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Xác thực OTP thất bại";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

@@ -21,10 +21,9 @@ const ForgotPassword = () => {
       setIsSubmitting(true);
 
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL_BACKEND}/api/auth/forgot-password`,
+        `${process.env.REACT_APP_API_URL_BACKEND}/auth/forgot-password`,
         { email }
       );
-      localStorage.setItem("reset_token", response.data.resetToken);
 
       toast.success("OTP đã được gửi đến email của bạn");
 
