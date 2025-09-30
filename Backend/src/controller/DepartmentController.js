@@ -46,11 +46,11 @@ exports.createDepartment = async (req, res) => {
   }
 };
 
-// 2. Lấy tất cả phòng ban
+// 2. Lấy tất cả phòng ban (có preview 5 người + đếm tổng)
 exports.getDepartments = async (req, res) => {
   try {
     const departments = await Department.find()
-      .populate("managerId", "full_name email role avatar")
+      .populate("managerId", "full_name email role avatar jobTitle")
       .lean();
 
     const result = await Promise.all(
@@ -58,8 +58,43 @@ exports.getDepartments = async (req, res) => {
         const members = await User.find(
           { "department.department_id": dep._id },
           "full_name email role avatar jobTitle"
-        );
-        return { ...dep, members };
+        ).lean();
+        const preview = [];
+        const seen = new Set();
+
+        if (dep.managerId) {
+          preview.push({
+            _id: String(dep.managerId._id),
+            full_name: dep.managerId.full_name,
+            role: dep.managerId.role,
+            avatar: dep.managerId.avatar,
+            jobTitle: dep.managerId.jobTitle || "Manager",
+            isManager: true,
+          });
+          seen.add(String(dep.managerId._id));
+        }
+
+        for (const u of members) {
+          const uid = String(u._id);
+          if (seen.has(uid)) continue;
+          preview.push({
+            _id: uid,
+            full_name: u.full_name,
+            role: u.role,
+            avatar: u.avatar,
+            jobTitle: u.jobTitle,
+            isManager: false,
+          });
+          seen.add(uid);
+          if (preview.length >= 5) break;
+        }
+
+        return {
+          ...dep,
+          members,                    
+          membersCount: members.length,
+          membersPreview: preview,    
+        };
       })
     );
 
@@ -68,6 +103,7 @@ exports.getDepartments = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // 3. Lấy chi tiết phòng ban 
 exports.getDepartmentById = async (req, res) => {

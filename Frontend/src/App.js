@@ -8,6 +8,7 @@ import OtpPage from "./pages/Authentication/OtpPage";
 import ResetPass from "./pages/Authentication/ResetPass";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Employees from "./pages/AllEmpoyeePage/AllEmployeePage.jsx";
+import Department from "./pages/AllDepartMentPage/AllDepartMent.jsx";
 import AddNewEmployee from "./pages/Employee/AddNewEmployee.jsx";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute.js";
@@ -51,12 +52,7 @@ function App() {
             />
             <Route
               path="/departments"
-              element={
-                <div style={{ padding: "24px" }}>
-                  <h1>Departments Page</h1>
-                  <p>This page is under development</p>
-                </div>
-              }
+              element={<><Department /></>}
             />
             <Route
               path="/attendance"
