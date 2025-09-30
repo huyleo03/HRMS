@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Employees.css";
+import { Empty } from "antd";
 import {
   getUsers,
   deleteUser as apiDeleteUser,
@@ -446,7 +447,16 @@ export default function Employees() {
               {!loading && !err && users.length === 0 && (
                 <tr>
                   <td colSpan="6" className="emp-empty">
-                    No employees found.
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description={
+                        <span>
+                          {q
+                            ? `Không tìm thấy nhân viên nào với từ khóa "${q}"`
+                            : "Chưa có nhân viên nào"}
+                        </span>
+                      }
+                    />
                   </td>
                 </tr>
               )}
