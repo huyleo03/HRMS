@@ -15,3 +15,15 @@ export const searchDepartments = async (keyword, token) => {
   });
   return res.data; // { success, data: { departments, users } }
 };
+export const getDepartmentOptions = async () => {
+  try {
+    const response = await axios.get(`${API}/departments/options/list`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "getDepartmentOptions error:",
+      error?.response?.data || error.message
+    );
+    throw error;
+  }
+};

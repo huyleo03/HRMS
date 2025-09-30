@@ -1,12 +1,23 @@
-import { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-export default function OtpPage() {
-  const [otp, setOtp] = useState(Array(5).fill(""));
-  const location = useLocation();
-  const navigate = useNavigate();
+import axios from "axios";
 
-  const email = location?.state?.email || "";
+export default function OtpPage() {
+  const [otp, setOtp] = useState(new Array(5).fill(""));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email;
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown((prevCountdown) => prevCountdown - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const handleChange = (value, index) => {
     if (/^[0-9]?$/.test(value)) {
@@ -21,18 +32,64 @@ export default function OtpPage() {
     }
   };
 
-  const handleVerify = () => {
-    const code = otp.join("");
-    console.log("OTP nhập vào:", code);
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
 
+    try {
+      await axios.post(
+        `${process.env.REACT_APP_API_URL_BACKEND}/auth/forgot-password`,
+        { email }
+      );
+      toast.success("Một mã OTP mới đã được gửi đến email của bạn.");
+      setCountdown(60);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể gửi lại OTP";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleVerify = async () => {
+    const code = otp.join("");
     if (otp.includes("") || code.length < otp.length) {
       toast.warn("Vui lòng nhập đầy đủ mã OTP");
       return;
     }
 
-    localStorage.setItem("reset_email", email);
-    localStorage.setItem("reset_otp", code);
-    navigate("/reset-password");
+    try {
+      setIsSubmitting(true);
+      // Gọi API verify-otp của backend
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL_BACKEND}/auth/verify-otp`,
+        {
+          email: email,
+          otp: code,
+        }
+      );
+
+      // Lấy resetToken từ response và lưu vào localStorage
+      const { resetToken } = response.data;
+      if (resetToken) {
+        localStorage.setItem("reset_token", resetToken);
+        toast.success("Xác thực OTP thành công!");
+
+        setTimeout(() => {
+          navigate("/reset-password", { state: { email } });
+        }, 1500);
+      } else {
+        toast.error("Không nhận được token xác thực. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Xác thực OTP thất bại";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -109,6 +166,7 @@ export default function OtpPage() {
         {/* Verify button */}
         <button
           onClick={handleVerify}
+          disabled={isSubmitting}
           style={{
             width: "100%",
             height: 55,
@@ -118,13 +176,33 @@ export default function OtpPage() {
             borderRadius: 12,
             fontSize: 16,
             fontWeight: 500,
-            cursor: "pointer",
+            cursor: isSubmitting ? "not-allowed" : "pointer",
             boxSizing: "border-box",
             display: "block",
+            opacity: isSubmitting ? 0.7 : 1,
           }}
         >
-          Verify
+          {isSubmitting ? "Đang xác thực..." : "Verify"}
         </button>
+
+        <div style={{ marginTop: 24, textAlign: "center", color: "#7d7d7d" }}>
+          Không nhận được mã?{" "}
+          {countdown > 0 ? (
+            <span style={{ color: "#333" }}>Gửi lại sau {countdown}s</span>
+          ) : (
+            <span
+              onClick={handleResendOtp}
+              style={{
+                color: "#7152F3",
+                fontWeight: 500,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Gửi lại mã
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

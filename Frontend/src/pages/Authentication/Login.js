@@ -35,7 +35,7 @@ function Login() {
     try {
       setIsSubmitting(true);
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL_BACKEND}/api/auth/login`,
+        `${process.env.REACT_APP_API_URL_BACKEND}/auth/login`,
         {
           email,
           password,

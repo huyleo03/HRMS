@@ -12,6 +12,19 @@ exports.createUserByAdmin = async (req, res) => {
       return res.status(400).json({ message: "Email này đã được sử dụng." });
     }
 
+    if (role === "Manager" && department && department.department_id) {
+      const existingManager = await User.findOne({
+        "department.department_id": department.department_id,
+        role: "Manager",
+      });
+
+      if (existingManager) {
+        return res.status(400).json({
+          message: `Phòng ban "${department.department_name}" đã có Manager là "${existingManager.full_name}". Không thể thêm Manager mới.`,
+        });
+      }
+    }
+
     const temporaryPassword = crypto.randomBytes(8).toString("hex");
 
     const newUser = new User({
@@ -29,7 +42,7 @@ exports.createUserByAdmin = async (req, res) => {
     delete userResponse.passwordHash;
 
     try {
-      const loginUrl = `http://your-frontend-url/login`;
+      const loginUrl = `http://localhost:3000/login`;
       const html = `
         <h1>Chào mừng bạn đến với hệ thống HRMS</h1>
         <p>Xin chào ${full_name},</p>
@@ -210,7 +223,6 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-
 // Delete user by Admin
 exports.deleteUser = async (req, res) => {
   const userId = req.params.id;
@@ -232,7 +244,9 @@ exports.deleteUser = async (req, res) => {
 exports.getOwnProfile = async (req, res) => {
   const userId = req.user._id;
   try {
-    const user = await User.findById(userId).select("-passwordHash -otp -otpExpires");
+    const user = await User.findById(userId).select(
+      "-passwordHash -otp -otpExpires"
+    );
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng." });
     }
@@ -244,7 +258,6 @@ exports.getOwnProfile = async (req, res) => {
     });
   }
 };
-  
 
 // Update own profile (for all roles)
 exports.updateOwnProfile = async (req, res) => {
@@ -285,7 +298,6 @@ exports.updateOwnProfile = async (req, res) => {
     });
   }
 };
-
 
 // Change own password (for all roles)
 exports.changeOwnPassword = async (req, res) => {

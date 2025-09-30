@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Employees.css";
-import { getUsers, deleteUser as apiDeleteUser } from "../../service/UserService";
+import { Empty } from "antd";
+import {
+  getUsers,
+  deleteUser as apiDeleteUser,
+} from "../../service/UserService";
 import { useAuth } from "../../contexts/AuthContext";
 
 /** ----------------- Icon ----------------- */
@@ -17,9 +21,16 @@ function Icon({ name }) {
     chevR: "M9 6l6 6-6 6",
   };
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="2"
-      strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d={paths[name]} />
     </svg>
   );
@@ -27,9 +38,9 @@ function Icon({ name }) {
 
 /** --------------- Filter Modal (RADIO cho tất cả) ---------------- */
 function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
-  const [dept, setDept]     = useState(initial.department || "");
+  const [dept, setDept] = useState(initial.department || "");
   const [status, setStatus] = useState(initial.status || "");
-  const [role, setRole]     = useState(initial.role || "");
+  const [role, setRole] = useState(initial.role || "");
 
   useEffect(() => {
     if (open) {
@@ -150,7 +161,9 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
         </div>
 
         <div className="modal__footer">
-          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn" onClick={onClose}>
+            Cancel
+          </button>
           <button
             className="btn btn--primary"
             onClick={() => onApply({ department: dept, status, role })}
@@ -163,11 +176,16 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
   );
 }
 
-
 /** ---------------------- Helpers ---------------------- */
 function getInitials(name) {
   if (!name) return "U";
-  return name.split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 /** ---------------------- Main Page ---------------------- */
@@ -186,7 +204,11 @@ export default function Employees() {
   const [sortOrder, setSortOrder] = useState("asc");
 
   // Filters gửi lên BE
-  const [filters, setFilters] = useState({ department: "", status: "", role: "" });
+  const [filters, setFilters] = useState({
+    department: "",
+    status: "",
+    role: "",
+  });
   const [isFilterOpen, setFilterOpen] = useState(false);
 
   // Data
@@ -236,7 +258,9 @@ export default function Employees() {
         if (!abort) setLoading(false);
       }
     })();
-    return () => { abort = true; };
+    return () => {
+      abort = true;
+    };
   }, [page, pageSize, sortBy, sortOrder, debouncedQ, filters, token]);
 
   // 🌟 Load cố định danh sách Department một lần (hoặc khi token đổi)
@@ -261,7 +285,9 @@ export default function Employees() {
         console.error("Load departments failed:", e?.message || e);
       }
     })();
-    return () => { abort = true; };
+    return () => {
+      abort = true;
+    };
   }, [token]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -272,7 +298,16 @@ export default function Employees() {
     const name = u?.full_name || u?.name || "User";
     if (url) return <img className="emp-person__avatar" src={url} alt={name} />;
     return (
-      <div className="emp-person__avatar" style={{ background:"#eef", color:"#334", display:"grid", placeItems:"center", fontWeight:600 }}>
+      <div
+        className="emp-person__avatar"
+        style={{
+          background: "#eef",
+          color: "#334",
+          display: "grid",
+          placeItems: "center",
+          fontWeight: 600,
+        }}
+      >
         {getInitials(name)}
       </div>
     );
@@ -299,7 +334,9 @@ export default function Employees() {
         {/* Header: search + actions */}
         <div className="emp-card__head">
           <div className="emp-search emp-search--compact">
-            <span className="emp-search__icon"><Icon name="search" /></span>
+            <span className="emp-search__icon">
+              <Icon name="search" />
+            </span>
             <input
               className="emp-search__input emp-search__input--compact"
               placeholder="Search"
@@ -309,41 +346,21 @@ export default function Employees() {
           </div>
 
           <div className="emp__actions">
-            <button className="btn btn--primary" onClick={() => navigate("/employees/add")}>
-              <span className="btn__icon"><Icon name="plus" /></span>
+            <button
+              className="btn btn--primary"
+              onClick={() => navigate("/employees/add")}
+            >
+              <span className="btn__icon">
+                <Icon name="plus" />
+              </span>
               Add New Employee
             </button>
             <button className="btn" onClick={() => setFilterOpen(true)}>
-              <span className="btn__icon"><Icon name="filter" /></span>
+              <span className="btn__icon">
+                <Icon name="filter" />
+              </span>
               Filter
             </button>
-          </div>
-        </div>
-
-        {/* Sort bar */}
-        <div className="emp-table__toolbar">
-          <div className="toolbar__group">
-            <label>
-              Sort by:&nbsp;
-              <select
-                value={sortBy}
-                onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-              >
-                <option value="created_at">Created</option>
-                <option value="full_name">Name</option>
-                <option value="status">Status</option>
-              </select>
-            </label>
-            <label>
-              &nbsp;Order:&nbsp;
-              <select
-                value={sortOrder}
-                onChange={(e) => { setSortOrder(e.target.value); setPage(1); }}
-              >
-                <option value="asc">ASC</option>
-                <option value="desc">DESC</option>
-              </select>
-            </label>
           </div>
         </div>
 
@@ -352,54 +369,96 @@ export default function Employees() {
           <table className="emp-table">
             <thead>
               <tr>
-                <th>Employee Name</th>
                 <th>Employee ID</th>
+                <th>Employee Name</th>
                 <th>Department</th>
-                <th>Job</th>
+                <th>Job Title</th>
                 <th>Status</th>
                 <th style={{ width: 120 }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan="6" className="emp-empty">Đang tải dữ liệu...</td></tr>
+                <tr>
+                  <td colSpan="6" className="emp-empty">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
               )}
 
               {!loading && err && (
-                <tr><td colSpan="6" className="emp-empty">Lỗi tải dữ liệu: {err}</td></tr>
+                <tr>
+                  <td colSpan="6" className="emp-empty">
+                    Lỗi tải dữ liệu: {err}
+                  </td>
+                </tr>
               )}
 
-              {!loading && !err && users.map((u) => {
-                const name = u?.full_name || u?.name || "—";
-                const id   = u?.employeeId || "—";
-                const dept = u?.department?.department_name || u?.department || "—";
-                const title= u?.jobTitle || "—";
-                const status = u?.status || "Active";
-                return (
-                  <tr key={u._id || id}>
-                    <td>
-                      <div className="emp-person">
-                        {renderAvatar(u)}
-                        <span className="emp-person__name">{name}</span>
-                      </div>
-                    </td>
-                    <td>{id}</td>
-                    <td>{dept}</td>
-                    <td>{title}</td>
-                    <td><span className="badge">{status}</span></td>
-                    <td>
-                      <div className="emp-actions">
-                        <button title="View" onClick={() => alert("Xem chi tiết")}><Icon name="eye" /></button>
-                        <button title="Edit" onClick={() => alert("Sửa thông tin")}><Icon name="edit" /></button>
-                        <button title="Delete" className="danger" onClick={() => handleDelete(u._id)}><Icon name="trash" /></button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {!loading &&
+                !err &&
+                users.map((u) => {
+                  const name = u?.full_name || u?.name || "—";
+                  const id = u?.employeeId || "—";
+                  const dept =
+                    u?.department?.department_name || u?.department || "—";
+                  const title = u?.jobTitle || "—";
+                  const status = u?.status || "Active";
+                  return (
+                    <tr key={u._id || id}>
+                      <td>{id}</td>
+                      <td>
+                        <div className="emp-person">
+                          {renderAvatar(u)}
+                          <span className="emp-person__name">{name}</span>
+                        </div>
+                      </td>
+                      <td>{dept}</td>
+                      <td>{title}</td>
+                      <td>
+                        <span className="badge">{status}</span>
+                      </td>
+                      <td>
+                        <div className="emp-actions">
+                          <button
+                            title="View"
+                            onClick={() => alert("Xem chi tiết")}
+                          >
+                            <Icon name="eye" />
+                          </button>
+                          <button
+                            title="Edit"
+                            onClick={() => alert("Sửa thông tin")}
+                          >
+                            <Icon name="edit" />
+                          </button>
+                          <button
+                            title="Delete"
+                            className="danger"
+                            onClick={() => handleDelete(u._id)}
+                          >
+                            <Icon name="trash" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
 
               {!loading && !err && users.length === 0 && (
-                <tr><td colSpan="6" className="emp-empty">No employees found.</td></tr>
+                <tr>
+                  <td colSpan="6" className="emp-empty">
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description={
+                        <span>
+                          {q
+                            ? `Không tìm thấy nhân viên nào với từ khóa "${q}"`
+                            : "Chưa có nhân viên nào"}
+                        </span>
+                      }
+                    />
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -411,7 +470,10 @@ export default function Employees() {
             <label>Showing</label>
             <select
               value={pageSize}
-              onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setPage(1); }}
+              onChange={(e) => {
+                setPageSize(parseInt(e.target.value, 10));
+                setPage(1);
+              }}
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -420,24 +482,39 @@ export default function Employees() {
           </div>
 
           <div className="emp-foot__center">
-            Showing {users.length ? (current - 1) * pageSize + 1 : 0} to {Math.min(current * pageSize, total)} out of {total} records
+            Showing {users.length ? (current - 1) * pageSize + 1 : 0} to{" "}
+            {Math.min(current * pageSize, total)} out of {total} records
           </div>
 
           <div className="emp-foot__right emp-foot__pager">
-            <button className="circle" disabled={current === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} aria-label="Prev">
+            <button
+              className="circle"
+              disabled={current === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              aria-label="Prev"
+            >
               <Icon name="chevL" />
             </button>
 
             {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
               const n = i + 1;
               return (
-                <button key={n} className={`page ${n === current ? "is-active" : ""}`} onClick={() => setPage(n)}>
+                <button
+                  key={n}
+                  className={`page ${n === current ? "is-active" : ""}`}
+                  onClick={() => setPage(n)}
+                >
                   {n}
                 </button>
               );
             })}
 
-            <button className="circle" disabled={current === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} aria-label="Next">
+            <button
+              className="circle"
+              disabled={current === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Next"
+            >
               <Icon name="chevR" />
             </button>
           </div>
@@ -450,7 +527,11 @@ export default function Employees() {
         onClose={() => setFilterOpen(false)}
         initial={filters}
         allDepartments={deptOptions}
-        onApply={(f) => { setFilters(f); setFilterOpen(false); setPage(1); }}
+        onApply={(f) => {
+          setFilters(f);
+          setFilterOpen(false);
+          setPage(1);
+        }}
       />
     </div>
   );
