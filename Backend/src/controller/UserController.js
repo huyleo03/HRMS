@@ -1,4 +1,4 @@
-const User = require("../models/User");
+  const User = require("../models/User");
 const crypto = require("crypto");
 const sendEmail = require("../utils/email");
 
@@ -204,6 +204,48 @@ exports.changeUserRole = async (req, res) => {
   }
 };
 
+// Update user by Admin
+exports.updateUserByAdmin = async (req, res) => {
+  const userId = req.params.id;
+  const { full_name, jobTitle, role, department, salary, status } = req.body;
+  const validStatuses = ["Active", "Inactive"];
+
+  try {
+    const userToUpdate = await User.findById(userId);
+    if (!userToUpdate) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    }
+
+    // Validate status
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Trạng thái không hợp lệ." });
+    }
+
+    // Update fields
+    if (full_name) userToUpdate.full_name = full_name;
+    if (jobTitle) userToUpdate.jobTitle = jobTitle;
+    if (role) userToUpdate.role = role;
+    if (department) userToUpdate.department = department;
+    if (salary) userToUpdate.salary = salary;
+    if (status) userToUpdate.status = status;
+
+    await userToUpdate.save();
+
+    const userResponse = userToUpdate.toObject();
+    delete userResponse.passwordHash;
+
+    res.status(200).json({
+      message: "Cập nhật thông tin người dùng thành công.",
+      user: userResponse,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi server khi cập nhật thông tin người dùng.",
+      error: error.message,
+    });
+  }
+};
+
 // Get user details by ID (for Admin and Manager)
 exports.getUserById = async (req, res) => {
   const userId = req.params.id;
@@ -262,7 +304,7 @@ exports.getOwnProfile = async (req, res) => {
 // Update own profile (for all roles)
 exports.updateOwnProfile = async (req, res) => {
   const userId = req.user._id;
-  const { full_name, phone, address, avatar, gender } = req.body;
+  const { full_name, jobTitle, phone, address, avatar, gender } = req.body;
 
   try {
     const user = await User.findById(userId);
@@ -271,6 +313,7 @@ exports.updateOwnProfile = async (req, res) => {
     }
 
     if (full_name) user.full_name = full_name;
+    if (jobTitle) user.jobTitle = jobTitle;
     if (phone) user.phone = phone;
     if (address) user.address = address;
     if (avatar) user.avatar = avatar;

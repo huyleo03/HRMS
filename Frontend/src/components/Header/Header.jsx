@@ -69,6 +69,15 @@ const Header = () => {
           description: "System Configuration",
         };
       default:
+        // Check for dynamic routes
+        if (path.startsWith('/employees/') && path !== '/employees/add') {
+          // Get employee name from sessionStorage or context if available
+          const employeeName = sessionStorage.getItem('currentEmployeeName') || 'Employee Details';
+          return {
+            title: employeeName,
+            description: `All Employee > ${employeeName}`
+          };
+        }
         return {
           title: "HRMS",
           description: "Human Resource Management System",

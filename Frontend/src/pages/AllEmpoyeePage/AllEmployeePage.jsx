@@ -4,7 +4,6 @@ import "./Employees.css";
 import { Empty } from "antd";
 import {
   getUsers,
-  deleteUser as apiDeleteUser,
 } from "../../service/UserService";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -313,20 +312,6 @@ export default function Employees() {
     );
   }
 
-  async function handleDelete(id) {
-    if (!window.confirm("Bạn có chắc muốn xóa người dùng này?")) return;
-    try {
-      await apiDeleteUser(id, token);
-      if (users.length === 1 && page > 1) setPage((p) => p - 1);
-      else {
-        setUsers((prev) => prev.filter((u) => u._id !== id));
-        setTotal((t) => Math.max(0, t - 1));
-      }
-    } catch (e) {
-      alert(`Xóa thất bại: ${e.message}`);
-    }
-  }
-
   return (
     <div className="emp">
       {/* Card */}
@@ -421,22 +406,9 @@ export default function Employees() {
                         <div className="emp-actions">
                           <button
                             title="View"
-                            onClick={() => alert("Xem chi tiết")}
+                            onClick={() => navigate(`/employees/${u._id}`)}
                           >
                             <Icon name="eye" />
-                          </button>
-                          <button
-                            title="Edit"
-                            onClick={() => alert("Sửa thông tin")}
-                          >
-                            <Icon name="edit" />
-                          </button>
-                          <button
-                            title="Delete"
-                            className="danger"
-                            onClick={() => handleDelete(u._id)}
-                          >
-                            <Icon name="trash" />
                           </button>
                         </div>
                       </td>

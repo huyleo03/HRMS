@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { apiCall, API_CONFIG } from "../../utils/api";
+import { createUser } from "../../service/UserService";
+import { useAuth } from "../../contexts/AuthContext";
 import "./AddNewEmployee.css";
 import { getDepartmentOptions } from "../../service/DepartmentService";
 
 const AddNewEmployee = () => {
   const navigate = useNavigate();
+  const { token } = useAuth();
 
   // Form state based on UserController requirements - simplified
   const [formData, setFormData] = useState({
@@ -105,12 +107,9 @@ const AddNewEmployee = () => {
 
       console.log("Submitting data:", submitData); // Debug log
 
-      const result = await apiCall(API_CONFIG.ENDPOINTS.CREATE_USER, {
-        method: "POST",
-        body: JSON.stringify(submitData),
-      });
+      const result = await createUser(submitData, token);
 
-      if (result.success) {
+      if (result.success || result.user) {
         toast.success("Employee created successfully!", {
           position: "top-right",
           autoClose: 2000,
