@@ -37,12 +37,9 @@ module.exports = {
         text: `Mã OTP của bạn là: ${otp}`,
       });
 
-      const payload = { id: user._id, email: user.email, type: "reset" };
-      const resetToken = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: "5m",
+      res.json({
+        message: "Mã OTP để đặt lại mật khẩu đã được gửi đến email của bạn.",
       });
-
-      res.json({ message: "OTP đã gửi về email", resetToken });
     } catch (err) {
       res.status(500).json({ message: "Lỗi server", error: err.message });
     }
@@ -51,12 +48,19 @@ module.exports = {
   // 2. Xác thực OTP
   async verifyOtp(req, res) {
     try {
-      const decoded = req.user; // từ middleware auth
-      const { otp } = req.body;
+      // Nhận email và otp từ body, không cần token
+      const { email, otp } = req.body;
 
-      const user = await User.findById(decoded.id).select("+otp +otpExpires");
+      if (!email || !otp) {
+        return res
+          .status(400)
+          .json({ message: "Vui lòng cung cấp email và OTP." });
+      }
+
+      // Tìm user bằng email
+      const user = await User.findOne({ email }).select("+otp +otpExpires");
       if (!user)
-        return res.status(400).json({ message: "Người dùng không tồn tại" });
+        return res.status(400).json({ message: "Email không tồn tại" });
 
       if (!user.otp || user.otp !== otp)
         return res.status(400).json({ message: "OTP không hợp lệ" });
@@ -68,14 +72,18 @@ module.exports = {
       user.otpExpires = undefined;
       await user.save();
 
-      const payload = { id: user._id, email: user.email, type: "reset" };
-      const newResetToken = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: "5m",
+      // Tạo resetToken để sử dụng cho bước tiếp theo
+      const payload = {
+        sub: user._id,
+        aud: "app:reset", // Audience là 'reset'
+      };
+      const resetToken = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: "10m", // Cho phép 10 phút để đổi mật khẩu
       });
 
       res.json({
         message: "OTP hợp lệ, bạn có thể đổi mật khẩu",
-        resetToken: newResetToken,
+        resetToken: resetToken, // Trả về token này cho frontend
       });
     } catch (err) {
       res.status(500).json({ message: "Lỗi server", error: err.message });
@@ -86,12 +94,13 @@ module.exports = {
   async resetPassword(req, res) {
     try {
       const { newPassword, confirmPassword } = req.body;
-      const decoded = req.user;
+      const decoded = req.user; // Middleware authenticate sẽ giải mã resetToken
 
-      if (decoded.type !== "reset")
+      if (decoded.aud !== "app:reset") {
         return res
           .status(403)
-          .json({ message: "Token không hợp lệ cho reset password" });
+          .json({ message: "Token không hợp lệ cho việc reset mật khẩu" });
+      }
       if (!newPassword || !confirmPassword)
         return res.status(400).json({
           message: "Vui lòng nhập đầy đủ mật khẩu mới và xác nhận mật khẩu",
@@ -101,7 +110,7 @@ module.exports = {
           .status(400)
           .json({ message: "Mật khẩu xác nhận không khớp" });
 
-      const user = await User.findById(decoded.id).select("+passwordHash");
+      const user = await User.findById(decoded.sub).select("+passwordHash");
       if (!user)
         return res.status(400).json({ message: "Người dùng không tồn tại" });
 

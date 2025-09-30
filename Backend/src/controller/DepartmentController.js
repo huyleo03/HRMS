@@ -207,4 +207,14 @@ exports.removeEmployeeFromDepartment = async (req, res) => {
   }
 };
 
+// 7. Lấy ra id và tên phòng ban
+exports.getDepartmentOptions = async (req, res) => {
+  try {
+    const departments = await Department.find({}, "_id department_name");
+    res.status(200).json({ success: true, data: departments });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
