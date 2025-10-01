@@ -2,6 +2,7 @@ import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import 'antd/dist/reset.css'; 
 import Login from "./pages/Authentication/Login";
 import ForgotPass from "./pages/Authentication/ForgotPass";
 import OtpPage from "./pages/Authentication/OtpPage";
