@@ -2,18 +2,19 @@
 .add-employee-container {
   width: 100%;
   padding: 20px;
-  font-family: 'Lexend', sans-serif;
+  font-family: "Lexend", sans-serif;
 }
 
 /* Breadcrumb */
 .breadcrumb {
   margin-bottom: 20px;
   font-size: 14px;
-  color: #16151C;
+  color: #16151c;
+  margin: 0 auto;
 }
 
 .breadcrumb-link {
-  color: #7152F3;
+  color: #7152f3;
   cursor: pointer;
   text-decoration: none;
   transition: color 0.2s ease;
@@ -26,11 +27,11 @@
 
 .breadcrumb-separator {
   margin: 0 8px;
-  color: rgba(162, 161, 168, 0.60);
+  color: rgba(162, 161, 168, 0.6);
 }
 
 .breadcrumb-current {
-  color: #16151C;
+  color: #16151c;
   font-weight: 500;
 }
 
@@ -40,7 +41,7 @@
   margin: 0 auto;
   background: white;
   border-radius: 10px;
-  border: 1px solid rgba(162, 161, 168, 0.20);
+  border: 1px solid rgba(162, 161, 168, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -73,12 +74,12 @@
 }
 
 .tab-item.active {
-  color: #7152F3;
+  color: #7152f3;
   font-weight: 600;
 }
 
 .tab-item:not(.active) {
-  color: #16151C;
+  color: #16151c;
   font-weight: 300;
 }
 
@@ -105,14 +106,14 @@
 .tab-divider {
   width: 100%;
   height: 1px;
-  background: rgba(162, 161, 168, 0.20);
+  background: rgba(162, 161, 168, 0.2);
   margin-bottom: 20px;
 }
 
 .tab-indicator {
   width: 207px;
   height: 3px;
-  background: #7152F3;
+  background: #7152f3;
   border-radius: 2px;
   margin-bottom: 20px;
   transition: transform 0.3s ease;
@@ -145,9 +146,9 @@
 .avatar-placeholder {
   width: 100px;
   height: 100px;
-  background: #F0F2F5;
+  background: #f0f2f5;
   border-radius: 50%;
-  border: 3px solid #E4E6EA;
+  border: 3px solid #e4e6ea;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,8 +158,8 @@
 }
 
 .avatar-placeholder:hover {
-  background: #E4E6EA;
-  border-color: #BCC0C4;
+  background: #e4e6ea;
+  border-color: #bcc0c4;
 }
 
 .avatar-placeholder svg {
@@ -195,9 +196,9 @@
   height: 56px;
   padding: 16px;
   border-radius: 10px;
-  border: 1px solid rgba(162, 161, 168, 0.20);
+  border: 1px solid rgba(162, 161, 168, 0.2);
   font-size: 16px;
-  font-family: 'Lexend', sans-serif;
+  font-family: "Lexend", sans-serif;
   font-weight: 300;
   line-height: 24px;
   background: white;
@@ -206,26 +207,26 @@
 }
 
 /* Hide number input spinners */
-.input-group input[type=number]::-webkit-outer-spin-button,
-.input-group input[type=number]::-webkit-inner-spin-button {
+.input-group input[type="number"]::-webkit-outer-spin-button,
+.input-group input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.input-group input[type=number] {
+.input-group input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
 .input-group input::placeholder,
 .input-group select option:first-child {
-  color: rgba(162, 161, 168, 0.80);
+  color: rgba(162, 161, 168, 0.8);
 }
 
 .input-group input:focus,
 .input-group select:focus {
   outline: none;
-  border-color: #7152F3;
+  border-color: #7152f3;
   box-shadow: 0 0 0 3px rgba(113, 82, 243, 0.1);
 }
 
@@ -259,7 +260,7 @@
 .form-content h3 {
   font-size: 20px;
   font-weight: 600;
-  color: #16151C;
+  color: #16151c;
   margin-bottom: 20px;
 }
 
@@ -278,7 +279,7 @@
   gap: 16px;
   text-align: center;
   padding: 40px;
-  border: 2px dashed rgba(162, 161, 168, 0.30);
+  border: 2px dashed rgba(162, 161, 168, 0.3);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -286,24 +287,24 @@
 }
 
 .upload-area:hover {
-  border-color: #7152F3;
+  border-color: #7152f3;
   background: rgba(113, 82, 243, 0.02);
 }
 
 .upload-area svg {
-  color: rgba(162, 161, 168, 0.60);
+  color: rgba(162, 161, 168, 0.6);
 }
 
 .upload-area p {
   font-size: 18px;
   font-weight: 500;
-  color: #16151C;
+  color: #16151c;
   margin: 0;
 }
 
 .upload-area span {
   font-size: 14px;
-  color: rgba(162, 161, 168, 0.80);
+  color: rgba(162, 161, 168, 0.8);
   margin: 0;
 }
 
@@ -327,17 +328,17 @@
 .info-item label {
   font-size: 16px;
   font-weight: 600;
-  color: #16151C;
+  color: #16151c;
 }
 
 .info-value {
   font-size: 16px;
   font-weight: 300;
-  color: rgba(162, 161, 168, 0.80);
+  color: rgba(162, 161, 168, 0.8);
   padding: 16px;
   background: rgba(162, 161, 168, 0.05);
   border-radius: 8px;
-  border: 1px solid rgba(162, 161, 168, 0.20);
+  border: 1px solid rgba(162, 161, 168, 0.2);
 }
 
 /* Form Actions */
@@ -348,7 +349,7 @@
   gap: 20px;
   margin-top: 30px;
   padding-top: 20px;
-  border-top: 1px solid rgba(162, 161, 168, 0.20);
+  border-top: 1px solid rgba(162, 161, 168, 0.2);
 }
 
 .btn-cancel,
@@ -357,7 +358,7 @@
   padding: 0 20px;
   border-radius: 10px;
   font-size: 16px;
-  font-family: 'Lexend', sans-serif;
+  font-family: "Lexend", sans-serif;
   font-weight: 300;
   line-height: 24px;
   cursor: pointer;
@@ -368,17 +369,17 @@
 
 .btn-cancel {
   background: white;
-  color: #16151C;
-  border: 1px solid rgba(162, 161, 168, 0.20);
+  color: #16151c;
+  border: 1px solid rgba(162, 161, 168, 0.2);
 }
 
 .btn-cancel:hover {
   background: rgba(162, 161, 168, 0.05);
-  border-color: rgba(162, 161, 168, 0.40);
+  border-color: rgba(162, 161, 168, 0.4);
 }
 
 .btn-submit {
-  background: #7152F3;
+  background: #7152f3;
   color: white;
   min-width: 140px;
 }
@@ -390,7 +391,7 @@
 }
 
 .btn-submit:disabled {
-  background: rgba(162, 161, 168, 0.40);
+  background: rgba(162, 161, 168, 0.4);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -401,26 +402,26 @@
   .add-employee-container {
     padding: 10px;
   }
-  
+
   .tab-list {
     flex-wrap: wrap;
     gap: 10px;
   }
-  
+
   .tab-item span {
     display: none;
   }
-  
+
   .form-row {
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .form-actions {
     flex-direction: column-reverse;
     gap: 12px;
   }
-  
+
   .btn-cancel,
   .btn-submit {
     width: 100%;
@@ -431,11 +432,11 @@
   .tab-item {
     padding: 6px;
   }
-  
+
   .form-content {
     min-height: auto;
   }
-  
+
   .upload-area {
     padding: 20px;
     max-width: 100%;

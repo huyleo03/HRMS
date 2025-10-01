@@ -8,7 +8,6 @@ import {
   getDepartmentOptions,
   checkDepartmentManager,
 } from "../../service/DepartmentService";
-import { useAuth } from "../../contexts/AuthContext";
 
 const AddNewEmployee = () => {
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ const AddNewEmployee = () => {
     email: "",
     full_name: "",
     role: "",
-    department: null, // Thay đổi từ "" thành null để tránh gửi giá trị không hợp lệ
+    department: null,
     jobTitle: "",
     salary: "",
   });
@@ -66,21 +65,10 @@ const AddNewEmployee = () => {
             formData.department.department_id,
             token
           );
-          
-          if (result.success && result.hasManager) {
+
+          if (result.success && !result.hasManager) {
             toast.warning(result.message || "Phòng ban này đã có Manager", {
               position: "top-right",
-            });
-
-            setErrors((prev) => ({
-              ...prev,
-              department: result.message || "Phòng ban này đã có Manager",
-            }));
-          } else if (result.success && !result.hasManager) {
-            setErrors((prev) => {
-              const newErrors = { ...prev };
-              delete newErrors.department;
-              return newErrors;
             });
           }
         } catch (error) {
@@ -164,7 +152,6 @@ const AddNewEmployee = () => {
         jobTitle: formData.jobTitle,
         salary: formData.salary ? parseFloat(formData.salary) : null,
       };
-
 
       const result = await createUser(submitData, token);
 
