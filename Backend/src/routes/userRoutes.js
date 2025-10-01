@@ -30,10 +30,30 @@ router.put(
   userController.changeUserRole
 );
 
+router.put(
+  "/update/:id",
+  authenticate,
+  authorize("Admin"),
+  userController.updateUserByAdmin
+);
+
+router.get(
+  "/detail/:id",
+  authenticate,
+  authorize("Admin", "Manager"),
+  userController.getUserById
+);
+
 router.get(
   "/:id",
   authenticate,
   userController.getOwnProfile
+);
+
+router.put(
+  "/:id",
+  authenticate,
+  userController.updateOwnProfile
 );
 
 module.exports = router;

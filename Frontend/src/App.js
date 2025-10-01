@@ -2,12 +2,16 @@ import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import 'antd/dist/reset.css'; 
 import Login from "./pages/Authentication/Login";
 import ForgotPass from "./pages/Authentication/ForgotPass";
 import OtpPage from "./pages/Authentication/OtpPage";
 import ResetPass from "./pages/Authentication/ResetPass";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Employees from "./pages/AllEmpoyeePage/AllEmployeePage.jsx";
+import { AddNewEmployee } from "./pages/Employee";
+import ViewEmployeeDetailsPage from "./pages/Employee/ViewEmployeeDetailsPage";
+import MyProfile from "./pages/MyProfile/MyProfile";
 import Department from "./pages/AllDepartMentPage/AllDepartMent.jsx";
 import DepartmentMembers from "./pages/ViewDepartMentPage/ViewDepartMentPage.jsx";
 import AddNewEmployee from "./pages/Employee/AddNewEmployee.jsx";
@@ -42,15 +46,8 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/add" element={<AddNewEmployee />} />
-            <Route
-              path="/profile"
-              element={
-                <div style={{ padding: "24px" }}>
-                  <h1>My Profile</h1>
-                  <p>This page is under development</p>
-                </div>
-              }
-            />
+            <Route path="/employees/:id" element={<ViewEmployeeDetailsPage />} />
+            <Route path="/profile" element={<MyProfile />} />
             <Route
               path="/departments"
               element={<><Department /></>}

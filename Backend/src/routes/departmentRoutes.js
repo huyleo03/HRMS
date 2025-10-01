@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const departmentController = require("../controller/DepartmentController");
+const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
 // Đặt các path tĩnh / cụ thể TRƯỚC path động
 router.get("/options/all", departmentController.getDepartmentOptions);

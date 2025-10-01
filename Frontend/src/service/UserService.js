@@ -87,6 +87,24 @@ export const changeUserRole = async (id, role, token) => {
   }
 };
 
+// Cập nhật thông tin user (PUT /api/users/update/:id)
+export const updateUser = async (id, userData, token) => {
+  try {
+    const res = await axios.put(
+      `${API}/users/update/${id}`,
+      userData,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data; // { message, user }
+  } catch (error) {
+    console.error(
+      "updateUser error:",
+      error?.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
 // Xoá user (DELETE /api/users/:id)
 export const deleteUser = async (id, token) => {
   try {
@@ -100,15 +118,58 @@ export const deleteUser = async (id, token) => {
   }
 };
 
-// (Tuỳ chọn) Lấy chi tiết user (GET /api/users/:id) — nếu bạn thêm route này
+// Lấy chi tiết user (GET /api/users/detail/:id) 
 export const getUserById = async (id, token) => {
   try {
-    const res = await axios.get(`${API}/users/${id}`, {
+    const res = await axios.get(`${API}/users/detail/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.data; // { user }
   } catch (error) {
     console.error("getUserById error:", error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Lấy own profile (GET /api/users/:id)
+export const getOwnProfile = async (userId, token) => {
+  try {
+    console.log('getOwnProfile API call:', {
+      url: `${API}/users/${userId}`,
+      hasToken: !!token
+    });
+    
+    const res = await axios.get(`${API}/users/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    console.log('getOwnProfile response:', res.data);
+    return res.data; // { user }
+  } catch (error) {
+    console.error("getOwnProfile error:", error?.response?.data || error.message);
+    console.error("Full error:", error);
+    throw error;
+  }
+};
+
+// Cập nhật own profile (PUT /api/users/:id)
+export const updateOwnProfile = async (userId, userData, token) => {
+  try {
+    console.log('updateOwnProfile API call:', {
+      url: `${API}/users/${userId}`,
+      userData,
+      hasToken: !!token
+    });
+    
+    const res = await axios.put(`${API}/users/${userId}`, userData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    console.log('updateOwnProfile response:', res.data);
+    return res.data; // { message, user }
+  } catch (error) {
+    console.error("updateOwnProfile error:", error?.response?.data || error.message);
+    console.error("Full error:", error);
     throw error;
   }
 };
