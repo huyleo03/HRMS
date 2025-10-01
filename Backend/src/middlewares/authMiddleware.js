@@ -98,12 +98,9 @@ exports.authenticateReset = async (req, res, next) => {
       });
     }
 
-    // QUAN TRỌNG: Không kiểm tra trạng thái tài khoản
-    // Cho phép reset mật khẩu ngay cả khi tài khoản bị vô hiệu hóa
-
-    // Gắn thông tin user và decoded token vào request
-    req.user = decoded; // Chỉ truyền decoded, không phải currentUser
-    req.currentUser = currentUser; // Truyền currentUser riêng để sử dụng trong controller
+  
+    req.user = decoded; 
+    req.currentUser = currentUser; 
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
