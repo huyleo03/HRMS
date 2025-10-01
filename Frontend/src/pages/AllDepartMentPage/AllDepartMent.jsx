@@ -1,18 +1,20 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { getDepartments, searchDepartments } from "../../service/DepartmentService";
+// src/pages/AllDepartMentPage/Departments.jsx
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";              // <-- thêm
+import { getDepartments } from "../../service/DepartmentService";
 import "./Departments.css";
 import { useAuth } from "../../contexts/AuthContext";
 
-/* Icon (chevron + search + plus) */
+/* Icons */
 function Icon({ name }) {
   const paths = {
     search: "M11 19a8 8 0 100-16 8 8 0 000 16zm10 2l-6-6",
     plus: "M12 5v14M5 12h14",
     chevR: "M9 6l6 6-6 6",
+    chevL: "M15 18l-6-6 6-6",
   };
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d={paths[name]} />
     </svg>
   );
@@ -24,9 +26,7 @@ function MemberRow({ m }) {
       <img className="dept-member__avatar" src={m.avatar} alt={m.full_name} />
       <div className="dept-member__info">
         <div className="dept-member__name">{m.full_name}</div>
-        <div className="dept-member__title">
-          {m.isManager ? "Manager" : (m.jobTitle || m.role || "")}
-        </div>
+        <div className="dept-member__title">{m.isManager ? "Manager" : (m.jobTitle || m.role || "")}</div>
       </div>
       <span className="dept-member__chev"><Icon name="chevR" /></span>
     </div>
@@ -34,13 +34,8 @@ function MemberRow({ m }) {
 }
 
 function DepartmentCard({ dep, onViewAll }) {
-  const membersPreview = dep.membersPreview && dep.membersPreview.length
-    ? dep.membersPreview
-    : (dep.members || []).slice(0, 5); // fallback nếu BE cũ
-
-  const count = typeof dep.membersCount === "number"
-    ? dep.membersCount
-    : (dep.members ? dep.members.length : 0);
+  const preview = Array.isArray(dep.membersPreview) ? dep.membersPreview : [];
+  const count = typeof dep.membersCount === "number" ? dep.membersCount : 0;
 
   return (
     <div className="dept-card">
@@ -56,7 +51,7 @@ function DepartmentCard({ dep, onViewAll }) {
         {count === 0 ? (
           <div className="dept-empty">No members yet</div>
         ) : (
-          membersPreview.map((m) => <MemberRow key={m._id} m={m} />)
+          preview.map((m) => <MemberRow key={m._id} m={m} />)
         )}
       </div>
     </div>
@@ -64,41 +59,41 @@ function DepartmentCard({ dep, onViewAll }) {
 }
 
 export default function Departments() {
+  const navigate = useNavigate();                               // <-- thêm
   const { token } = useAuth();
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(6);
+
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [depts, setDepts] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
 
   // debounce search
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(q.trim()), 350);
+    const t = setTimeout(() => {
+      setDebouncedQ(q.trim());
+      setPage(1);
+    }, 350);
     return () => clearTimeout(t);
   }, [q]);
 
-  // fetch
+  // fetch departments
   useEffect(() => {
     let abort = false;
     (async () => {
       setLoading(true);
       setErr("");
       try {
-        if (debouncedQ) {
-          const res = await searchDepartments(debouncedQ, token);
-          if (abort) return;
-          const onlyDepts = (res?.data?.departments || []).map((d) => ({
-            ...d,
-            members: [],           // search endpoint không trả members
-            membersCount: undefined,
-            membersPreview: [],    // sẽ thành No members, nhưng ok cho search nhanh
-          }));
-          setDepts(onlyDepts);
-        } else {
-          const res = await getDepartments(token);
-          if (abort) return;
-          setDepts(res?.data || []);
-        }
+        const res = await getDepartments({ page, limit, q: debouncedQ }, token);
+        if (abort) return;
+        setDepts(res?.data || []);
+        setTotal(res?.total || 0);
+        setPages(res?.pages || 1);
       } catch (e) {
         if (!abort) setErr(e.message || "Fetch failed");
       } finally {
@@ -106,13 +101,16 @@ export default function Departments() {
       }
     })();
     return () => { abort = true; };
-  }, [debouncedQ, token]);
+  }, [page, limit, debouncedQ, token]);
 
+  // >>> điều hướng sang trang danh sách thành viên
   const handleViewAll = (dep) => {
-    // điều hướng tới trang chi tiết department (nếu có route)
-    // navigate(`/departments/${dep._id}`);
-    alert(`View all: ${dep.department_name}`);
+    if (!dep?._id) return;
+    navigate(`/view-department/${dep._id}`);                        // <-- sửa ở đây
   };
+
+  const canPrev = page > 1;
+  const canNext = page < pages;
 
   return (
     <div className="depts">
@@ -137,14 +135,35 @@ export default function Departments() {
       ) : err ? (
         <div className="depts-error">Error: {err}</div>
       ) : (
-        <div className="depts-grid">
-          {depts.map((d) => (
-            <DepartmentCard key={d._id} dep={d} onViewAll={handleViewAll} />
-          ))}
-          {depts.length === 0 && (
-            <div className="depts-empty">No departments found.</div>
-          )}
-        </div>
+        <>
+          <div className="depts-grid">
+            {depts.map((d) => (
+              <DepartmentCard key={d._id} dep={d} onViewAll={handleViewAll} />
+            ))}
+            {depts.length === 0 && <div className="depts-empty">No departments found.</div>}
+          </div>
+
+          <div className="depts-foot">
+            <div className="depts-foot__left">
+              <label>Show</label>
+              <select value={limit} onChange={(e) => { setLimit(parseInt(e.target.value, 10)); setPage(1); }}>
+                <option value={4}>4</option>
+                <option value={6}>6</option>
+                <option value={8}>8</option>
+              </select>
+            </div>
+
+            <div className="depts-foot__center">
+              Showing {(depts.length ? (page - 1) * limit + 1 : 0)} to {Math.min(page * limit, total)} of {total} departments
+            </div>
+
+            <div className="depts-foot__right">
+              <button className="circle" disabled={!canPrev} onClick={() => setPage(p => Math.max(1, p - 1))}><Icon name="chevL" /></button>
+              <span className="page-indicator">{page} / {pages}</span>
+              <button className="circle" disabled={!canNext} onClick={() => setPage(p => Math.min(pages, p + 1))}><Icon name="chevR" /></button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
