@@ -3,17 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { apiCall, API_CONFIG } from "../../utils/api";
 import "./AddNewEmployee.css";
-import { getDepartmentOptions } from "../../service/DepartmentService";
+import {
+  getDepartmentOptions,
+  checkDepartmentManager,
+} from "../../service/DepartmentService";
+import { useAuth } from "../../contexts/AuthContext";
 
 const AddNewEmployee = () => {
   const navigate = useNavigate();
+  const { token } = useAuth();
 
   // Form state based on UserController requirements - simplified
   const [formData, setFormData] = useState({
     email: "",
     full_name: "",
     role: "",
-    department: "",
+    department: null, // Thay đổi từ "" thành null để tránh gửi giá trị không hợp lệ
     jobTitle: "",
     salary: "",
   });
@@ -23,33 +28,89 @@ const AddNewEmployee = () => {
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState("personal");
 
+  // Fetch department options on component mount
   useEffect(() => {
     const fetchDepartments = async () => {
+      if (!token) return;
       try {
-        const departmentData = await getDepartmentOptions();
-         if (departmentData && departmentData.success && Array.isArray(departmentData.data)) {
+        const departmentData = await getDepartmentOptions(token);
+        if (
+          departmentData &&
+          departmentData.success &&
+          Array.isArray(departmentData.data)
+        ) {
           setDepartments(departmentData.data);
         } else {
           toast.error("Could not parse department data.");
-          console.error("Invalid department data format:", departmentData);
         }
       } catch (error) {
-        toast.error("Failed to load departments. Please try again.");
-        console.error("Error fetching departments:", error);
+        toast.error("Failed to load departments.");
       }
     };
 
     fetchDepartments();
-  }, []);
+  }, [token]);
+
+  // Use effect to check for existing manager when role or department changes
+  useEffect(() => {
+    const checkManager = async () => {
+      if (
+        formData.role === "Manager" &&
+        formData.department &&
+        formData.department.department_id &&
+        token
+      ) {
+        try {
+          const result = await checkDepartmentManager(
+            formData.department.department_id,
+            token
+          );
+          
+          if (result.success && result.hasManager) {
+            toast.warning(result.message || "Phòng ban này đã có Manager", {
+              position: "top-right",
+            });
+
+            setErrors((prev) => ({
+              ...prev,
+              department: result.message || "Phòng ban này đã có Manager",
+            }));
+          } else if (result.success && !result.hasManager) {
+            setErrors((prev) => {
+              const newErrors = { ...prev };
+              delete newErrors.department;
+              return newErrors;
+            });
+          }
+        } catch (error) {
+          console.error("Error checking for existing manager:", error);
+        }
+      }
+    };
+
+    checkManager();
+  }, [formData.role, formData.department, token]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
 
-    // Clear error when user starts typing
+    if (name === "department") {
+      const selectedDept = departments.find((dept) => dept._id === value);
+      setFormData((prev) => ({
+        ...prev,
+        department: selectedDept
+          ? {
+              department_id: selectedDept._id,
+              department_name: selectedDept.department_name,
+            }
+          : null,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -98,17 +159,20 @@ const AddNewEmployee = () => {
         email: formData.email,
         full_name: formData.full_name,
         role: formData.role,
-        department: formData.department, 
+        department: formData.department,
         jobTitle: formData.jobTitle,
         salary: formData.salary ? parseFloat(formData.salary) : null,
       };
 
-      console.log("Submitting data:", submitData); // Debug log
 
-      const result = await apiCall(API_CONFIG.ENDPOINTS.CREATE_USER, {
-        method: "POST",
-        body: JSON.stringify(submitData),
-      });
+      const result = await apiCall(
+        API_CONFIG.ENDPOINTS.CREATE_USER,
+        {
+          method: "POST",
+          body: JSON.stringify(submitData),
+        },
+        token
+      );
 
       if (result.success) {
         toast.success("Employee created successfully!", {
@@ -127,12 +191,10 @@ const AddNewEmployee = () => {
         });
         setErrors({});
 
-        // Auto redirect to all employees page after 2.5 seconds
         setTimeout(() => {
           navigate("/employees");
-        }, 2500);
+        }, 1500);
       } else {
-        // Handle API error response
         console.error("API Error:", result);
         const errorMessage =
           result.data?.message || result.error || `Error: ${result.status}`;
@@ -298,7 +360,7 @@ const AddNewEmployee = () => {
                   <div className="input-group">
                     <select
                       name="department"
-                      value={formData.department}
+                      value={formData.department?.department_id || ""}
                       onChange={handleInputChange}
                       className={errors.department ? "error" : ""}
                     >
