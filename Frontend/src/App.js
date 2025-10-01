@@ -9,7 +9,6 @@ import OtpPage from "./pages/Authentication/OtpPage";
 import ResetPass from "./pages/Authentication/ResetPass";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Employees from "./pages/AllEmpoyeePage/AllEmployeePage.jsx";
-import { AddNewEmployee } from "./pages/Employee";
 import ViewEmployeeDetailsPage from "./pages/Employee/ViewEmployeeDetailsPage";
 import MyProfile from "./pages/MyProfile/MyProfile";
 import Department from "./pages/AllDepartMentPage/AllDepartMent.jsx";
