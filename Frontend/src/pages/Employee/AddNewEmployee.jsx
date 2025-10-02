@@ -197,10 +197,9 @@ const AddNewEmployee = () => {
   };
 
   const handleCancel = () => {
-    toast.info("Operation cancelled", {
-      position: "top-right",
-    });
-    navigate("/employees");
+    setTimeout(() => {
+      navigate("/employees");
+    }, 100);
   };
 
   return (
@@ -271,154 +270,208 @@ const AddNewEmployee = () => {
         <form onSubmit={handleSubmit} className="employee-form">
           {activeTab === "personal" && (
             <div className="form-content">
-              <div className="avatar-section">
-                <div className="avatar-placeholder">
-                  {/* Facebook-style default avatar */}
-                  <svg
-                    width="100"
-                    height="100"
-                    viewBox="0 0 100 100"
-                    fill="none"
-                  >
-                    <circle cx="50" cy="50" r="50" fill="#E4E6EA" />
-                    <circle cx="50" cy="35" r="12" fill="#BCC0C4" />
-                    <path
-                      d="M23 75C23 61 35 50 50 50C65 50 77 61 77 75"
-                      fill="#BCC0C4"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              <div className="form-rows">
-                {/* Row 1: Full Name và Email */}
-                <div className="form-row">
-                  <div className="input-group">
-                    <input
-                      type="text"
-                      name="full_name"
-                      value={formData.full_name}
-                      onChange={handleInputChange}
-                      placeholder="Full name"
-                      className={errors.full_name ? "error" : ""}
-                    />
-                    {errors.full_name && (
-                      <span className="error-text">{errors.full_name}</span>
-                    )}
-                  </div>
-                  <div className="input-group">
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="Email"
-                      className={errors.email ? "error" : ""}
-                    />
-                    {errors.email && (
-                      <span className="error-text">{errors.email}</span>
-                    )}
+              {/* Thay đổi cấu trúc thành layout 2 cột */}
+              <div className="form-layout-horizontal">
+                {/* Cột trái: Avatar (30%) */}
+                <div className="avatar-column">
+                  <div className="avatar-section">
+                    <div className="avatar-container">
+                      <div className="avatar-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M20.5899 22C20.5899 18.13 16.7399 15 11.9999 15C7.25991 15 3.40991 18.13 3.40991 22"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
+                      <div className="avatar-upload-btn">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M12 16V12M12 12V8M12 12H16M12 12H8"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <p className="avatar-hint">
+                      Click to upload profile picture
+                    </p>
                   </div>
                 </div>
 
-                {/* Row 2: Role và Department */}
-                <div className="form-row">
-                  <div className="input-group">
-                    <select
-                      name="role"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      className={errors.role ? "error" : ""}
+                {/* Cột phải: Form fields (70%) */}
+                <div className="fields-column">
+                  <div className="form-rows">
+                    {/* Row 1: Full Name */}
+                    <div className="form-row">
+                      <div className="input-group">
+                        <input
+                          type="text"
+                          name="full_name"
+                          value={formData.full_name}
+                          onChange={handleInputChange}
+                          placeholder="Full name"
+                          className={errors.full_name ? "error" : ""}
+                        />
+                        {errors.full_name && (
+                          <span className="error-text">{errors.full_name}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 2: Email */}
+                    <div className="form-row">
+                      <div className="input-group">
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          placeholder="Email"
+                          className={errors.email ? "error" : ""}
+                        />
+                        {errors.email && (
+                          <span className="error-text">{errors.email}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 3: Role */}
+                    <div className="form-row">
+                      <div className="input-group">
+                        <select
+                          name="role"
+                          value={formData.role}
+                          onChange={handleInputChange}
+                          className={errors.role ? "error" : ""}
+                        >
+                          <option value="">Select Role</option>
+                          <option value="Manager">Manager</option>
+                          <option value="Employee">Employee</option>
+                        </select>
+                        {errors.role && (
+                          <span className="error-text">{errors.role}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 4: Department */}
+                    <div className="form-row">
+                      <div className="input-group">
+                        <select
+                          name="department"
+                          value={formData.department?.department_id || ""}
+                          onChange={handleInputChange}
+                          className={errors.department ? "error" : ""}
+                        >
+                          <option value="">Select Department</option>
+                          {departments.map((dept) => (
+                            <option key={dept._id} value={dept._id}>
+                              {dept.department_name}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.department && (
+                          <span className="error-text">
+                            {errors.department}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 5: Job Title */}
+                    <div className="form-row">
+                      <div className="input-group">
+                        <input
+                          type="text"
+                          name="jobTitle"
+                          value={formData.jobTitle}
+                          onChange={handleInputChange}
+                          placeholder="Job Title"
+                          className={errors.jobTitle ? "error" : ""}
+                        />
+                        {errors.jobTitle && (
+                          <span className="error-text">{errors.jobTitle}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 6: Salary */}
+                    <div className="form-row">
+                      <div className="input-group">
+                        <input
+                          type="text"
+                          name="salary"
+                          value={formData.salary}
+                          onChange={handleInputChange}
+                          placeholder="Salary (USD)"
+                          className={errors.salary ? "error" : ""}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                        />
+                        {errors.salary && (
+                          <span className="error-text">{errors.salary}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      onClick={handleCancel}
+                      className="btn-cancel"
+                      disabled={isLoading}
                     >
-                      <option value="">Select Role</option>
-                      <option value="Manager">Manager</option>
-                      <option value="Employee">Employee</option>
-                    </select>
-                    {errors.role && (
-                      <span className="error-text">{errors.role}</span>
-                    )}
-                  </div>
-                  <div className="input-group">
-                    <select
-                      name="department"
-                      value={formData.department?.department_id || ""}
-                      onChange={handleInputChange}
-                      className={errors.department ? "error" : ""}
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-submit"
+                      disabled={isLoading}
                     >
-                      <option value="">Select Department</option>
-                      {departments.map((dept) => (
-                        <option key={dept._id} value={dept._id}>
-                          {dept.department_name}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.department && (
-                      <span className="error-text">{errors.department}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Row 3: Job Title và Salary */}
-                <div className="form-row">
-                  <div className="input-group">
-                    <input
-                      type="text"
-                      name="jobTitle"
-                      value={formData.jobTitle}
-                      onChange={handleInputChange}
-                      placeholder="Job Title"
-                      className={errors.jobTitle ? "error" : ""}
-                    />
-                    {errors.jobTitle && (
-                      <span className="error-text">{errors.jobTitle}</span>
-                    )}
-                  </div>
-                  <div className="input-group">
-                    <input
-                      type="text"
-                      name="salary"
-                      value={formData.salary}
-                      onChange={handleInputChange}
-                      placeholder="Salary (USD)"
-                      className={errors.salary ? "error" : ""}
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                    />
-                    {errors.salary && (
-                      <span className="error-text">{errors.salary}</span>
-                    )}
+                      {isLoading ? (
+                        <>
+                          <svg className="spinner" viewBox="0 0 24 24">
+                            <circle
+                              className="spinner-circle"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              fill="none"
+                            />
+                          </svg>
+                          Creating...
+                        </>
+                      ) : (
+                        "Create Employee"
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           )}
-
-          {activeTab === "documents" && (
-            <div className="form-content">
-              <div className="documents-placeholder">
-                <div className="upload-area">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M4 6C4 3.79086 5.79086 2 8 2H15.3431C16.404 2 17.4214 2.42143 18.1716 3.17157L20.8284 5.82843C21.5786 6.57857 22 7.59599 22 8.65685V18C22 20.2091 20.2091 22 18 22H8C5.79086 22 4 20.2091 4 18V6Z"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                  <p>Upload employee documents</p>
-                  <span>CV, ID Copy, Certificates, etc.</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="form-actions">
-            <button type="button" onClick={handleCancel} className="btn-cancel">
-              Cancel
-            </button>
-            <button type="submit" disabled={isLoading} className="btn-submit">
-              {isLoading ? "Creating..." : "Create Employee"}
-            </button>
-          </div>
         </form>
       </div>
     </div>

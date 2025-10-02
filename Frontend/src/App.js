@@ -14,7 +14,6 @@ import ViewEmployeeDetailsPage from "./pages/Employee/ViewEmployeeDetailsPage";
 import MyProfile from "./pages/MyProfile/MyProfile";
 import Department from "./pages/AllDepartMentPage/AllDepartMent.jsx";
 import DepartmentMembers from "./pages/ViewDepartMentPage/ViewDepartMentPage.jsx";
-import AddNewEmployee from "./pages/Employee/AddNewEmployee.jsx";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute.js";
 
