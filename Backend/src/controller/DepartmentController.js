@@ -52,7 +52,9 @@ exports.createDepartment = async (req, res) => {
     if (managerId) {
       manager = await User.findById(managerId);
       if (!manager) {
-        return res.status(400).json({ success: false, message: "Manager không tồn tại" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Manager không tồn tại" });
       }
       const existed = await Department.findOne({ managerId });
       if (existed) {
@@ -99,7 +101,9 @@ exports.getDepartments = async (req, res) => {
       sortOrder = "asc",
     } = req.query;
 
-    const filter = q ? { department_name: { $regex: q.trim(), $options: "i" } } : {};
+    const filter = q
+      ? { department_name: { $regex: q.trim(), $options: "i" } }
+      : {};
 
     const sort = {};
     sort[sortBy] = String(sortOrder).toLowerCase() === "desc" ? -1 : 1;
@@ -166,7 +170,6 @@ exports.getDepartmentById = async (req, res) => {
   }
 };
 
-
 /** 4) View All: Lấy full members của 1 phòng ban (phân trang + search + sort) */
 exports.getDepartmentMembers = async (req, res) => {
   try {
@@ -180,7 +183,10 @@ exports.getDepartmentMembers = async (req, res) => {
     } = req.query;
 
     const dep = await Department.findById(id).lean();
-    if (!dep) return res.status(404).json({ success: false, message: "Không tìm thấy phòng ban" });
+    if (!dep)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy phòng ban" });
 
     const query = { "department.department_id": id };
     if (q && q.trim()) {
@@ -233,12 +239,16 @@ exports.addEmployeeToDepartment = async (req, res) => {
 
     const department = await Department.findById(departmentId);
     if (!department) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy phòng ban" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy phòng ban" });
     }
 
     const user = await User.findById(employeeId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy nhân viên" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy nhân viên" });
     }
 
     if (user.department && user.department.department_id) {
@@ -250,7 +260,10 @@ exports.addEmployeeToDepartment = async (req, res) => {
 
     // ràng buộc manager
     if (user.role === "Manager") {
-      if (department.managerId && String(department.managerId) !== String(user._id)) {
+      if (
+        department.managerId &&
+        String(department.managerId) !== String(user._id)
+      ) {
         return res.status(400).json({
           success: false,
           message: "Phòng ban này đã có Manager, không thể thêm Manager khác.",
@@ -293,10 +306,17 @@ exports.removeEmployeeFromDepartment = async (req, res) => {
 
     const user = await User.findById(employeeId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy nhân viên" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy nhân viên" });
     }
     if (!user.department || !user.department.department_id) {
-      return res.status(400).json({ success: false, message: "Nhân viên này chưa thuộc phòng ban nào" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Nhân viên này chưa thuộc phòng ban nào",
+        });
     }
 
     const oldDepartmentId = user.department.department_id;
@@ -326,6 +346,67 @@ exports.getDepartmentOptions = async (req, res) => {
   try {
     const departments = await Department.find({}, "_id department_name").lean();
     res.status(200).json({ success: true, data: departments });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.checkDepartmentManager = async (req, res) => {
+  try {
+    const { departmentId } = req.params;
+    const department = await Department.findById(departmentId);
+    if (!department) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy phòng ban" });
+    }
+    if (department.managerId) {
+      return res
+        .status(200)
+        .json({
+          success: true,
+          hasManager: true,
+          message: "Phòng ban đã có quản lý",
+        });
+    }
+    res
+      .status(200)
+      .json({
+        success: true,
+        hasManager: false,
+        message: "Phòng ban chưa có quản lý",
+      });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 8. Kiểm tra department đã có manager chưa
+exports.checkDepartmentManager = async (req, res) => {
+  try {
+    const { departmentId } = req.params;
+    const department = await Department.findById(departmentId);
+    if (!department) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy phòng ban" });
+    }
+    if (department.managerId) {
+      return res
+        .status(200)
+        .json({
+          success: true,
+          hasManager: true,
+          message: "Phòng ban đã có quản lý",
+        });
+    }
+    res
+      .status(200)
+      .json({
+        success: true,
+        hasManager: false,
+        message: "Phòng ban chưa có quản lý",
+      });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

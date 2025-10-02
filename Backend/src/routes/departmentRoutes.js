@@ -12,6 +12,20 @@ router.get("/", departmentController.getDepartments);
 router.get("/:id/members", departmentController.getDepartmentMembers);
 router.get("/:id", departmentController.getDepartmentById);
 router.post("/add-employee", departmentController.addEmployeeToDepartment);
-router.post("/remove-employee", departmentController.removeEmployeeFromDepartment);
+router.post(
+  "/remove-employee",
+  departmentController.removeEmployeeFromDepartment
+);
+
+router.get(
+  "/options/list",
+  authenticate,
+  departmentController.getDepartmentOptions
+);
+router.get(
+  "/:departmentId/manager-check",
+  authenticate,
+  departmentController.checkDepartmentManager
+);
 
 module.exports = router;
