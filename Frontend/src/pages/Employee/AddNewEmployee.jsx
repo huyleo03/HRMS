@@ -21,12 +21,15 @@ const AddNewEmployee = () => {
     department: null,
     jobTitle: "",
     salary: "",
+    avatar: null,
   });
 
   const [departments, setDepartments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState("personal");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   // Fetch department options on component mount
   useEffect(() => {
@@ -108,6 +111,45 @@ const AddNewEmployee = () => {
     }
   };
 
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Vui lòng chọn file ảnh');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Kích thước file không được vượt quá 5MB');
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target.result);
+        setFormData(prev => ({
+          ...prev,
+          avatar: e.target.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setFormData(prev => ({
+      ...prev,
+      avatar: null
+    }));
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -151,6 +193,7 @@ const AddNewEmployee = () => {
         department: formData.department,
         jobTitle: formData.jobTitle,
         salary: formData.salary ? parseFloat(formData.salary) : null,
+        avatar: formData.avatar, // Include avatar
       };
 
       const result = await createUser(submitData, token);
@@ -169,7 +212,10 @@ const AddNewEmployee = () => {
           department: "",
           jobTitle: "",
           salary: "",
+          avatar: null,
         });
+        setSelectedFile(null);
+        setPreviewUrl(null);
         setErrors({});
 
         setTimeout(() => {
@@ -185,12 +231,20 @@ const AddNewEmployee = () => {
       }
     } catch (error) {
       console.error("Network Error:", error);
-      toast.error(
-        `Network error: ${error.message}. Check if backend is running on correct port.`,
-        {
+      
+      // Handle backend validation errors (like manager already exists)
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message, {
           position: "top-right",
-        }
-      );
+        });
+      } else {
+        toast.error(
+          `Network error: ${error.message}. Check if backend is running on correct port.`,
+          {
+            position: "top-right",
+          }
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -276,44 +330,72 @@ const AddNewEmployee = () => {
                 <div className="avatar-column">
                   <div className="avatar-section">
                     <div className="avatar-container">
-                      <div className="avatar-placeholder">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                      {previewUrl ? (
+                        <div style={{ position: 'relative' }}>
+                          <img 
+                            src={previewUrl} 
+                            alt="Preview" 
+                            className="avatar-preview"
                           />
-                          <path
-                            d="M20.5899 22C20.5899 18.13 16.7399 15 11.9999 15C7.25991 15 3.40991 18.13 3.40991 22"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                          <button 
+                            type="button"
+                            className="avatar-remove-btn"
+                            onClick={handleRemoveAvatar}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="avatar-placeholder">
+                          <svg viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M20.5899 22C20.5899 18.13 16.7399 15 11.9999 15C7.25991 15 3.40991 18.13 3.40991 22"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            style={{ display: 'none' }}
+                            id="avatar-upload-input"
                           />
-                        </svg>
-                      </div>
-                      <div className="avatar-upload-btn">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M12 16V12M12 12V8M12 12H16M12 12H8"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                          />
-                        </svg>
-                      </div>
+                          
+                          <label htmlFor="avatar-upload-input" className="avatar-upload-btn">
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 16V12M12 12V8M12 12H16M12 12H8"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                              />
+                              <circle
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                              />
+                            </svg>
+                          </label>
+                        </div>
+                      )}
                     </div>
                     <p className="avatar-hint">
-                      Click to upload profile picture
+                      {previewUrl ? 'Click X to remove' : 'Click to upload profile picture'}
                     </p>
                   </div>
                 </div>

@@ -4,7 +4,7 @@ const sendEmail = require("../utils/email");
 
 // Create a new user by Admin
 exports.createUserByAdmin = async (req, res) => {
-  const { email, full_name, role, department, jobTitle, salary } = req.body;
+  const { email, full_name, role, department, jobTitle, salary, avatar } = req.body;
 
   try {
     const existingUser = await User.findOne({ email });
@@ -35,6 +35,7 @@ exports.createUserByAdmin = async (req, res) => {
       department,
       jobTitle,
       salary,
+      avatar: avatar || "https://i.pravatar.cc/150", // Use provided avatar or default
     });
 
     const savedUser = await newUser.save();
@@ -207,8 +208,7 @@ exports.changeUserRole = async (req, res) => {
 // Update user by Admin
 exports.updateUserByAdmin = async (req, res) => {
   const userId = req.params.id;
-  const { full_name, jobTitle, role, department, salary, status } = req.body;
-  const validStatuses = ["Active", "Inactive"];
+  const { full_name, jobTitle, role, department, salary, avatar } = req.body;
 
   try {
     const userToUpdate = await User.findById(userId);
@@ -216,18 +216,39 @@ exports.updateUserByAdmin = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng." });
     }
 
-    // Validate status
-    if (status && !validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Trạng thái không hợp lệ." });
+    // Validate if user is being promoted to Manager (only when role is changing TO Manager)
+    // OR if existing Manager is moving to a different department
+    if (role === "Manager" && department && department.department_id) {
+      const isNewManager = userToUpdate.role !== "Manager";
+      const isDepartmentChange = userToUpdate.department?.department_id !== department.department_id;
+      
+      if (isNewManager || isDepartmentChange) {
+        // Check if there's already a manager in this department (excluding current user)
+        const existingManager = await User.findOne({
+          _id: { $ne: userId }, // Exclude current user from check
+          "department.department_id": department.department_id,
+          role: "Manager",
+        });
+
+        if (existingManager) {
+          return res.status(400).json({
+            message: `Phòng ban "${department.department_name}" đã có Manager là "${existingManager.full_name}". Không thể thay đổi role thành Manager.`,
+          });
+        }
+      }
     }
 
-    // Update fields
+    // Update fields (removed status field)
     if (full_name) userToUpdate.full_name = full_name;
     if (jobTitle) userToUpdate.jobTitle = jobTitle;
     if (role) userToUpdate.role = role;
     if (department) userToUpdate.department = department;
     if (salary) userToUpdate.salary = salary;
-    if (status) userToUpdate.status = status;
+    
+    // Handle avatar - allow null/empty to reset to default
+    if (avatar !== undefined) {
+      userToUpdate.avatar = avatar || "https://i.pravatar.cc/150";
+    }
 
     await userToUpdate.save();
 

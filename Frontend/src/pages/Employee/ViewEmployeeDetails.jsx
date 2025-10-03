@@ -16,6 +16,9 @@ const ViewEmployeeDetails = () => {
   const [editFormData, setEditFormData] = useState({});
   const [departments, setDepartments] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
   const { id } = useParams();
   const navigate = useNavigate();
@@ -29,14 +32,14 @@ const ViewEmployeeDetails = () => {
         setLoading(true);
         const response = await getUserById(id, token);
         setEmployeeData(response.user);
+        
         // Initialize edit form data
         setEditFormData({
-          full_name: response.user.full_name || '',
           jobTitle: response.user.jobTitle || '',
           role: response.user.role || 'Employee',
           department: response.user.department || null,
           salary: response.user.salary || '',
-          status: response.user.status || 'Active'
+          avatar: response.user.avatar || null
         });
         // Set employee name for header
         sessionStorage.setItem('currentEmployeeName', response.user.full_name);
@@ -57,8 +60,19 @@ const ViewEmployeeDetails = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const departmentData = await getDepartmentOptions();
-        setDepartments(departmentData.departments || []);
+        const departmentData = await getDepartmentOptions(token);
+        
+        // Handle different response structures
+        let departmentList = [];
+        if (departmentData.data && Array.isArray(departmentData.data)) {
+          departmentList = departmentData.data;
+        } else if (departmentData.departments && Array.isArray(departmentData.departments)) {
+          departmentList = departmentData.departments;
+        } else if (Array.isArray(departmentData)) {
+          departmentList = departmentData;
+        }
+        
+        setDepartments(departmentList);
       } catch (err) {
         console.error('Error fetching departments:', err);
         toast.error('Không thể tải danh sách phòng ban');
@@ -66,7 +80,7 @@ const ViewEmployeeDetails = () => {
     };
 
     fetchDepartments();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     // Cleanup when component unmounts
@@ -88,15 +102,12 @@ const ViewEmployeeDetails = () => {
         break;
       case 'attendance':
         // Could navigate to attendance page or show attendance data
-        console.log('Navigate to attendance');
         break;
       case 'projects':
         // Could navigate to projects page or show projects data
-        console.log('Navigate to projects');
         break;
       case 'leave':
         // Could navigate to leave page or show leave data
-        console.log('Navigate to leave');
         break;
       default:
         break;
@@ -104,6 +115,14 @@ const ViewEmployeeDetails = () => {
   };
 
   const handleEditClick = () => {
+    // Reset editFormData to current employee data when starting edit
+    setEditFormData({
+      jobTitle: employeeData.jobTitle || '',
+      role: employeeData.role || 'Employee',
+      department: employeeData.department || null,
+      salary: employeeData.salary || '',
+      avatar: employeeData.avatar || null
+    });
     setIsEditing(true);
   };
 
@@ -111,12 +130,11 @@ const ViewEmployeeDetails = () => {
     setIsEditing(false);
     // Reset form data to original employee data
     setEditFormData({
-      full_name: employeeData.full_name || '',
       jobTitle: employeeData.jobTitle || '',
       role: employeeData.role || 'Employee',
       department: employeeData.department || null,
       salary: employeeData.salary || '',
-      status: employeeData.status || 'Active'
+      avatar: employeeData.avatar || null
     });
   };
 
@@ -127,13 +145,85 @@ const ViewEmployeeDetails = () => {
     }));
   };
 
-  const handleSaveEdit = async () => {
-    // Validate required fields
-    if (!editFormData.full_name?.trim()) {
-      toast.error('Họ tên không được để trống');
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Vui lòng chọn file ảnh');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Kích thước file không được vượt quá 5MB');
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!selectedFile) {
+      toast.error('Vui lòng chọn ảnh trước khi upload');
       return;
     }
-    
+
+    try {
+      setUploadingAvatar(true);
+      
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const avatarBase64 = e.target.result;
+          
+          // Update editFormData with new avatar
+          setEditFormData(prev => ({
+            ...prev,
+            avatar: avatarBase64
+          }));
+          
+          // Update employee data with new avatar for immediate display
+          setEmployeeData(prev => ({
+            ...prev,
+            avatar: avatarBase64
+          }));
+          
+          setSelectedFile(null);
+          setPreviewUrl(null);
+          
+          toast.success('Ảnh đại diện đã được cập nhật! Nhấn Save để lưu thay đổi.');
+        } catch (error) {
+          console.error('Error processing avatar:', error);
+          toast.error('Có lỗi xảy ra khi xử lý ảnh');
+        }
+      };
+      reader.readAsDataURL(selectedFile);
+      
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Có lỗi xảy ra khi upload ảnh');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleCancelAvatarUpload = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+  };
+
+  const handleSaveEdit = async () => {
+    // Validate required fields
     if (!editFormData.jobTitle?.trim()) {
       toast.error('Chức vụ không được để trống');
       return;
@@ -141,6 +231,7 @@ const ViewEmployeeDetails = () => {
 
     try {
       setSaving(true);
+      
       const response = await updateUser(id, editFormData, token);
       
       // Update employee data with new data
@@ -306,14 +397,72 @@ const ViewEmployeeDetails = () => {
           {/* Profile Header */}
           <div className="profile-header">
             <div className="profile-info-section">
-              <div className="profile-avatar-large">
-                <img 
-                  src={employeeData.avatar || '/api/placeholder/120/120'} 
-                  alt={employeeData.full_name}
-                  onError={(e) => {
-                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik02MCA2MEM2Ny45NTY4IDYwIDc0LjQgNTMuNTU2OCA3NC40IDQ1LjZDNzQuNCAzNy42NDMyIDY3Ljk1NjggMzEuMiA2MCAzMS4yQzUyLjA0MzIgMzEuMiA0NS42IDM3LjY0MzIgNDUuNiA0NS42QzQ1LjYgNTMuNTU2OCA1Mi4wNDMyIDYwIDYwIDYwWk02MCA2NC44QzQ4LjA3MDcgNjQuOCAzOC40IDc0LjQ3MDcgMzguNCA4Ni40VjkxLjJINDMuMlY4Ni40QzQzLjIgNzcuMTIxNiA1MC43MjE2IDY5LjYgNjAgNjkuNkM2OS4yNzg0IDY5LjYgNzYuOCA3Ny4xMjE2IDc2LjggODYuNFY5MS4ySDgxLjZWODYuNEM4MS42IDc0LjQ3MDcgNzEuOTI5MyA2NC44IDYwIDY0LjhaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPgo=';
-                  }}
-                />
+              <div className="profile-avatar-container">
+                <div className="profile-avatar-large">
+                  {(previewUrl || (employeeData.avatar && employeeData.avatar !== "https://i.pravatar.cc/150")) ? (
+                    <img 
+                      src={previewUrl || employeeData.avatar} 
+                      alt={employeeData.full_name}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : (
+                    <div className="avatar-placeholder" style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#F3F4F6',
+                      color: '#9CA3AF',
+                      fontSize: '24px',
+                      fontWeight: '600'
+                    }}>
+                      {employeeData.full_name ? employeeData.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Avatar Upload Controls - moved outside */}
+                {isEditing && (
+                  <div className="avatar-upload-controls-external">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      style={{ display: 'none' }}
+                      id="avatar-upload"
+                    />
+                    {!selectedFile ? (
+                      <label htmlFor="avatar-upload" className="upload-btn-external">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 16V12M12 12V8M12 12H16M12 12H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/>
+                        </svg>
+                      </label>
+                    ) : (
+                      <div className="upload-actions-external">
+                        <button 
+                          type="button" 
+                          className="upload-confirm-btn-external" 
+                          onClick={handleAvatarUpload}
+                          disabled={uploadingAvatar}
+                        >
+                          {uploadingAvatar ? '...' : '✓'}
+                        </button>
+                        <button 
+                          type="button" 
+                          className="upload-cancel-btn-external" 
+                          onClick={handleCancelAvatarUpload}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="profile-info-container">
                 <h1 className="profile-name">{employeeData.full_name}</h1>
@@ -371,16 +520,7 @@ const ViewEmployeeDetails = () => {
                     <div className="info-row">
                       <div className="info-field">
                         <label>Full Name</label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            className="field-input"
-                            value={editFormData.full_name}
-                            onChange={(e) => handleInputChange('full_name', e.target.value)}
-                          />
-                        ) : (
-                          <div className="field-value">{employeeData.full_name || 'N/A'}</div>
-                        )}
+                        <div className="field-value">{employeeData.full_name || 'N/A'}</div>
                         <div className="field-line"></div>
                       </div>
                       <div className="info-field">
@@ -460,18 +600,39 @@ const ViewEmployeeDetails = () => {
                         {isEditing ? (
                           <select
                             className="field-select"
-                            value={editFormData.department?.department_id || ''}
+                            value={editFormData.department?.department_id || editFormData.department?._id || ''}
                             onChange={(e) => {
-                              const selectedDept = departments.find(dept => dept.department_id === e.target.value);
-                              handleInputChange('department', selectedDept || null);
+                              const selectedDept = departments.find(dept => 
+                                dept.department_id === e.target.value || 
+                                dept._id === e.target.value ||
+                                dept.id === e.target.value
+                              );
+                              
+                              // Ensure department has correct structure like AddEmployee
+                              if (selectedDept) {
+                                const departmentForSave = {
+                                  department_id: selectedDept.department_id || selectedDept._id || selectedDept.id,
+                                  department_name: selectedDept.department_name || selectedDept.name
+                                };
+                                handleInputChange('department', departmentForSave);
+                              } else {
+                                handleInputChange('department', null);
+                              }
                             }}
                           >
                             <option value="">Select Department</option>
-                            {departments.map(dept => (
-                              <option key={dept.department_id} value={dept.department_id}>
-                                {dept.department_name}
-                              </option>
-                            ))}
+                            {departments && departments.length > 0 ? (
+                              departments.map(dept => (
+                                <option 
+                                  key={dept.department_id || dept._id || dept.id} 
+                                  value={dept.department_id || dept._id || dept.id}
+                                >
+                                  {dept.department_name || dept.name}
+                                </option>
+                              ))
+                            ) : (
+                              <option disabled>No departments available</option>
+                            )}
                           </select>
                         ) : (
                           <div className="field-value">{employeeData.department?.department_name || 'N/A'}</div>
@@ -481,22 +642,6 @@ const ViewEmployeeDetails = () => {
                     </div>
 
                     <div className="info-row">
-                      <div className="info-field">
-                        <label>Status</label>
-                        {isEditing ? (
-                          <select
-                            className="field-select"
-                            value={editFormData.status}
-                            onChange={(e) => handleInputChange('status', e.target.value)}
-                          >
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                          </select>
-                        ) : (
-                          <div className="field-value">{employeeData.status}</div>
-                        )}
-                        <div className="field-line"></div>
-                      </div>
                       <div className="info-field">
                         <label>Salary</label>
                         {isEditing ? (
@@ -511,6 +656,9 @@ const ViewEmployeeDetails = () => {
                           <div className="field-value">{employeeData.salary ? `$${employeeData.salary.toLocaleString()}` : 'N/A'}</div>
                         )}
                         <div className="field-line"></div>
+                      </div>
+                      <div className="info-field">
+                        {/* Empty field to maintain grid layout */}
                       </div>
                     </div>
                   </div>
