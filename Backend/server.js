@@ -22,20 +22,6 @@ const server = app.listen(PORT, () => {
 });
 
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('👋 SIGTERM RECEIVED. Shutting down gracefully');
-  server.close(() => {
-    console.log('💥 Process terminated!');
-  });
-});
 
-process.on('SIGINT', () => {
-  console.log('👋 SIGINT RECEIVED. Shutting down gracefully');
-  server.close(() => {
-    console.log('💥 Process terminated!');
-    process.exit(0);
-  });
-});
 
 module.exports = server;
