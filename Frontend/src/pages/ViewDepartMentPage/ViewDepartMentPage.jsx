@@ -23,8 +23,16 @@ function Icon({ name }) {
   );
 }
 
-const initials = (n) =>
-  n ? n.split(" ").map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() : "U";
+function getInitials(name) {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default function DepartmentMembers() {
   const { id } = useParams();
@@ -164,11 +172,20 @@ export default function DepartmentMembers() {
                   <td>{u.employeeId || "—"}</td>
                   <td>
                     <div className="dm-person" onClick={() => goToEmployeeProfile(u)} style={{cursor:"pointer"}}>
-                      {u.avatar ? (
+                      {u.avatar && u.avatar !== "https://i.pravatar.cc/150" ? (
                         <img className="dm-person__avatar" src={u.avatar} alt={u.full_name} />
                       ) : (
-                        <div className="dm-person__avatar dm-person__avatar--mono">
-                          {initials(u.full_name)}
+                        <div
+                          className="dm-person__avatar"
+                          style={{
+                            background: "#eef",
+                            color: "#334",
+                            display: "grid",
+                            placeItems: "center",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {getInitials(u.full_name)}
                         </div>
                       )}
                       <span className="dm-person__name">{u.full_name}</span>
