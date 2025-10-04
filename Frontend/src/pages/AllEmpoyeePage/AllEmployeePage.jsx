@@ -295,7 +295,12 @@ export default function Employees() {
   function renderAvatar(u) {
     const url = u?.avatar;
     const name = u?.full_name || u?.name || "User";
-    if (url) return <img className="emp-person__avatar" src={url} alt={name} />;
+    
+    if (url && url !== "https://i.pravatar.cc/150") {
+      return <img className="emp-person__avatar" src={url} alt={name} />;
+    }
+    
+    // Default avatar or placeholder
     return (
       <div
         className="emp-person__avatar"
