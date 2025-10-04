@@ -32,16 +32,34 @@
 .dm-crumb{
   width:100%;
   max-width:1120px;
-  display:flex; align-items:center; gap:8px;
+  display:flex; 
+  align-items:center; 
+  gap:8px;
   font-size:14px;
+  color:#A2A1A8;
+  padding: 20px 20px 12px;
+  font-family: 'Lexend', sans-serif;
 }
 .dm-crumb__link{
-  padding:0; border:none; background:transparent;
-  color:#6d28d9; font-weight:600; cursor:pointer;
+  padding:0; 
+  border:none; 
+  background:transparent;
+  color:#7152F3; 
+  cursor:pointer;
+  transition: color 0.2s ease;
+  font-weight:400;
 }
-.dm-crumb__link:hover{ text-decoration:underline; }
-.dm-crumb__sep{ color:#9ca3af; }
-.dm-crumb__current{ font-weight:800; color:#111827; }
+.dm-crumb__link:hover{ 
+  color:#5a3dd1; 
+}
+.dm-crumb__sep{ 
+  color:#A2A1A8; 
+  margin: 0 2px;
+}
+.dm-crumb__current{ 
+  font-weight:500; 
+  color:#16151C; 
+}
 
 /* Card */
 .dm-card{
@@ -51,6 +69,7 @@
   border:1px solid #eee;
   border-radius:12px;
   box-shadow:0 2px 12px rgba(16,24,40,.06);
+  overflow: hidden;
 }
 
 /* Card header */
@@ -59,8 +78,9 @@
   grid-template-columns:1fr auto;
   gap:12px;
   align-items:center;
-  padding:10px 12px;
+  padding:16px 20px;
   border-bottom:1px solid #f1f5f9;
+  background: #fafafa;
 }
 
 /* Search */
@@ -85,8 +105,17 @@
 .btn__icon{ width:16px; height:16px; display:grid; place-items:center; }
 
 /* Sub head */
-.dm-card__subhead{ padding:6px 12px 0; }
-.dm-card__title{ margin:0; font-size:15px; font-weight:800; }
+.dm-card__subhead{ 
+  padding: 16px 20px 12px;
+  background: #fff;
+}
+.dm-card__title{ 
+  margin:0; 
+  font-size:18px; 
+  font-weight:600; 
+  color: #16151C;
+  font-family: 'Lexend', sans-serif;
+}
 
 /* Table */
 .dm-table__scroll{ overflow:auto; }

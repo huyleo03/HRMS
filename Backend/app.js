@@ -58,7 +58,34 @@ app.get('/', (req, res) => {
   });
 });
 
+// 404 handler - must be after all other routes
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`
+  });
+});
 
+// Global error handler - must be last
+app.use((err, req, res, next) => {
+  console.error('Error occurred:', err);
+  
+  // Default error status and message
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  
+  // Log error stack in development
+  if (process.env.NODE_ENV === 'development') {
+    console.error(err.stack);
+  }
+  
+  // Send error response
+  res.status(statusCode).json({
+    success: false,
+    message: message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
 
 
 module.exports = app;
