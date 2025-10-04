@@ -104,10 +104,13 @@ export default function Departments() {
   }, [page, limit, debouncedQ, token]);
 
   // >>> điều hướng sang trang danh sách thành viên
-  const handleViewAll = (dep) => {
-    if (!dep?._id) return;
-    navigate(`/view-department/${dep._id}`);                        // <-- sửa ở đây
-  };
+const handleViewAll = (dep) => {
+  // Lưu state để Header đọc ngay, và lưu backup vào sessionStorage
+  sessionStorage.setItem("currentDepartmentName", dep.department_name);
+  navigate(`/view-department/${dep._id}`, {
+    state: { departmentName: dep.department_name },
+  });
+};
 
   const canPrev = page > 1;
   const canNext = page < pages;
