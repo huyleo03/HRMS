@@ -69,6 +69,7 @@ const AddNewEmployee = () => {
           if (result.success && !result.hasManager) {
             toast.warning(result.message || "Phòng ban này đã có Manager", {
               position: "top-right",
+              autoClose: 5000,
             });
           }
         } catch (error) {
