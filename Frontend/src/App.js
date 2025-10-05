@@ -16,6 +16,8 @@ import Department from "./pages/AllDepartMentPage/AllDepartMent.jsx";
 import DepartmentMembers from "./pages/ViewDepartMentPage/ViewDepartMentPage.jsx";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute.js";
+import Request from "./pages/Request/Request.jsx";
+
 
 function App() {
   return (
@@ -52,6 +54,7 @@ function App() {
               element={<><Department /></>}
             />
             <Route path="/view-department/:id" element={<DepartmentMembers />} />
+            <Route path="/request" element={<Request open={true} onClose={() => {}} />} />
             <Route
               path="/attendance"
               element={
