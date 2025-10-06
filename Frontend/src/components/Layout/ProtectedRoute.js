@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import Layout from './Layout/Layout';
+import { useAuth } from '../../contexts/AuthContext';
+import Layout from './Layout';
 import { toast } from 'react-toastify'; // 1. Import toast
 
 const ProtectedRoute = () => {

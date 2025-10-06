@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { getUserById, updateUser } from '../../service/UserService';
-import { getDepartmentOptions } from '../../service/DepartmentService';
-import { useAuth } from '../../contexts/AuthContext';
+import { getUserById, updateUser } from '../../../service/UserService';
+import { getDepartmentOptions } from '../../../service/DepartmentService';
+import { useAuth } from '../../../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import './ViewEmployeeDetails.css';
+import '../css/ViewEmployeeDetails.css';
 
 const ViewEmployeeDetails = () => {
   const [activeTab, setActiveTab] = useState('personal');
@@ -22,7 +22,7 @@ const ViewEmployeeDetails = () => {
   
   const { id } = useParams();
   const navigate = useNavigate();
-  const routerLocation = useLocation(); // ✅ dùng biến khác, không dùng global "location"
+  const routerLocation = useLocation(); 
   const { token } = useAuth();
 
   useEffect(() => {

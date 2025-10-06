@@ -1,11 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Employees.css";
+import "../css/Employees.css";
 import { Empty } from "antd";
-import {
-  getUsers,
-} from "../../service/UserService";
-import { useAuth } from "../../contexts/AuthContext";
+import { getUsers } from "../../../service/UserService";
+import { useAuth } from "../../../contexts/AuthContext";
 
 /** ----------------- Icon ----------------- */
 function Icon({ name }) {
@@ -295,11 +293,11 @@ export default function Employees() {
   function renderAvatar(u) {
     const url = u?.avatar;
     const name = u?.full_name || u?.name || "User";
-    
+
     if (url && url !== "https://i.pravatar.cc/150") {
       return <img className="emp-person__avatar" src={url} alt={name} />;
     }
-    
+
     // Default avatar or placeholder
     return (
       <div

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { createUser } from "../../service/UserService";
-import { useAuth } from "../../contexts/AuthContext";
-import "./AddNewEmployee.css";
+import { createUser } from "../../../service/UserService";
+import { useAuth } from "../../../contexts/AuthContext";
+import "../css/AddNewEmployee.css";
 import {
   getDepartmentOptions,
   checkDepartmentManager,
-} from "../../service/DepartmentService";
+} from "../../../service/DepartmentService";
 
 const AddNewEmployee = () => {
   const navigate = useNavigate();
@@ -115,26 +115,26 @@ const AddNewEmployee = () => {
     const file = event.target.files[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Vui lòng chọn file ảnh');
+      if (!file.type.startsWith("image/")) {
+        toast.error("Vui lòng chọn file ảnh");
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Kích thước file không được vượt quá 5MB');
+        toast.error("Kích thước file không được vượt quá 5MB");
         return;
       }
-      
+
       setSelectedFile(file);
-      
+
       // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreviewUrl(e.target.result);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          avatar: e.target.result
+          avatar: e.target.result,
         }));
       };
       reader.readAsDataURL(file);
@@ -144,9 +144,9 @@ const AddNewEmployee = () => {
   const handleRemoveAvatar = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      avatar: null
+      avatar: null,
     }));
   };
 
@@ -231,7 +231,7 @@ const AddNewEmployee = () => {
       }
     } catch (error) {
       console.error("Network Error:", error);
-      
+
       // Handle backend validation errors (like manager already exists)
       if (error.response?.data?.message) {
         toast.error(error.response.data.message, {
@@ -331,19 +331,25 @@ const AddNewEmployee = () => {
                   <div className="avatar-section">
                     <div className="avatar-container">
                       {previewUrl ? (
-                        <div style={{ position: 'relative' }}>
-                          <img 
-                            src={previewUrl} 
-                            alt="Preview" 
+                        <div style={{ position: "relative" }}>
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
                             className="avatar-preview"
                           />
-                          <button 
+                          <button
                             type="button"
                             className="avatar-remove-btn"
                             onClick={handleRemoveAvatar}
                           >
                             <svg viewBox="0 0 24 24" fill="none">
-                              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path
+                                d="M18 6L6 18M6 6L18 18"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                             </svg>
                           </button>
                         </div>
@@ -365,16 +371,19 @@ const AddNewEmployee = () => {
                               strokeLinejoin="round"
                             />
                           </svg>
-                          
+
                           <input
                             type="file"
                             accept="image/*"
                             onChange={handleFileSelect}
-                            style={{ display: 'none' }}
+                            style={{ display: "none" }}
                             id="avatar-upload-input"
                           />
-                          
-                          <label htmlFor="avatar-upload-input" className="avatar-upload-btn">
+
+                          <label
+                            htmlFor="avatar-upload-input"
+                            className="avatar-upload-btn"
+                          >
                             <svg viewBox="0 0 24 24" fill="none">
                               <path
                                 d="M12 16V12M12 12V8M12 12H16M12 12H8"
@@ -395,7 +404,9 @@ const AddNewEmployee = () => {
                       )}
                     </div>
                     <p className="avatar-hint">
-                      {previewUrl ? 'Click X to remove' : 'Click to upload profile picture'}
+                      {previewUrl
+                        ? "Click X to remove"
+                        : "Click to upload profile picture"}
                     </p>
                   </div>
                 </div>

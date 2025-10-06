@@ -1,9 +1,9 @@
 // src/pages/AllDepartMentPage/Departments.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";              // <-- thêm
-import { getDepartments } from "../../service/DepartmentService";
-import "./Departments.css";
-import { useAuth } from "../../contexts/AuthContext";
+import { getDepartments } from "../../../service/DepartmentService";
+import "../css/Departments.css";
+import { useAuth } from "../../../contexts/AuthContext";
 
 /* Icons */
 function Icon({ name }) {

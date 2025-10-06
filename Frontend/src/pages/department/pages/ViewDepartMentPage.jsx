@@ -1,9 +1,9 @@
 // src/pages/DepartmentMembers/DepartmentMembers.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getDepartmentById } from "../../service/DepartmentService";
-import { useAuth } from "../../contexts/AuthContext";
-import "./DepartmentMembers.css";
+import { getDepartmentById } from "../../../service/DepartmentService";
+import { useAuth } from "../../../contexts/AuthContext";
+import "../css/DepartmentMembers.css";
 
 function Icon({ name }) {
   const paths = {

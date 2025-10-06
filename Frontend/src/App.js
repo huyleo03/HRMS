@@ -2,22 +2,20 @@ import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import 'antd/dist/reset.css'; 
-import Login from "./pages/Authentication/Login";
-import ForgotPass from "./pages/Authentication/ForgotPass";
-import OtpPage from "./pages/Authentication/OtpPage";
-import ResetPass from "./pages/Authentication/ResetPass";
-import Dashboard from "./pages/Dashboard/Dashboard";
-import Employees from "./pages/AllEmpoyeePage/AllEmployeePage.jsx";
-import { AddNewEmployee } from "./pages/Employee";
-import ViewEmployeeDetailsPage from "./pages/Employee/ViewEmployeeDetailsPage";
-import MyProfile from "./pages/MyProfile/MyProfile";
-import Department from "./pages/AllDepartMentPage/AllDepartMent.jsx";
-import DepartmentMembers from "./pages/ViewDepartMentPage/ViewDepartMentPage.jsx";
-import { AuthProvider } from "./contexts/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute.js";
-import Request from "./pages/Request/Request.jsx";
-
+import "antd/dist/reset.css";
+import Login from "./pages/authentication/Login.jsx";
+import ForgotPass from "./pages/authentication/ForgotPass.jsx";
+import OtpPage from "./pages/authentication/OtpPage.jsx";
+import ResetPass from "./pages/authentication/ResetPass.jsx";
+import Dashboard from "./pages/dashboard/Dashboard.jsx";
+import Employees from "./pages/employee/pages/AllEmployeePage.jsx";
+import AddNewEmployee from './pages/employee/pages/AddNewEmployee.jsx';
+import ViewEmployeeDetailsPage from "./pages/employee/pages/ViewEmployeeDetailsPage.jsx";
+import MyProfile from "./pages/my-profile/MyProfile.jsx";
+import Department from "./pages/department/pages/AllDepartMent.jsx";
+import DepartmentMembers from "./pages/department/pages/ViewDepartMentPage.jsx";
+import { AuthProvider } from "./contexts/AuthContext.js";
+import ProtectedRoute from "./components/Layout/ProtectedRoute";
 
 function App() {
   return (
@@ -47,14 +45,27 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/add" element={<AddNewEmployee />} />
-            <Route path="/employees/:id" element={<ViewEmployeeDetailsPage />} />
+            <Route
+              path="/employees/:id"
+              element={<ViewEmployeeDetailsPage />}
+            />
             <Route path="/profile" element={<MyProfile />} />
             <Route
               path="/departments"
-              element={<><Department /></>}
+              element={
+                <>
+                  <Department />
+                </>
+              }
             />
-            <Route path="/view-department/:id" element={<DepartmentMembers />} />
-            <Route path="/request" element={<Request open={true} onClose={() => {}} />} />
+            <Route
+              path="/view-department/:id"
+              element={<DepartmentMembers />}
+            />
+            {/* <Route
+              path="/request"
+              element={<Request open={true} onClose={() => {}} />}
+            /> */}
             <Route
               path="/attendance"
               element={
