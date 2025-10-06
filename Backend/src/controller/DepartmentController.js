@@ -157,9 +157,10 @@ exports.getDepartmentById = async (req, res) => {
 
     // THAY DÒNG NÀY: thêm employeeId và department vào projection
     const members = await User.find(
-      { "department.department_id": id },
-      "employeeId full_name avatar jobTitle status department"
-    ).lean();
+  { "department.department_id": id },
+  "employeeId full_name avatar jobTitle status role"   // <— thêm role
+).lean();
+
 
     res.status(200).json({
       success: true,

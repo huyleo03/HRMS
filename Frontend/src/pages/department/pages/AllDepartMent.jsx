@@ -1,9 +1,9 @@
 // src/pages/AllDepartMentPage/Departments.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";              // <-- thêm
-import { getDepartments } from "../../service/DepartmentService";
-import "./Departments.css";
-import { useAuth } from "../../contexts/AuthContext";
+import { getDepartments } from "../../../service/DepartmentService";
+import "../css/Departments.css";
+import { useAuth } from "../../../contexts/AuthContext";
 
 /* Icons */
 function Icon({ name }) {
@@ -20,12 +20,43 @@ function Icon({ name }) {
   );
 }
 
+/* Helper: lấy initials từ tên */
+function getInitials(name) {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 function MemberRow({ m }) {
+  const name = m?.full_name || "User";
+  const hasAvatar = m?.avatar && m.avatar !== "https://i.pravatar.cc/150";
+
   return (
     <div className="dept-member">
-      <img className="dept-member__avatar" src={m.avatar} alt={m.full_name} />
+      {hasAvatar ? (
+        <img className="dept-member__avatar" src={m.avatar} alt={name} />
+      ) : (
+        <div
+          className="dept-member__avatar"
+          style={{
+            background: "#eef",
+            color: "#334",
+            display: "grid",
+            placeItems: "center",
+            fontWeight: 600,
+            fontSize: "14px",
+          }}
+        >
+          {getInitials(name)}
+        </div>
+      )}
       <div className="dept-member__info">
-        <div className="dept-member__name">{m.full_name}</div>
+        <div className="dept-member__name">{name}</div>
         <div className="dept-member__title">{m.isManager ? "Manager" : (m.jobTitle || m.role || "")}</div>
       </div>
       <span className="dept-member__chev"><Icon name="chevR" /></span>
@@ -104,10 +135,13 @@ export default function Departments() {
   }, [page, limit, debouncedQ, token]);
 
   // >>> điều hướng sang trang danh sách thành viên
-  const handleViewAll = (dep) => {
-    if (!dep?._id) return;
-    navigate(`/view-department/${dep._id}`);                        // <-- sửa ở đây
-  };
+const handleViewAll = (dep) => {
+  // Lưu state để Header đọc ngay, và lưu backup vào sessionStorage
+  sessionStorage.setItem("currentDepartmentName", dep.department_name);
+  navigate(`/view-department/${dep._id}`, {
+    state: { departmentName: dep.department_name },
+  });
+};
 
   const canPrev = page > 1;
   const canNext = page < pages;

@@ -1,9 +1,9 @@
 // src/pages/DepartmentMembers/DepartmentMembers.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getDepartmentById } from "../../service/DepartmentService";
-import { useAuth } from "../../contexts/AuthContext";
-import "./DepartmentMembers.css";
+import { getDepartmentById } from "../../../service/DepartmentService";
+import { useAuth } from "../../../contexts/AuthContext";
+import "../css/DepartmentMembers.css";
 
 function Icon({ name }) {
   const paths = {
@@ -23,8 +23,16 @@ function Icon({ name }) {
   );
 }
 
-const initials = (n) =>
-  n ? n.split(" ").map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() : "U";
+function getInitials(name) {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default function DepartmentMembers() {
   const { id } = useParams();
@@ -40,6 +48,12 @@ export default function DepartmentMembers() {
   const [allMembers, setAllMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+
+  // Compact header khi vào trang này
+  useEffect(() => {
+    document.body.classList.add("compact-header");
+    return () => document.body.classList.remove("compact-header");
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedQ(q.trim()); setPage(1); }, 300);
@@ -64,7 +78,7 @@ export default function DepartmentMembers() {
     return () => { abort = true; };
   }, [id, token]);
 
-  // === LỌC: theo name / employeeId / jobTitle / department_name ===
+  // LỌC
   const filtered = useMemo(() => {
     const term = debouncedQ.toLowerCase();
     if (!term) return allMembers;
@@ -77,13 +91,7 @@ export default function DepartmentMembers() {
         (typeof u?.department === "string" ? u.department : "") ||
         ""
       ).toLowerCase();
-
-      return (
-        name.includes(term) ||
-        empId.includes(term) ||
-        job.includes(term) ||
-        deptName.includes(term)
-      );
+      return name.includes(term) || empId.includes(term) || job.includes(term) || deptName.includes(term);
     });
   }, [allMembers, debouncedQ]);
 
@@ -93,9 +101,34 @@ export default function DepartmentMembers() {
   const start = (current - 1) * limit;
   const pageRows = filtered.slice(start, start + limit);
 
+  // 👉 Điều hướng sang ViewEmployeeDetails, mang theo context phòng ban để breadcrumb hiển thị đúng
+  const goToEmployeeProfile = (u) => {
+    if (!u?._id) return;
+    navigate(`/employees/${u._id}`, {
+      state: {
+        from: "department",
+        departmentId: id,
+        departmentName: department?.department_name || "Department",
+      },
+    });
+  };
+
   return (
     <div className="dm">
+
+
+      {/* Card */}
       <section className="dm-card">
+              {/* Breadcrumb (đặt trên card, sát header) */}
+      <div className="dm-crumb">
+        <button type="button" className="dm-crumb__link" onClick={() => navigate("/departments")}>
+          Department
+        </button>
+        <span className="dm-crumb__sep">›</span>
+        <span className="dm-crumb__current">
+          {department?.department_name || "Department"}
+        </span>
+      </div>
         <div className="dm-card__head">
           <div className="dm-search">
             <span className="dm-search__icon"><Icon name="search" /></span>
@@ -107,10 +140,6 @@ export default function DepartmentMembers() {
             />
           </div>
           <div className="dm__actions">
-            <button className="btn btn--primary" onClick={() => navigate("/employees/add")}>
-              <span className="btn__icon"><Icon name="plus" /></span>
-              Add New Employee
-            </button>
             <button className="btn" onClick={() => alert("Filter (optional)")}>
               <span className="btn__icon"><Icon name="filter" /></span>
               Filter
@@ -128,7 +157,7 @@ export default function DepartmentMembers() {
               <tr>
                 <th>Employee ID</th>
                 <th>Employee Name</th>
-                <th>Department</th>
+                <th>Role</th>
                 <th>Job</th>
                 <th>Status</th>
                 <th style={{ width: 120 }}>Action</th>
@@ -142,23 +171,32 @@ export default function DepartmentMembers() {
                 <tr key={u._id || u.employeeId}>
                   <td>{u.employeeId || "—"}</td>
                   <td>
-                    <div className="dm-person">
-                      {u.avatar ? (
+                    <div className="dm-person" onClick={() => goToEmployeeProfile(u)} style={{cursor:"pointer"}}>
+                      {u.avatar && u.avatar !== "https://i.pravatar.cc/150" ? (
                         <img className="dm-person__avatar" src={u.avatar} alt={u.full_name} />
                       ) : (
-                        <div className="dm-person__avatar dm-person__avatar--mono">
-                          {initials(u.full_name)}
+                        <div
+                          className="dm-person__avatar"
+                          style={{
+                            background: "#eef",
+                            color: "#334",
+                            display: "grid",
+                            placeItems: "center",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {getInitials(u.full_name)}
                         </div>
                       )}
                       <span className="dm-person__name">{u.full_name}</span>
                     </div>
                   </td>
-                  <td>{u?.department?.department_name || (typeof u?.department === "string" ? u.department : "—")}</td>
+                  <td>{u?.role || "—"}</td>
                   <td>{u.jobTitle || "—"}</td>
                   <td><span className="badge">{u.status || "Active"}</span></td>
                   <td>
                     <div className="dm-actions">
-                      <button title="View"><Icon name="eye" /></button>
+                      <button title="View" onClick={() => goToEmployeeProfile(u)}><Icon name="eye" /></button>
                       <button title="Edit"><Icon name="edit" /></button>
                       <button title="Delete" className="danger"><Icon name="trash" /></button>
                     </div>
