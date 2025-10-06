@@ -1,10 +1,12 @@
-  const User = require("../models/User");
+const User = require("../models/User");
+const Department = require("../models/Department");
 const crypto = require("crypto");
 const sendEmail = require("../utils/email");
 
 // Create a new user by Admin
 exports.createUserByAdmin = async (req, res) => {
-  const { email, full_name, role, department, jobTitle, salary, avatar } = req.body;
+  const { email, full_name, role, department, jobTitle, salary, avatar } =
+    req.body;
 
   try {
     const existingUser = await User.findOne({ email });
@@ -39,6 +41,29 @@ exports.createUserByAdmin = async (req, res) => {
     });
 
     const savedUser = await newUser.save();
+    // ===== THÊM LOGIC ĐỒng BỘ MANAGER VÀO DEPARTMENT =====
+    if (role === "Manager" && department && department.department_id) {
+      try {
+        await Department.findByIdAndUpdate(
+          department.department_id,
+          { managerId: savedUser._id },
+          { new: true }
+        );
+        console.log(
+          `✅ Đã cập nhật managerId cho phòng ban ${department.department_name}`
+        );
+      } catch (deptError) {
+        console.error("❌ Lỗi khi cập nhật managerId:", deptError);
+        // Rollback: xóa user vừa tạo nếu không cập nhật được department
+        await User.findByIdAndDelete(savedUser._id);
+        return res.status(500).json({
+          message:
+            "Không thể đồng bộ thông tin quản lý với phòng ban. Đã hủy tạo nhân viên.",
+          error: deptError.message,
+        });
+      }
+    }
+    // ===== KẾT THÚC LOGIC ĐỒNG BỘ =====
     const userResponse = savedUser.toObject();
     delete userResponse.passwordHash;
 
@@ -74,6 +99,24 @@ exports.createUserByAdmin = async (req, res) => {
       temporaryPassword: temporaryPassword,
     });
   } catch (error) {
+    console.error("❌ Lỗi server khi tạo người dùng:", error);
+    
+    // Xử lý các loại lỗi cụ thể
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        message: "Dữ liệu không hợp lệ.",
+        error: error.message,
+        details: error.errors
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: "Email đã tồn tại trong hệ thống.",
+        error: error.message,
+      });
+    }
+    
     res.status(500).json({
       message: "Lỗi server khi tạo người dùng.",
       error: error.message,
@@ -220,8 +263,9 @@ exports.updateUserByAdmin = async (req, res) => {
     // OR if existing Manager is moving to a different department
     if (role === "Manager" && department && department.department_id) {
       const isNewManager = userToUpdate.role !== "Manager";
-      const isDepartmentChange = userToUpdate.department?.department_id !== department.department_id;
-      
+      const isDepartmentChange =
+        userToUpdate.department?.department_id !== department.department_id;
+
       if (isNewManager || isDepartmentChange) {
         // Check if there's already a manager in this department (excluding current user)
         const existingManager = await User.findOne({
@@ -244,7 +288,7 @@ exports.updateUserByAdmin = async (req, res) => {
     if (role) userToUpdate.role = role;
     if (department) userToUpdate.department = department;
     if (salary) userToUpdate.salary = salary;
-    
+
     // Handle avatar - allow null/empty to reset to default
     if (avatar !== undefined) {
       userToUpdate.avatar = avatar || "https://i.pravatar.cc/150";

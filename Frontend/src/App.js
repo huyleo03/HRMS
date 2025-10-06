@@ -9,7 +9,7 @@ import OtpPage from "./pages/authentication/OtpPage.jsx";
 import ResetPass from "./pages/authentication/ResetPass.jsx";
 import Dashboard from "./pages/dashboard/Dashboard.jsx";
 import Employees from "./pages/employee/pages/AllEmployeePage.jsx";
-import AddNewEmployee from "./pages/employee/pages/AddNewEmployee.jsx";
+import AddNewEmployee from './pages/employee/pages/AddNewEmployee.jsx';
 import ViewEmployeeDetailsPage from "./pages/employee/pages/ViewEmployeeDetailsPage.jsx";
 import MyProfile from "./pages/my-profile/MyProfile.jsx";
 import Department from "./pages/department/pages/AllDepartMent.jsx";
