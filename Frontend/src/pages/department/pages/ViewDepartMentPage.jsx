@@ -34,6 +34,117 @@ function getInitials(name) {
     .toUpperCase();
 }
 
+/** --------------- Filter Modal ---------------- */
+function FilterModal({ open, onClose, initial, onApply }) {
+  const [status, setStatus] = useState(initial.status || "");
+  const [role, setRole] = useState(initial.role || "");
+
+  useEffect(() => {
+    if (open) {
+      setStatus(initial.status || "");
+      setRole(initial.role || "");
+    }
+  }, [open, initial]);
+
+  if (!open) return null;
+  return (
+    <div className="dm-modal-overlay" onClick={onClose}>
+      <div className="dm-modal" onClick={(e) => e.stopPropagation()}>
+        <h3 className="dm-modal__title">Filter</h3>
+
+        {/* Status */}
+        <div className="dm-modal__group">
+          <div className="dm-group__title">Status</div>
+          <div className="dm-group__grid dm-group__grid--2">
+            <label className="dm-radio">
+              <input
+                type="radio"
+                name="status"
+                checked={status === ""}
+                onChange={() => setStatus("")}
+              />
+              <span>All</span>
+            </label>
+            <label className="dm-radio">
+              <input
+                type="radio"
+                name="status"
+                checked={status === "Active"}
+                onChange={() => setStatus("Active")}
+              />
+              <span>Active</span>
+            </label>
+            <label className="dm-radio">
+              <input
+                type="radio"
+                name="status"
+                checked={status === "Inactive"}
+                onChange={() => setStatus("Inactive")}
+              />
+              <span>Inactive</span>
+            </label>
+            <label className="dm-radio">
+              <input
+                type="radio"
+                name="status"
+                checked={status === "Suspended"}
+                onChange={() => setStatus("Suspended")}
+              />
+              <span>Suspended</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Role */}
+        <div className="dm-modal__group">
+          <div className="dm-group__title">Role</div>
+          <div className="dm-group__col">
+            <label className="dm-radio">
+              <input
+                type="radio"
+                name="role"
+                checked={role === ""}
+                onChange={() => setRole("")}
+              />
+              <span>All</span>
+            </label>
+            <label className="dm-radio">
+              <input
+                type="radio"
+                name="role"
+                checked={role === "Employee"}
+                onChange={() => setRole("Employee")}
+              />
+              <span>Employee</span>
+            </label>
+            <label className="dm-radio">
+              <input
+                type="radio"
+                name="role"
+                checked={role === "Manager"}
+                onChange={() => setRole("Manager")}
+              />
+              <span>Manager</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="dm-modal__footer">
+          <button className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            className="btn btn--primary"
+            onClick={() => onApply({ status, role })}
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DepartmentMembers() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -48,6 +159,13 @@ export default function DepartmentMembers() {
   const [allMembers, setAllMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+
+  // Filter state
+  const [filters, setFilters] = useState({
+    status: "",
+    role: "",
+  });
+  const [isFilterOpen, setFilterOpen] = useState(false);
 
   // Compact header khi vào trang này
   useEffect(() => {
@@ -78,22 +196,47 @@ export default function DepartmentMembers() {
     return () => { abort = true; };
   }, [id, token]);
 
-  // LỌC
+  // LỌC và SẮP XẾP (Manager lên đầu)
   const filtered = useMemo(() => {
     const term = debouncedQ.toLowerCase();
-    if (!term) return allMembers;
-    return allMembers.filter((u) => {
-      const name = (u.full_name || "").toLowerCase();
-      const empId = (u.employeeId || "").toString().toLowerCase();
-      const job = (u.jobTitle || "").toLowerCase();
-      const deptName = (
-        u?.department?.department_name ||
-        (typeof u?.department === "string" ? u.department : "") ||
-        ""
-      ).toLowerCase();
-      return name.includes(term) || empId.includes(term) || job.includes(term) || deptName.includes(term);
+    let result = allMembers;
+    
+    // Lọc theo search term
+    if (term) {
+      result = allMembers.filter((u) => {
+        const name = (u.full_name || "").toLowerCase();
+        const empId = (u.employeeId || "").toString().toLowerCase();
+        const job = (u.jobTitle || "").toLowerCase();
+        const role = (u.role || "").toLowerCase();
+        const deptName = (
+          u?.department?.department_name ||
+          (typeof u?.department === "string" ? u.department : "") ||
+          ""
+        ).toLowerCase();
+        return name.includes(term) || empId.includes(term) || job.includes(term) || role.includes(term) || deptName.includes(term);
+      });
+    }
+    
+    // Lọc theo filters
+    if (filters.status) {
+      result = result.filter((u) => u.status === filters.status);
+    }
+    if (filters.role) {
+      result = result.filter((u) => u.role === filters.role);
+    }
+    
+    // Sắp xếp: Manager lên đầu, sau đó theo tên
+    return result.sort((a, b) => {
+      // Manager luôn lên đầu
+      if (a.role === "Manager" && b.role !== "Manager") return -1;
+      if (a.role !== "Manager" && b.role === "Manager") return 1;
+      
+      // Nếu cùng role, sắp xếp theo tên
+      const nameA = (a.full_name || "").toLowerCase();
+      const nameB = (b.full_name || "").toLowerCase();
+      return nameA.localeCompare(nameB);
     });
-  }, [allMembers, debouncedQ]);
+  }, [allMembers, debouncedQ, filters]);
 
   const total = filtered.length;
   const pages = Math.max(1, Math.ceil(total / limit));
@@ -140,7 +283,7 @@ export default function DepartmentMembers() {
             />
           </div>
           <div className="dm__actions">
-            <button className="btn" onClick={() => alert("Filter (optional)")}>
+            <button className="btn" onClick={() => setFilterOpen(true)}>
               <span className="btn__icon"><Icon name="filter" /></span>
               Filter
             </button>
@@ -235,6 +378,18 @@ export default function DepartmentMembers() {
           </div>
         </div>
       </section>
+
+      {/* Filter Modal */}
+      <FilterModal
+        open={isFilterOpen}
+        onClose={() => setFilterOpen(false)}
+        initial={filters}
+        onApply={(f) => {
+          setFilters(f);
+          setFilterOpen(false);
+          setPage(1);
+        }}
+      />
     </div>
   );
 }
