@@ -10,6 +10,14 @@ export const getDepartments = async ({ page = 1, limit = 6, q = "", sortBy = "cr
   return res.data;
 };
 
+// Tạo phòng ban mới
+export const createDepartment = async (data, token) => {
+  const res = await axios.post(`${API}/departments`, data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+};
+
 // Dùng nếu cần search riêng
 export const searchDepartments = async (keyword, token) => {
   const res = await axios.get(`${API}/departments/search`, {

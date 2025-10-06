@@ -1,7 +1,7 @@
 // src/pages/AllDepartMentPage/Departments.jsx
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";              // <-- thêm
-import { getDepartments } from "../../../service/DepartmentService";
+import { useNavigate } from "react-router-dom";
+import { getDepartments, createDepartment } from "../../../service/DepartmentService";
 import "../css/Departments.css";
 import { useAuth } from "../../../contexts/AuthContext";
 
@@ -57,7 +57,7 @@ function MemberRow({ m }) {
       )}
       <div className="dept-member__info">
         <div className="dept-member__name">{name}</div>
-        <div className="dept-member__title">{m.isManager ? "Manager" : (m.jobTitle || m.role || "")}</div>
+        <div className="dept-member__title">{m.role || "Employee"}</div>
       </div>
       <span className="dept-member__chev"><Icon name="chevR" /></span>
     </div>
@@ -89,8 +89,132 @@ function DepartmentCard({ dep, onViewAll }) {
   );
 }
 
+/* Modal Add Department */
+function AddDepartmentModal({ open, onClose, onSuccess }) {
+  const { token } = useAuth();
+  const [formData, setFormData] = useState({
+    department_name: "",
+    description: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  // Reset form khi modal đóng/mở
+  useEffect(() => {
+    if (open) {
+      setFormData({ department_name: "", description: "" });
+      setErrors({});
+    }
+  }, [open]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Xóa error khi user nhập
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.department_name.trim()) {
+      newErrors.department_name = "Tên phòng ban là bắt buộc";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      await createDepartment(formData, token);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      setErrors({
+        submit: error.message || "Không thể tạo phòng ban. Vui lòng thử lại.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal__header">
+          <h2 className="modal__title">Add New Department</h2>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal__body">
+            <div className="modal__form-group">
+              <label className="modal__label">
+                Department Name
+                <span className="modal__label-required">*</span>
+              </label>
+              <input
+                type="text"
+                name="department_name"
+                className="modal__input"
+                placeholder="Enter department name"
+                value={formData.department_name}
+                onChange={handleChange}
+                autoFocus
+              />
+              {errors.department_name && (
+                <div className="modal__error">{errors.department_name}</div>
+              )}
+            </div>
+
+            <div className="modal__form-group">
+              <label className="modal__label">Description</label>
+              <textarea
+                name="description"
+                className="modal__textarea"
+                placeholder="Enter department description (optional)"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+              />
+            </div>
+
+            {errors.submit && (
+              <div className="modal__error">{errors.submit}</div>
+            )}
+          </div>
+
+          <div className="modal__footer">
+            <button
+              type="button"
+              className="modal__btn"
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="modal__btn modal__btn--primary"
+              disabled={loading}
+            >
+              {loading ? "Creating..." : "Create Department"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function Departments() {
-  const navigate = useNavigate();                               // <-- thêm
+  const navigate = useNavigate();
   const { token } = useAuth();
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
@@ -103,6 +227,9 @@ export default function Departments() {
   const [depts, setDepts] = useState([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
+
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // debounce search
   useEffect(() => {
@@ -135,13 +262,33 @@ export default function Departments() {
   }, [page, limit, debouncedQ, token]);
 
   // >>> điều hướng sang trang danh sách thành viên
-const handleViewAll = (dep) => {
-  // Lưu state để Header đọc ngay, và lưu backup vào sessionStorage
-  sessionStorage.setItem("currentDepartmentName", dep.department_name);
-  navigate(`/view-department/${dep._id}`, {
-    state: { departmentName: dep.department_name },
-  });
-};
+  const handleViewAll = (dep) => {
+    sessionStorage.setItem("currentDepartmentName", dep.department_name);
+    navigate(`/view-department/${dep._id}`, {
+      state: { departmentName: dep.department_name },
+    });
+  };
+
+  // Xử lý khi tạo department thành công
+  const handleDepartmentCreated = () => {
+    // Refresh danh sách departments
+    setPage(1);
+    const fetchData = async () => {
+      setLoading(true);
+      setErr("");
+      try {
+        const res = await getDepartments({ page: 1, limit, q: debouncedQ }, token);
+        setDepts(res?.data || []);
+        setTotal(res?.total || 0);
+        setPages(res?.pages || 1);
+      } catch (e) {
+        setErr(e.message || "Fetch failed");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  };
 
   const canPrev = page > 1;
   const canNext = page < pages;
@@ -158,7 +305,7 @@ const handleViewAll = (dep) => {
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
-        <button className="btn btn--primary" onClick={() => alert("Add New Department")}>
+        <button className="btn btn--primary" onClick={() => setIsModalOpen(true)}>
           <span className="btn__icon"><Icon name="plus" /></span>
           Add New Department
         </button>
@@ -199,6 +346,13 @@ const handleViewAll = (dep) => {
           </div>
         </>
       )}
+
+      {/* Modal Add Department */}
+      <AddDepartmentModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleDepartmentCreated}
+      />
     </div>
   );
 }

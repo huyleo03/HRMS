@@ -215,6 +215,21 @@ exports.changeUserRole = async (req, res) => {
     if (!userToUpdate) {
       return res.status(404).json({ message: "Không tìm thấy người dùng." });
     }
+    
+    const Department = require("../models/Department");
+    
+    // Nếu đổi từ Manager sang Employee
+    if (userToUpdate.role === "Manager" && role === "Employee") {
+      // Cập nhật managerId của Department về null
+      if (userToUpdate.department && userToUpdate.department.department_id) {
+        await Department.findByIdAndUpdate(
+          userToUpdate.department.department_id,
+          { managerId: null }
+        );
+      }
+    }
+    
+    // Nếu đổi sang Manager
     if (role === "Manager") {
       if (!userToUpdate.department || !userToUpdate.department.department_id) {
         return res.status(400).json({
@@ -234,7 +249,14 @@ exports.changeUserRole = async (req, res) => {
           message: `Phòng ban "${userToUpdate.department.department_name}" đã có Manager là "${existingManager.full_name}".`,
         });
       }
+      
+      // Cập nhật managerId của Department
+      await Department.findByIdAndUpdate(
+        userToUpdate.department.department_id,
+        { managerId: userId }
+      );
     }
+    
     userToUpdate.role = role;
     await userToUpdate.save();
     res
@@ -259,6 +281,10 @@ exports.updateUserByAdmin = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng." });
     }
 
+    const Department = require("../models/Department");
+    const oldRole = userToUpdate.role;
+    const oldDepartmentId = userToUpdate.department?.department_id;
+
     // Validate if user is being promoted to Manager (only when role is changing TO Manager)
     // OR if existing Manager is moving to a different department
     if (role === "Manager" && department && department.department_id) {
@@ -280,6 +306,26 @@ exports.updateUserByAdmin = async (req, res) => {
           });
         }
       }
+    }
+
+    // Xử lý khi đổi role từ Manager sang Employee
+    if (oldRole === "Manager" && role === "Employee") {
+      if (oldDepartmentId) {
+        await Department.findByIdAndUpdate(oldDepartmentId, { managerId: null });
+      }
+    }
+
+    // Xử lý khi đổi sang Manager hoặc Manager đổi phòng ban
+    if (role === "Manager" && department && department.department_id) {
+      const isDepartmentChange = oldDepartmentId !== department.department_id;
+      
+      // Nếu Manager đổi phòng ban, xóa managerId ở phòng ban cũ
+      if (oldRole === "Manager" && isDepartmentChange && oldDepartmentId) {
+        await Department.findByIdAndUpdate(oldDepartmentId, { managerId: null });
+      }
+      
+      // Cập nhật managerId cho phòng ban mới
+      await Department.findByIdAndUpdate(department.department_id, { managerId: userId });
     }
 
     // Update fields (removed status field)

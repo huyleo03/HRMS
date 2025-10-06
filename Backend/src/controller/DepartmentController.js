@@ -1,7 +1,7 @@
 const Department = require("../models/Department");
 const User = require("../models/User");
 
-/** ===== Helper: build preview list (max 5, manager first, KHÔNG mượn người khác) ===== */
+/** ===== Helper: build preview list (max 5, manager first nếu có role Manager) ===== */
 async function buildPreview(depDoc) {
   // Lấy đúng member thuộc phòng ban này
   const members = await User.find(
@@ -10,27 +10,27 @@ async function buildPreview(depDoc) {
   ).lean();
 
   const preview = [];
-  const seen = new Set();
-
-  // Ưu tiên manager nếu có
-  if (depDoc.managerId) {
+  
+  // Tìm nhân viên có role Manager trong danh sách members
+  const managerInDept = members.find(m => m.role === "Manager");
+  
+  // Nếu có Manager trong phòng ban, đưa lên đầu
+  if (managerInDept) {
     preview.push({
-      _id: String(depDoc.managerId._id),
-      full_name: depDoc.managerId.full_name,
-      role: depDoc.managerId.role,
-      avatar: depDoc.managerId.avatar,
-      jobTitle: depDoc.managerId.jobTitle || "Manager",
+      _id: String(managerInDept._id),
+      full_name: managerInDept.full_name,
+      role: managerInDept.role,
+      avatar: managerInDept.avatar,
+      jobTitle: managerInDept.jobTitle,
       isManager: true,
     });
-    seen.add(String(depDoc.managerId._id));
   }
 
-  // Bổ sung các member còn lại (đúng dept), tối đa 5
+  // Bổ sung các member còn lại (không phải Manager), tối đa 5
   for (const u of members) {
-    const uid = String(u._id);
-    if (seen.has(uid)) continue;
+    if (u.role === "Manager") continue; // Bỏ qua Manager vì đã thêm rồi
     preview.push({
-      _id: uid,
+      _id: String(u._id),
       full_name: u.full_name,
       role: u.role,
       avatar: u.avatar,
