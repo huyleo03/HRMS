@@ -17,6 +17,7 @@ import DepartmentMembers from "./pages/department/pages/ViewDepartMentPage.jsx";
 import { AuthProvider } from "./contexts/AuthContext.js";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ChangePass from "./pages/authentication/ChangePass.jsx";
+import Request from "./pages/request/pages/Request.jsx";
 
 function App() {
   return (
@@ -64,10 +65,6 @@ function App() {
               path="/view-department/:id"
               element={<DepartmentMembers />}
             />
-            {/* <Route
-              path="/request"
-              element={<Request open={true} onClose={() => {}} />}
-            /> */}
             <Route
               path="/attendance"
               element={
@@ -87,12 +84,9 @@ function App() {
               }
             />
             <Route
-              path="/leaves"
+              path="/request"
               element={
-                <div style={{ padding: "24px" }}>
-                  <h1>Leaves Page</h1>
-                  <p>This page is under development</p>
-                </div>
+                <Request />
               }
             />
             <Route

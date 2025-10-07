@@ -1,0 +1,21 @@
+.request-page {
+  width: 100%;
+  height: 100vh;
+  background-color: #f5f5f5;
+  overflow: hidden;
+}
+
+.request-layout {
+  display: flex;
+  gap: 16px;
+  height: 100%;
+  padding: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .request-layout {
+    flex-direction: column;
+    padding: 8px;
+  }
+}

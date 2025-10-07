@@ -33,8 +33,8 @@ const Sidebar = () => {
             icon: '💰'
         },
         {
-            path: '/leaves',
-            label: 'Leaves',
+            path: '/request',
+            label: 'Request',
             icon: '🏖️'
         },
         {
@@ -62,7 +62,6 @@ const Sidebar = () => {
         <div className="side-menu">
             {/* Background */}
             <div className="sidebar-background" />
-            
             {/* Logo + Text */}
             <div className="logo-section">
                 <div className="logo-container">
