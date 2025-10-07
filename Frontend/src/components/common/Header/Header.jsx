@@ -134,6 +134,13 @@ const Header = () => {
                   </svg>
                   My Profile
                 </button>
+                <button className="dropdown-item" onClick={() => { navigate("/change-password"); setIsDropdownOpen(false); }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 15C14.2091 15 16 13.2091 16 11C16 8.79086 14.2091 7 12 7C9.79086 7 8 8.79086 8 11C8 13.2091 9.79086 15 12 15Z" stroke="#16151C" strokeWidth="1.5" />
+                    <path d="M4 21V19C4 16.2386 6.23858 14 9 14H15C17.7614 14 20 16.2386 20 19V21" stroke="#16151C" strokeWidth="1.5" />
+                  </svg>
+                  Change Password
+                </button>
                 <button className="dropdown-item" onClick={handleLogout}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M8.90002 7.55999C9.21002 3.95999 11.06 2.48999 15.11 2.48999H15.24C19.71 2.48999 21.5 4.27999 21.5 8.74999V15.27C21.5 19.74 19.71 21.53 15.24 21.53H15.11C11.09 21.53 9.24002 20.08 8.91002 16.54" stroke="#16151C" strokeWidth="1.5" />

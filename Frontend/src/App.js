@@ -19,6 +19,7 @@ import ManagerEmployees from "./pages/manager/pages/ManagerEmployees.jsx";
 import ManagerViewEmployeeDetails from "./pages/manager/pages/ManagerViewEmployeeDetails.jsx";
 import { AuthProvider } from "./contexts/AuthContext.js";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
+import ChangePass from "./pages/authentication/ChangePass.jsx";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/add" element={<AddNewEmployee />} />
+            <Route path="/change-password" element={<ChangePass />} />
             <Route
               path="/employees/:id"
               element={<ViewEmployeeDetailsPage />}
