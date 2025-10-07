@@ -47,7 +47,7 @@ export default function ChangePasswordPage() {
       toast.success(res.data.message || "Đổi mật khẩu thành công!");
 
       setTimeout(() => {
-        navigate("/profile"); // hoặc /login nếu bạn muốn bắt đăng nhập lại
+        navigate("/dashboard"); // hoặc /login nếu bạn muốn bắt đăng nhập lại
       }, 1500);
     } catch (err) {
       const msg =

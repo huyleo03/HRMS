@@ -41,12 +41,15 @@ function App() {
           <Route path="/otp-page" element={<OtpPage />} />
           <Route path="/reset-password" element={<ResetPass />} />
 
+          <Route element={<ProtectedRoute noSidebar={true} />}>
+            <Route path="/change-password" element={<ChangePass />} />
+          </Route>
+
           {/* --- Protected Routes --- */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/add" element={<AddNewEmployee />} />
-            <Route path="/change-password" element={<ChangePass />} />
             <Route
               path="/employees/:id"
               element={<ViewEmployeeDetailsPage />}
