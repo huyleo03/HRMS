@@ -7,7 +7,7 @@ import Login from "./pages/authentication/Login.jsx";
 import ForgotPass from "./pages/authentication/ForgotPass.jsx";
 import OtpPage from "./pages/authentication/OtpPage.jsx";
 import ResetPass from "./pages/authentication/ResetPass.jsx";
-import Dashboard from "./pages/Dashboard/Dashboard.jsx";
+import Dashboard from "./pages/dashboard/Dashboard.jsx";
 import Employees from "./pages/employee/pages/AllEmployeePage.jsx";
 import AddNewEmployee from './pages/employee/pages/AddNewEmployee.jsx';
 import ViewEmployeeDetailsPage from "./pages/employee/pages/ViewEmployeeDetailsPage.jsx";
