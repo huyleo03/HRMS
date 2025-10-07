@@ -7,13 +7,16 @@ import Login from "./pages/authentication/Login.jsx";
 import ForgotPass from "./pages/authentication/ForgotPass.jsx";
 import OtpPage from "./pages/authentication/OtpPage.jsx";
 import ResetPass from "./pages/authentication/ResetPass.jsx";
-import Dashboard from "./pages/dashboard/Dashboard.jsx";
+import Dashboard from "./pages/Dashboard/Dashboard.jsx";
 import Employees from "./pages/employee/pages/AllEmployeePage.jsx";
 import AddNewEmployee from './pages/employee/pages/AddNewEmployee.jsx';
 import ViewEmployeeDetailsPage from "./pages/employee/pages/ViewEmployeeDetailsPage.jsx";
 import MyProfile from "./pages/my-profile/MyProfile.jsx";
 import Department from "./pages/department/pages/AllDepartMent.jsx";
 import DepartmentMembers from "./pages/department/pages/ViewDepartMentPage.jsx";
+import ManagerDashboard from "./pages/manager/pages/ManagerDashboard.jsx";
+import ManagerEmployees from "./pages/manager/pages/ManagerEmployees.jsx";
+import ManagerViewEmployeeDetails from "./pages/manager/pages/ManagerViewEmployeeDetails.jsx";
 import { AuthProvider } from "./contexts/AuthContext.js";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ChangePass from "./pages/authentication/ChangePass.jsx";
@@ -114,6 +117,14 @@ function App() {
               }
             />
           </Route>
+
+          {/* --- Manager Routes --- */}
+          <Route element={<ProtectedRoute allowedRoles={['Manager']} />}>
+            <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+            <Route path="/manager/employees" element={<ManagerEmployees />} />
+            <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />} />
+          </Route>
+
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
