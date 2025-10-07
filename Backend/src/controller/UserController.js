@@ -142,6 +142,12 @@ exports.getAllUsers = async (req, res) => {
     const query = {
       role: { $in: ["Manager", "Employee"] },
     };
+    
+    // Nếu là Manager, chỉ lấy employees thuộc department của mình
+    if (req.user.role === "Manager" && req.user.department && req.user.department.department_id) {
+      query["department.department_id"] = req.user.department.department_id;
+    }
+    
     if (name) query.full_name = { $regex: name.trim(), $options: "i" };
     if (role) query.role = role;
     if (status) query.status = status;

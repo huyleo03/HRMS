@@ -63,7 +63,12 @@ function Login() {
         }
         toast.success("Đăng nhập thành công!");
         setTimeout(() => {
-          navigate("/dashboard");
+          // Redirect based on user role
+          if (userInfo.role === 'Manager') {
+            navigate("/manager/dashboard");
+          } else {
+            navigate("/dashboard");
+          }
         }, 1500);
       }
     } catch (error) {

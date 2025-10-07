@@ -6,7 +6,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import '../css/ViewEmployeeDetails.css';
 
-const ViewEmployeeDetails = () => {
+const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
   const [activeTab, setActiveTab] = useState('personal');
   const [activeSidebarItem, setActiveSidebarItem] = useState('profile');
   const [employeeData, setEmployeeData] = useState(null);
@@ -89,6 +89,12 @@ const ViewEmployeeDetails = () => {
   }, []);
 
   const handleBackToEmployees = () => {
+    // Nếu có backPath từ props (Manager), dùng nó
+    if (backPath) {
+      navigate(backPath);
+      return;
+    }
+    
     // nếu đến từ phòng ban thì quay lại /departments, ngược lại về /employees
     if (routerLocation.state?.from === 'department') {
       navigate('/departments');
@@ -506,7 +512,7 @@ const ViewEmployeeDetails = () => {
               </div>
             </div>
             <div className="profile-actions">
-              {!isEditing ? (
+              {!isReadOnly && !isEditing ? (
                 <button className="edit-profile-btn" onClick={handleEditClick}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
                        xmlns="http://www.w3.org/2000/svg">
@@ -515,7 +521,7 @@ const ViewEmployeeDetails = () => {
                   </svg>
                   Edit Profile
                 </button>
-              ) : (
+              ) : !isReadOnly && isEditing ? (
                 <div className="edit-actions">
                   <button className="save-btn" onClick={handleSaveEdit} disabled={saving}>
                     {saving ? 'Saving...' : 'Save'}
@@ -524,7 +530,7 @@ const ViewEmployeeDetails = () => {
                     Cancel
                   </button>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
