@@ -161,4 +161,52 @@ module.exports = {
       res.status(500).json({ message: "Lỗi server", error: err.message });
     }
   },
+
+  // 5. Đổi mật khẩu (cho người dùng đã đăng nhập)
+async changePassword(req, res) {
+  try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const user = req.user; // lấy từ middleware authenticate
+
+    // Kiểm tra đủ trường
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng nhập đầy đủ 3 trường mật khẩu." });
+    }
+
+    // Kiểm tra mật khẩu cũ
+    const isMatch = await user.comparePassword(oldPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Mật khẩu cũ không đúng." });
+    }
+
+    // Kiểm tra mật khẩu mới và xác nhận
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "Mật khẩu mới và xác nhận mật khẩu không khớp." });
+    }
+
+    // ✅ Kiểm tra độ mạnh của mật khẩu mới
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm 1 chữ hoa, 1 chữ thường và 1 ký tự đặc biệt.",
+      });
+    }
+
+    // Gán mật khẩu mới (tự hash nhờ pre('save'))
+    user.passwordHash = newPassword;
+    await user.save();
+
+    res.json({ message: "Đổi mật khẩu thành công." });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+}
+
 };
