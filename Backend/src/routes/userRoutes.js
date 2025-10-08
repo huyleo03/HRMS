@@ -12,7 +12,7 @@ router.post(
 router.get(
   "/", 
   authenticate, 
-  authorize("Admin"), 
+  authorize("Admin", "Manager"), 
   userController.getAllUsers
 );
 

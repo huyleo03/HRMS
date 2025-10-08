@@ -91,37 +91,59 @@ module.exports = {
   },
 
   // 3. Đặt lại mật khẩu
-  async resetPassword(req, res) {
-    try {
-      const { newPassword, confirmPassword } = req.body;
-      const decoded = req.user; // Middleware authenticate sẽ giải mã resetToken
+async resetPassword(req, res) {
+  try {
+    const { newPassword, confirmPassword } = req.body;
+    const decoded = req.user; // Middleware authenticate sẽ giải mã resetToken
 
-      if (decoded.aud !== "app:reset") {
-        return res
-          .status(403)
-          .json({ message: "Token không hợp lệ cho việc reset mật khẩu" });
-      }
-      if (!newPassword || !confirmPassword)
-        return res.status(400).json({
-          message: "Vui lòng nhập đầy đủ mật khẩu mới và xác nhận mật khẩu",
-        });
-      if (newPassword !== confirmPassword)
-        return res
-          .status(400)
-          .json({ message: "Mật khẩu xác nhận không khớp" });
-
-      const user = await User.findById(decoded.sub).select("+passwordHash");
-      if (!user)
-        return res.status(400).json({ message: "Người dùng không tồn tại" });
-
-      user.passwordHash = newPassword;
-      await user.save();
-
-      res.json({ message: "Đổi mật khẩu thành công, vui lòng đăng nhập lại" });
-    } catch (err) {
-      res.status(500).json({ message: "Lỗi server", error: err.message });
+    // ✅ Kiểm tra token reset có hợp lệ không
+    if (decoded.aud !== "app:reset") {
+      return res
+        .status(403)
+        .json({ message: "Token không hợp lệ cho việc reset mật khẩu" });
     }
-  },
+
+    // ✅ Kiểm tra nhập đủ trường
+    if (!newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message: "Vui lòng nhập đầy đủ mật khẩu mới và xác nhận mật khẩu.",
+      });
+    }
+
+    // ✅ Kiểm tra mật khẩu mới và xác nhận có khớp không
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "Mật khẩu mới và xác nhận mật khẩu không khớp." });
+    }
+
+    // ✅ Kiểm tra độ mạnh của mật khẩu mới (giống changePassword)
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm 1 chữ hoa, 1 chữ thường và 1 ký tự đặc biệt.",
+      });
+    }
+
+    // ✅ Tìm user theo decoded.sub trong token reset
+    const user = await User.findById(decoded.sub).select("+passwordHash");
+    if (!user) {
+      return res.status(400).json({ message: "Người dùng không tồn tại." });
+    }
+
+    // ✅ Gán mật khẩu mới (pre('save') sẽ tự hash)
+    user.passwordHash = newPassword;
+    await user.save();
+
+    res.json({ message: "Đặt lại mật khẩu thành công, vui lòng đăng nhập lại." });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+},
+
 
   // 4. Đăng nhập
   async login(req, res) {

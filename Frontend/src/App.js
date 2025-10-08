@@ -14,6 +14,9 @@ import ViewEmployeeDetailsPage from "./pages/employee/pages/ViewEmployeeDetailsP
 import MyProfile from "./pages/my-profile/MyProfile.jsx";
 import Department from "./pages/department/pages/AllDepartMent.jsx";
 import DepartmentMembers from "./pages/department/pages/ViewDepartMentPage.jsx";
+import ManagerDashboard from "./pages/manager/pages/ManagerDashboard.jsx";
+import ManagerEmployees from "./pages/manager/pages/ManagerEmployees.jsx";
+import ManagerViewEmployeeDetails from "./pages/manager/pages/ManagerViewEmployeeDetails.jsx";
 import { AuthProvider } from "./contexts/AuthContext.js";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ChangePass from "./pages/authentication/ChangePass.jsx";
@@ -42,12 +45,15 @@ function App() {
           <Route path="/otp-page" element={<OtpPage />} />
           <Route path="/reset-password" element={<ResetPass />} />
 
+          <Route element={<ProtectedRoute noSidebar={true} />}>
+            <Route path="/change-password" element={<ChangePass />} />
+          </Route>
+
           {/* --- Protected Routes --- */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/add" element={<AddNewEmployee />} />
-            <Route path="/change-password" element={<ChangePass />} />
             <Route
               path="/employees/:id"
               element={<ViewEmployeeDetailsPage />}
@@ -108,6 +114,14 @@ function App() {
               }
             />
           </Route>
+
+          {/* --- Manager Routes --- */}
+          <Route element={<ProtectedRoute allowedRoles={['Manager']} />}>
+            <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+            <Route path="/manager/employees" element={<ManagerEmployees />} />
+            <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />} />
+          </Route>
+
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
