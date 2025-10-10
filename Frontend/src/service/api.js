@@ -50,7 +50,7 @@ export const apiCall = async (endpoint, options = {}) => {
     delete options.params;
   }
 
-  const token = localStorage.getItem("token"); 
+  const token = localStorage.getItem("auth_token"); 
 
   const defaultOptions = {
     headers: {
