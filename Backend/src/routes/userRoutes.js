@@ -5,8 +5,8 @@ const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
 router.post(
   "/create",
-  // authenticate,
-  // authorize("Admin"),
+  authenticate,
+  authorize("Admin"),
   userController.createUserByAdmin
 );
 router.get(

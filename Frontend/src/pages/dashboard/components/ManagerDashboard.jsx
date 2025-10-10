@@ -1,5 +1,5 @@
 import React from 'react';
-import '../css/ManagerDashboard.css';
+import "../css/ManagerDashboard.css";
 
 const ManagerDashboard = () => {
   return (

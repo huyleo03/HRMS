@@ -7,20 +7,21 @@ import Login from "./pages/authentication/Login.jsx";
 import ForgotPass from "./pages/authentication/ForgotPass.jsx";
 import OtpPage from "./pages/authentication/OtpPage.jsx";
 import ResetPass from "./pages/authentication/ResetPass.jsx";
-import Dashboard from "./pages/dashboard/Dashboard.jsx";
+import AdminDashboard from "./pages/dashboard/components/AdminDashboard.jsx";
 import Employees from "./pages/employee/pages/AllEmployeePage.jsx";
-import AddNewEmployee from './pages/employee/pages/AddNewEmployee.jsx';
+import AddNewEmployee from "./pages/employee/pages/AddNewEmployee.jsx";
 import ViewEmployeeDetailsPage from "./pages/employee/pages/ViewEmployeeDetailsPage.jsx";
 import MyProfile from "./pages/my-profile/MyProfile.jsx";
 import Department from "./pages/department/pages/AllDepartMent.jsx";
 import DepartmentMembers from "./pages/department/pages/ViewDepartMentPage.jsx";
-import ManagerDashboard from "./pages/manager/pages/ManagerDashboard.jsx";
+import ManagerDashboard from "./pages/dashboard/components/ManagerDashboard.jsx";
 import ManagerEmployees from "./pages/manager/pages/ManagerEmployees.jsx";
 import ManagerViewEmployeeDetails from "./pages/manager/pages/ManagerViewEmployeeDetails.jsx";
 import { AuthProvider } from "./contexts/AuthContext.js";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ChangePass from "./pages/authentication/ChangePass.jsx";
 import Request from "./pages/request/pages/Request.jsx";
+import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.jsx";
 
 function App() {
   return (
@@ -44,14 +45,13 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPass />} />
           <Route path="/otp-page" element={<OtpPage />} />
           <Route path="/reset-password" element={<ResetPass />} />
-
           <Route element={<ProtectedRoute noSidebar={true} />}>
             <Route path="/change-password" element={<ChangePass />} />
           </Route>
 
-          {/* --- Protected Routes --- */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
+          {/* --- Admin Routes --- */}
+          <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+            <Route path="/dashboard" element={<AdminDashboard />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/add" element={<AddNewEmployee />} />
             <Route
@@ -59,67 +59,28 @@ function App() {
               element={<ViewEmployeeDetailsPage />}
             />
             <Route path="/profile" element={<MyProfile />} />
-            <Route
-              path="/departments"
-              element={
-                <>
-                  <Department />
-                </>
-              }
-            />
+            <Route path="/departments" element={<Department />} />
             <Route
               path="/view-department/:id"
               element={<DepartmentMembers />}
             />
-            <Route
-              path="/attendance"
-              element={
-                <div style={{ padding: "24px" }}>
-                  <h1>Attendance Page</h1>
-                  <p>This page is under development</p>
-                </div>
-              }
-            />
-            <Route
-              path="/payroll"
-              element={
-                <div style={{ padding: "24px" }}>
-                  <h1>Payroll Page</h1>
-                  <p>This page is under development</p>
-                </div>
-              }
-            />
-            <Route
-              path="/request"
-              element={
-                <Request />
-              }
-            />
-            <Route
-              path="/holidays"
-              element={
-                <div style={{ padding: "24px" }}>
-                  <h1>Holidays Page</h1>
-                  <p>This page is under development</p>
-                </div>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <div style={{ padding: "24px" }}>
-                  <h1>Settings Page</h1>
-                  <p>This page is under development</p>
-                </div>
-              }
-            />
           </Route>
 
           {/* --- Manager Routes --- */}
-          <Route element={<ProtectedRoute allowedRoles={['Manager']} />}>
+          <Route element={<ProtectedRoute allowedRoles={["Manager"]} />}>
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/employees" element={<ManagerEmployees />} />
-            <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />} />
+            <Route
+              path="/manager/employees/:id"
+              element={<ManagerViewEmployeeDetails />}
+            />
+          </Route>
+
+          {/* --- Employee Routes --- */}
+          <Route element={<ProtectedRoute allowedRoles={["Employee"]} />}>
+            <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+            <Route path="/profile" element={<MyProfile />} />
+            <Route path="/employee/requests" element={<Request />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/login" />} />

@@ -5,10 +5,7 @@ import Layout from "./Layout";
 import Header from "../common/Header/Header.jsx"; 
 import { toast } from "react-toastify";
 
-/**
- * @param {boolean} noSidebar - Nếu true → chỉ hiện Header, ẩn Sidebar
- * @param {string[]} allowedRoles - Danh sách role được phép truy cập route này
- */
+
 const ProtectedRoute = ({ noSidebar = false, allowedRoles = [] }) => {
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
@@ -19,7 +16,6 @@ const ProtectedRoute = ({ noSidebar = false, allowedRoles = [] }) => {
     }
   }, [isAuthenticated]);
 
-  // 🔸 Chưa đăng nhập → quay về login
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -42,7 +38,6 @@ const ProtectedRoute = ({ noSidebar = false, allowedRoles = [] }) => {
     );
   }
 
-  // 🔸 Mặc định: dùng Layout đầy đủ
   return (
     <Layout>
       <Outlet />

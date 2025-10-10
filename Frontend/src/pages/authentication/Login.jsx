@@ -63,9 +63,10 @@ function Login() {
         }
         toast.success("Đăng nhập thành công!");
         setTimeout(() => {
-          // Redirect based on user role
-          if (userInfo.role === 'Manager') {
+          if (userInfo.role === "Manager") {
             navigate("/manager/dashboard");
+          } else if (userInfo.role === "Employee") {
+            navigate("/employee/dashboard");
           } else {
             navigate("/dashboard");
           }
