@@ -7,8 +7,6 @@ const requestSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-
-    // ===== NGƯỜI GỬI=====
     submittedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -26,8 +24,6 @@ const requestSchema = new mongoose.Schema(
     submittedByAvatar: {
       type: String,
     },
-
-    // ===== PHÒNG BAN =====
     department: {
       department_id: {
         type: mongoose.Schema.Types.ObjectId,
@@ -38,8 +34,6 @@ const requestSchema = new mongoose.Schema(
         trim: true,
       },
     },
-
-    // ===== LOẠI ĐƠN (Mở rộng) =====
     type: {
       type: String,
       enum: [
@@ -56,8 +50,6 @@ const requestSchema = new mongoose.Schema(
       ],
       required: [true, "Loại yêu cầu là bắt buộc"],
     },
-
-    // ===== TIÊU ĐỀ & NỘI DUNG =====
     subject: {
       type: String,
       trim: true,
@@ -69,8 +61,6 @@ const requestSchema = new mongoose.Schema(
       required: [true, "Lý do là bắt buộc"],
       trim: true,
     },
-
-    // ===== THỜI GIAN =====
     startDate: {
       type: Date,
       required: [true, "Ngày bắt đầu là bắt buộc"],
@@ -82,8 +72,6 @@ const requestSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
-
-    // ===== TỆP ĐÍNH KÈM (Nâng cấp) =====
     attachments: [
       {
         fileName: {
@@ -122,15 +110,11 @@ const requestSchema = new mongoose.Schema(
       ],
       default: "Pending",
     },
-
-    // ===== MỨC ĐỘ ƯU TIÊN (Thêm mới) =====
     priority: {
       type: String,
       enum: ["Low", "Normal", "High", "Urgent"],
       default: "Normal",
     },
-
-    // ===== LUỒNG PHÊ DUYỆT =====
     approvalFlow: [
       {
         level: {
@@ -175,26 +159,12 @@ const requestSchema = new mongoose.Schema(
         },
       },
     ],
-
-    // ===== CC (NGƯỜI NHẬN BẢN SAO) - Thêm mới =====
     cc: [
       {
-        userId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        name: String,
-        email: String,
-        department: String,
-        isRead: {
-          type: Boolean,
-          default: false,
-        },
-        readAt: Date,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
       },
     ],
-
-    // ===== COMMENTS/REPLIES - Thêm mới =====
     comments: [
       {
         commentId: {

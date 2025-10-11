@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Calendar,
@@ -11,8 +11,14 @@ import {
   Upload,
   Plus,
   Trash2,
+  Loader,
 } from "lucide-react";
 import "../css/CreateRequestModal.css";
+import { getWorkflowTemplate } from "../../../service/WorkflowService";
+import RequestTypeGrid from "./RequestTypeGrid";
+import { toast } from 'react-toastify'; 
+import 'react-toastify/dist/ReactToastify.css';
+import { createRequest } from "../../../service/RequestService";
 
 const CreateRequestModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -28,22 +34,14 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     cc: [],
   });
 
+  const [workflow, setWorkflow] = useState({
+    isLoading: false,
+    error: null,
+    name: "",
+  });
   const [errors, setErrors] = useState({});
-  const [showApproverForm, setShowApproverForm] = useState(false);
   const [showCCForm, setShowCCForm] = useState(false);
-
-  const requestTypes = [
-    { value: "Leave", label: "Nghỉ phép", icon: "🏖️" },
-    { value: "Overtime", label: "Tăng ca", icon: "⏰" },
-    { value: "RemoteWork", label: "Làm từ xa", icon: "💻" },
-    { value: "Resignation", label: "Nghỉ việc", icon: "👋" },
-    { value: "BusinessTrip", label: "Công tác", icon: "✈️" },
-    { value: "Equipment", label: "Thiết bị", icon: "🖥️" },
-    { value: "ITSupport", label: "Hỗ trợ IT", icon: "🛠️" },
-    { value: "HRDocument", label: "Tài liệu HR", icon: "📄" },
-    { value: "Expense", label: "Chi phí", icon: "💰" },
-    { value: "Other", label: "Khác", icon: "📝" },
-  ];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const priorityOptions = [
     { value: "Low", label: "Thấp", color: "#6b7280" },
@@ -52,13 +50,73 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     { value: "Urgent", label: "Khẩn cấp", color: "#ef4444" },
   ];
 
-  // Mock data - Replace with actual API call
   const mockUsers = [
-    { id: "user1", name: "Nguyễn Văn A", email: "nguyenvana@company.com", role: "Manager" },
-    { id: "user2", name: "Trần Thị B", email: "tranthib@company.com", role: "Manager" },
-    { id: "user3", name: "Lê Văn C", email: "levanc@company.com", role: "Director" },
-    { id: "user4", name: "Phạm Thị D", email: "phamthid@company.com", role: "HR" },
+    {
+      id: "user1",
+      name: "Nguyễn Văn A",
+      email: "nguyenvana@company.com",
+      role: "Manager",
+    },
+    {
+      id: "user2",
+      name: "Trần Thị B",
+      email: "tranthib@company.com",
+      role: "Manager",
+    },
+    {
+      id: "user3",
+      name: "Lê Văn C",
+      email: "levanc@company.com",
+      role: "Director",
+    },
+    {
+      id: "user4",
+      name: "Phạm Thị D",
+      email: "phamthid@company.com",
+      role: "HR",
+    },
   ];
+
+  useEffect(() => {
+    const fetchWorkflow = async () => {
+      if (!formData.type) return;
+
+      setWorkflow({ isLoading: true, error: null, name: "" });
+      setFormData((prev) => ({ ...prev, approvers: [] }));
+
+      try {
+        const response = await getWorkflowTemplate(formData.type);
+
+        if (response && response.approvalFlow) {
+          setFormData((prev) => ({
+            ...prev,
+            approvers: response.approvalFlow,
+          }));
+          setWorkflow({
+            isLoading: false,
+            error: null,
+            name: response.workflowName,
+          });
+        } else {
+          setWorkflow({
+            isLoading: false,
+            error: "Không tìm thấy quy trình phê duyệt cho loại đơn này.",
+            name: "",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch workflow:", error);
+        setWorkflow({
+          isLoading: false,
+          error:
+            error.response?.data?.message || "Lỗi khi tải quy trình phê duyệt.",
+          name: "",
+        });
+      }
+    };
+
+    fetchWorkflow();
+  }, [formData.type]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -93,34 +151,12 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     }));
   };
 
-  const addApprover = (user, level = 1) => {
-    const approver = {
-      userId: user.id,
-      name: user.name,
-      email: user.email,
-      level: level,
-      role: "Approver",
-    };
-    setFormData((prev) => ({
-      ...prev,
-      approvers: [...prev.approvers, approver],
-    }));
-    setShowApproverForm(false);
-  };
-
-  const removeApprover = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      approvers: prev.approvers.filter((_, i) => i !== index),
-    }));
-  };
-
   const addCC = (user) => {
     const ccUser = {
       userId: user.id,
       name: user.name,
       email: user.email,
-      department: "IT", 
+      department: "IT",
     };
     setFormData((prev) => ({
       ...prev,
@@ -165,28 +201,42 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) {
+      toast.warn("Vui lòng điền đầy đủ các trường bắt buộc.");
       return;
     }
-
-    // Prepare data for API
-    const requestData = {
-      ...formData,
-      // Convert file attachments to URLs (should upload first)
-      attachments: formData.attachments.map((att) => ({
-        fileName: att.fileName,
-        fileUrl: "https://storage.example.com/" + att.fileName, // Mock URL
-        fileSize: att.fileSize,
-        fileType: att.fileType,
-      })),
-    };
-
+    setIsSubmitting(true); 
     try {
-      await onSubmit(requestData);
+      const { approvers, ...dataToSend } = formData;
+      const requestData = {
+        ...dataToSend,
+        attachments: formData.attachments.map((att) => ({
+          fileName: att.fileName,
+          fileUrl: "https://storage.example.com/" + att.fileName, 
+          fileSize: att.fileSize,
+          fileType: att.fileType,
+        })),
+        cc: formData.cc.map((user) => ({
+          userId: user.userId,
+          name: user.name,
+          email: user.email,
+        })),
+      };
+      const response = await createRequest(requestData);
+      toast.success(response.message || "Gửi đơn thành công!");
+      if (onSubmit) {
+        onSubmit(response.request);
+      }
       handleClose();
     } catch (error) {
-      console.error("Error creating request:", error);
+      console.error("❌ Error creating request:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi tạo đơn. Vui lòng thử lại.";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false); 
     }
   };
 
@@ -204,7 +254,6 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
       cc: [],
     });
     setErrors({});
-    setShowApproverForm(false);
     setShowCCForm(false);
     onClose();
   };
@@ -234,22 +283,12 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
               <FileText size={16} />
               Loại đơn <span className="required">*</span>
             </label>
-            <div className="request-type-grid">
-              {requestTypes.map((type) => (
-                <div
-                  key={type.value}
-                  className={`type-card ${
-                    formData.type === type.value ? "active" : ""
-                  }`}
-                  onClick={() =>
-                    setFormData((prev) => ({ ...prev, type: type.value }))
-                  }
-                >
-                  <span className="type-icon">{type.icon}</span>
-                  <span className="type-label">{type.label}</span>
-                </div>
-              ))}
-            </div>
+            <RequestTypeGrid
+              selectedValue={formData.type}
+              onSelect={(value) =>
+                setFormData((prev) => ({ ...prev, type: value }))
+              }
+            />
             {errors.type && <span className="error-text">{errors.type}</span>}
           </div>
 
@@ -428,64 +467,52 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
           <div className="form-group">
             <label className="form-label">
               <User size={16} />
-              Người phê duyệt <span className="required">*</span>
+              Quy trình phê duyệt <span className="required">*</span>
             </label>
 
-            {formData.approvers.length > 0 && (
-              <div className="user-list">
-                {formData.approvers.map((approver, index) => (
-                  <div key={index} className="user-item">
-                    <div className="user-avatar">
-                      {approver.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="user-info">
-                      <span className="user-name">{approver.name}</span>
-                      <span className="user-email">{approver.email}</span>
-                    </div>
-                    <span className="user-level">Cấp {approver.level}</span>
-                    <button
-                      type="button"
-                      className="remove-btn"
-                      onClick={() => removeApprover(index)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))}
+            {/* Trạng thái Loading */}
+            {workflow.isLoading && (
+              <div className="workflow-status">
+                <Loader size={16} className="animate-spin" />
+                <span>Đang tải quy trình...</span>
               </div>
             )}
 
-            <button
-              type="button"
-              className="add-btn"
-              onClick={() => setShowApproverForm(!showApproverForm)}
-            >
-              <Plus size={16} />
-              Thêm người phê duyệt
-            </button>
-
-            {showApproverForm && (
-              <div className="user-select-dropdown">
-                {mockUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="user-select-item"
-                    onClick={() =>
-                      addApprover(user, formData.approvers.length + 1)
-                    }
-                  >
-                    <div className="user-avatar">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="user-info">
-                      <span className="user-name">{user.name}</span>
-                      <span className="user-email">{user.email}</span>
-                    </div>
-                    <span className="user-role">{user.role}</span>
-                  </div>
-                ))}
+            {workflow.error && !workflow.isLoading && (
+              <div className="workflow-status error">
+                <span>{workflow.error}</span>
               </div>
             )}
+
+            {!workflow.isLoading &&
+              !workflow.error &&
+              formData.approvers.length > 0 && (
+                <>
+                  <div className="workflow-name">
+                    Áp dụng quy trình: <strong>{workflow.name}</strong>
+                  </div>
+                  <div className="user-list read-only">
+                    {formData.approvers.map((approver, index) => (
+                      <div key={index} className="user-item">
+                        <div className="user-avatar">
+                          {approver.approverName
+                            ? approver.approverName.charAt(0).toUpperCase()
+                            : "?"}
+                        </div>
+                        <div className="user-info">
+                          <span className="user-name">
+                            {approver.approverName || "Không xác định"}
+                          </span>
+                          <span className="user-email">
+                            {approver.approverEmail}
+                          </span>
+                        </div>
+                        <span className="user-level">Cấp {approver.level}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
 
             {errors.approvers && (
               <span className="error-text">{errors.approvers}</span>
@@ -555,7 +582,11 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
 
         {/* Footer */}
         <div className="modal-footer">
-          <button type="button" className="btn btn-secondary" onClick={handleClose}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleClose}
+          >
             Hủy
           </button>
           <button

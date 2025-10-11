@@ -177,7 +177,7 @@ async resetPassword(req, res) {
 
       res.json({
         message: "Đăng nhập thành công",
-        token,
+        token: token,
       });
     } catch (err) {
       res.status(500).json({ message: "Lỗi server", error: err.message });

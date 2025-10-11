@@ -4,6 +4,7 @@ const {
   createNotificationForUser,
   createNotificationForMultipleUsers,
 } = require("../helper/NotificationService");
+const Workflow = require("../models/Workflow");
 
 // ===== 1. TẠO VÀ GỬI ĐƠN =====
 exports.createRequest = async (req, res) => {
@@ -17,38 +18,48 @@ exports.createRequest = async (req, res) => {
       hour,
       attachments,
       priority,
-      approvers,
       cc,
     } = req.body;
 
-    const submitter = await User.findById(req.user.id);
+    // Lấy thông tin người gửi và populate các trường cần thiết để resolve workflow
+    const submitter = await User.findById(req.user.id).populate(
+      "department.department_id manager_id"
+    );
     if (!submitter) {
       return res.status(404).json({ message: "Người gửi không tồn tại" });
     }
 
-    if (!approvers || approvers.length === 0) {
+    // Bước 2: Tìm Workflow Template phù hợp dựa trên 'type' của đơn
+    const workflow = await Workflow.getActiveWorkflow(
+      type,
+      submitter.department?.department_id?._id
+    );
+
+    if (!workflow) {
       return res.status(400).json({
-        message: "Vui lòng chọn ít nhất một người phê duyệt",
+        message: `Không tìm thấy quy trình phê duyệt nào cho loại đơn "${type}". Vui lòng liên hệ Admin.`,
       });
     }
 
-    const approvalFlow = approvers.map((approver) => ({
-      level: approver.level || 1,
-      approverId: approver.userId,
-      approverName: approver.name,
-      approverEmail: approver.email,
-      role: approver.role || "Approver",
-      status: "Pending",
-    }));
+    // Bước 3: "Giải quyết" (Resolve) Workflow Template thành một danh sách người duyệt cụ thể
+    const resolvedApprovalFlow = await workflow.resolveApprovers(submitter);
 
+    if (!resolvedApprovalFlow || resolvedApprovalFlow.length === 0) {
+      return res.status(400).json({
+        message: `Quy trình phê duyệt cho loại đơn "${type}" không hợp lệ hoặc không tìm thấy người duyệt.`,
+      });
+    }
+
+    const ccUserIds = (cc || []).map((c) => c.userId);
+    // Bước 4: Tạo đơn mới với 'approvalFlow' đã được giải quyết tự động
     const newRequest = new Request({
       submittedBy: submitter._id,
       submittedByName: submitter.full_name,
       submittedByEmail: submitter.email,
       submittedByAvatar: submitter.avatar,
       department: {
-        department_id: submitter.department?.department_id,
-        department_name: submitter.department?.department_name,
+        department_id: submitter.department?.department_id?._id,
+        department_name: submitter.department?.department_id?.department_name,
       },
       type,
       subject,
@@ -58,8 +69,8 @@ exports.createRequest = async (req, res) => {
       hour,
       attachments: attachments || [],
       priority: priority || "Normal",
-      approvalFlow,
-      cc: cc || [],
+      approvalFlow: resolvedApprovalFlow,
+      cc: ccUserIds,
       status: "Pending",
       senderStatus: {
         isDraft: false,
@@ -68,15 +79,17 @@ exports.createRequest = async (req, res) => {
 
     await newRequest.save();
 
-    // ✅ TẠO THÔNG BÁO CHO APPROVERS (thay thế sendEmail)
-    const approverIds = approvers.map((a) => a.userId);
-    
+    // Bước 5: Gửi thông báo đến những người duyệt thực tế trong quy trình
+    const approverIds = resolvedApprovalFlow.map((a) => a.approverId);
+
     await createNotificationForMultipleUsers(approverIds, {
       senderId: submitter._id,
       senderName: submitter.full_name,
       senderAvatar: submitter.avatar,
       type: "NewRequest",
-      message: `${submitter.full_name} đã gửi đơn ${type}${subject ? `: ${subject}` : ""} cần bạn phê duyệt.`,
+      message: `${submitter.full_name} đã gửi đơn ${type}${
+        subject ? `: ${subject}` : ""
+      } cần bạn phê duyệt.`,
       relatedId: newRequest._id,
       metadata: {
         requestType: type,
@@ -86,16 +99,16 @@ exports.createRequest = async (req, res) => {
       },
     });
 
-    // ✅ TẠO THÔNG BÁO CHO CC (nếu có)
-    if (cc && cc.length > 0) {
-      const ccIds = cc.map((c) => c.userId);
-      
+    // Gửi thông báo cho CC (nếu có)
+    if (ccUserIds.length > 0) {
       await createNotificationForMultipleUsers(ccIds, {
         senderId: submitter._id,
         senderName: submitter.full_name,
         senderAvatar: submitter.avatar,
         type: "NewRequest",
-        message: `Bạn được CC trong đơn ${type}${subject ? `: ${subject}` : ""} của ${submitter.full_name}.`,
+        message: `Bạn được CC trong đơn ${type}${
+          subject ? `: ${subject}` : ""
+        } của ${submitter.full_name}.`,
         relatedId: newRequest._id,
         metadata: {
           requestType: type,
@@ -124,29 +137,39 @@ exports.approveRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { comment } = req.body;
-
     const request = await Request.findById(requestId);
     if (!request) {
       return res.status(404).json({ message: "Không tìm thấy đơn" });
     }
-
     await request.approve(req.user.id, comment || "");
-
     const approver = await User.findById(req.user.id);
-
+    if (request.cc && request.cc.length > 0) {
+      await createNotificationForMultipleUsers(request.cc, {
+        senderId: approver._id,
+        senderName: approver.full_name,
+        senderAvatar: approver.avatar,
+        type: "RequestUpdate",
+        message: `Đơn ${request.type} của ${request.submittedByName} đã được ${approver.full_name} phê duyệt.`,
+        relatedId: request._id,
+        metadata: {
+          requestType: request.type,
+          actionUrl: `/requests/${request._id}`,
+        },
+      });
+    }
     const allApproved = request.approvalFlow.every(
       (a) => a.role !== "Approver" || a.status === "Approved"
     );
-
     if (allApproved) {
-      // ✅ TẠO THÔNG BÁO CHO NGƯỜI GỬI
       await createNotificationForUser({
         userId: request.submittedBy,
         senderId: approver._id,
         senderName: approver.full_name,
         senderAvatar: approver.avatar,
         type: "RequestApproved",
-        message: `${approver.full_name} đã phê duyệt đơn ${request.type} của bạn.${comment ? ` Nhận xét: ${comment}` : ""}`,
+        message: `${approver.full_name} đã phê duyệt đơn ${
+          request.type
+        } của bạn.${comment ? ` Nhận xét: ${comment}` : ""}`,
         relatedId: request._id,
         metadata: {
           requestType: request.type,
@@ -348,7 +371,9 @@ exports.cancelRequest = async (req, res) => {
         senderName: submitter.full_name,
         senderAvatar: submitter.avatar,
         type: "RequestCancelled",
-        message: `${submitter.full_name} đã hủy đơn ${request.type}.${comment ? ` Lý do: ${comment}` : ""}`,
+        message: `${submitter.full_name} đã hủy đơn ${request.type}.${
+          comment ? ` Lý do: ${comment}` : ""
+        }`,
         relatedId: request._id,
         metadata: {
           requestType: request.type,

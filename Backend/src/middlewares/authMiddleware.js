@@ -40,6 +40,8 @@ exports.authenticate = async (req, res, next) => {
 
     // Gắn thông tin user vào request
     req.user = currentUser;
+    // Thêm thuộc tính userId để dễ truy cập
+    req.user.userId = currentUser._id;
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {

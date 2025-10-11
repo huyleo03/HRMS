@@ -1,62 +1,48 @@
 const mongoose = require("mongoose");
 
-// ===== SUB-SCHEMA: APPROVAL STEP =====
 const approvalStepSchema = new mongoose.Schema({
   level: {
     type: Number,
     required: [true, "Cấp phê duyệt là bắt buộc"],
     min: 1,
   },
-
-  // Loại người duyệt (Dynamic)
   approverType: {
     type: String,
     required: true,
-    enum: [
-      "DIRECT_MANAGER", // Quản lý trực tiếp của người gửi
-      "DEPARTMENT_HEAD", // Trưởng phòng của người gửi
-      "SPECIFIC_DEPARTMENT_HEAD", // Trưởng của một phòng ban cụ thể
-      "SPECIFIC_USER", // Một người dùng cụ thể
-    ],
+    enum: ["DIRECT_MANAGER", "SPECIFIC_DEPARTMENT_HEAD", "SPECIFIC_USER"],
     default: "SPECIFIC_USER",
   },
-
-  // Dùng khi approverType = 'SPECIFIC_DEPARTMENT_HEAD'
   departmentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
   },
-
+  approverId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
   displayName: {
     type: String,
     required: [true, "Tên hiển thị là bắt buộc"],
     trim: true,
   },
-
   isRequired: {
     type: Boolean,
     default: true,
   },
 });
 
-// ===== MAIN SCHEMA: WORKFLOW =====
 const workflowSchema = new mongoose.Schema(
   {
-    // Tên workflow
     name: {
       type: String,
       required: [true, "Tên quy trình là bắt buộc"],
       trim: true,
       unique: true,
     },
-
-    // Mô tả workflow
     description: {
       type: String,
       trim: true,
     },
-
-    // Loại đơn áp dụng (phải khớp với Request.type)
     requestType: {
       type: String,
       required: [true, "Loại đơn áp dụng là bắt buộc"],
@@ -72,33 +58,23 @@ const workflowSchema = new mongoose.Schema(
         "Expense",
         "Other",
       ],
-      unique: true, // Mỗi loại đơn chỉ có 1 workflow active
+      unique: true,
     },
-
-    // Luồng phê duyệt
     approvalFlow: [approvalStepSchema],
-
-    // Trạng thái kích hoạt
     isActive: {
       type: Boolean,
       default: true,
     },
-
-    // Áp dụng cho phòng ban cụ thể (optional - nếu muốn có workflow khác nhau cho từng phòng)
     applicableDepartments: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Department",
       },
     ],
-
-    // Người tạo workflow
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-
-    // Người cập nhật cuối
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -134,22 +110,11 @@ workflowSchema.methods.resolveApprovers = async function (user) {
         }
         break;
 
-      case "DEPARTMENT_HEAD":
-        if (user.department?.department_id) {
-          const dept = await Department.findById(user.department.department_id);
-          if (dept && dept.manager) {
-            approver = await User.findById(dept.manager).select(
-              "_id full_name email avatar"
-            );
-          }
-        }
-        break;
-
       case "SPECIFIC_DEPARTMENT_HEAD":
         if (step.departmentId) {
           const dept = await Department.findById(step.departmentId);
-          if (dept && dept.manager) {
-            approver = await User.findById(dept.manager).select(
+          if (dept && dept.managerId) {
+            approver = await User.findById(dept.managerId).select(
               "_id full_name email avatar"
             );
           }
@@ -188,14 +153,12 @@ workflowSchema.methods.resolveApprovers = async function (user) {
   return resolvedApprovers;
 };
 
-
 workflowSchema.statics.getActiveWorkflow = async function (
   requestType,
   departmentId = null
 ) {
   let query = { requestType, isActive: true };
 
-  // Nếu có departmentId, ưu tiên workflow cho phòng ban đó
   if (departmentId) {
     const specificWorkflow = await this.findOne({
       ...query,
@@ -204,7 +167,6 @@ workflowSchema.statics.getActiveWorkflow = async function (
     if (specificWorkflow) return specificWorkflow;
   }
 
-  // Nếu không có workflow riêng, lấy workflow chung
   return await this.findOne({
     ...query,
     $or: [

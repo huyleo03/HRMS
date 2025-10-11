@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: "http://localhost:9999", 
+  BASE_URL: "http://localhost:9999",
   ENDPOINTS: {
     // Auth
     LOGIN: "/api/auth/login",
@@ -27,6 +27,13 @@ export const API_CONFIG = {
 
     // REQUESTS
     CREATE_REQUEST: "/api/requests/create",
+
+    // WORKFLOWS
+    GET_WORKFLOWS: "/api/workflows",
+    GET_WORKFLOW_TEMPLATE: "/api/workflows/template",
+    CREATE_WORKFLOW: "/api/workflows",
+    UPDATE_WORKFLOW: (id) => `/api/workflows/${id}`,
+    DELETE_WORKFLOW: (id) => `/api/workflows/${id}`,
   },
 };
 
@@ -50,7 +57,7 @@ export const apiCall = async (endpoint, options = {}) => {
     delete options.params;
   }
 
-  const token = localStorage.getItem("auth_token"); 
+  const token = localStorage.getItem("auth_token");
 
   const defaultOptions = {
     headers: {
