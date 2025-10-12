@@ -29,6 +29,17 @@ router.get(
 );
 router.get("/cc-suggestions", authenticate, userController.getCcUserList);
 router.get("/search", authenticate, userController.searchUsersForCc);
-router.get("/:id", authenticate, userController.getOwnProfile);
-router.put("/:id", authenticate, userController.updateOwnProfile);
+
+router.get(
+  "/me",
+  authenticate,
+  userController.getOwnProfile
+);
+
+router.put(
+  "/me",
+  authenticate,
+  userController.updateOwnProfile
+);
+
 module.exports = router;

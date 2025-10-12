@@ -58,7 +58,6 @@ function App() {
               path="/employees/:id"
               element={<ViewEmployeeDetailsPage />}
             />
-            <Route path="/profile" element={<MyProfile />} />
             <Route path="/departments" element={<Department />} />
             <Route
               path="/view-department/:id"
@@ -79,8 +78,12 @@ function App() {
           {/* --- Employee Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Employee"]} />}>
             <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
-            <Route path="/profile" element={<MyProfile />} />
             <Route path="/employee/requests" element={<Request />} />
+          </Route>
+
+          {/* --- Shared Routes (All roles can access) --- */}
+          <Route element={<ProtectedRoute allowedRoles={["Admin", "Manager", "Employee"]} />}>
+            <Route path="/my-profile" element={<MyProfile />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/login" />} />

@@ -167,10 +167,10 @@ async resetPassword(req, res) {
         aud: "app:login",
         role: user.role,
         name: user.full_name,
-        avatar: user.avatar,
         email: user.email,
         profileCompleted: user.profileCompleted,
       };
+      
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: "1h",
       });
@@ -178,6 +178,14 @@ async resetPassword(req, res) {
       res.json({
         message: "Đăng nhập thành công",
         token: token,
+        user: {
+          id: user._id,
+          name: user.full_name,
+          email: user.email,
+          role: user.role,
+          avatar: user.avatar,
+          profileCompleted: user.profileCompleted,
+        }
       });
     } catch (err) {
       res.status(500).json({ message: "Lỗi server", error: err.message });

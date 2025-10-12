@@ -51,10 +51,10 @@ export const getUserById = async (id) => {
   }
 };
 
-// Lấy own profile (GET /api/users/:id)
-export const getOwnProfile = async (userId) => {
+// Lấy own profile (GET /api/users/me)
+export const getOwnProfile = async () => {
   try {
-    return await apiCall(API_CONFIG.ENDPOINTS.GET_OWN_PROFILE(userId), {
+    return await apiCall(API_CONFIG.ENDPOINTS.GET_OWN_PROFILE, {
       method: "GET",
     });
   } catch (error) {
@@ -63,10 +63,10 @@ export const getOwnProfile = async (userId) => {
   }
 };
 
-// Cập nhật own profile (PUT /api/users/:id)
-export const updateOwnProfile = async (userId, userData) => {
+// Cập nhật own profile (PUT /api/users/me)
+export const updateOwnProfile = async (userData) => {
   try {
-    return await apiCall(API_CONFIG.ENDPOINTS.UPDATE_OWN_PROFILE(userId), {
+    return await apiCall(API_CONFIG.ENDPOINTS.UPDATE_OWN_PROFILE, {
       method: "PUT",
       body: JSON.stringify(userData),
     });

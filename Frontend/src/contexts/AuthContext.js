@@ -12,11 +12,14 @@ export const AuthProvider = ({ children }) => {
     const storedToken = localStorage.getItem("auth_token");
     if (storedToken) {
       try {
+        // Giữ lại jwtDecode để không ảnh hưởng code người khác
         const decodedToken = jwtDecode(storedToken);
         if (decodedToken.exp * 1000 > Date.now()) {
           const userInfo = JSON.parse(localStorage.getItem("user_info"));
-          setUser(userInfo);
-          setToken(storedToken);
+          if (userInfo) {
+            setUser(userInfo);
+            setToken(storedToken);
+          }
         } else {
           localStorage.removeItem("auth_token");
           localStorage.removeItem("user_info");
@@ -37,6 +40,12 @@ export const AuthProvider = ({ children }) => {
     setUser(newUserInfo);
   };
 
+  const updateUser = (updatedUserInfo) => {
+    const newUserInfo = { ...user, ...updatedUserInfo };
+    localStorage.setItem("user_info", JSON.stringify(newUserInfo));
+    setUser(newUserInfo);
+  };
+
   const logout = () => {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user_info");
@@ -50,6 +59,7 @@ export const AuthProvider = ({ children }) => {
     token,
     login,
     logout,
+    updateUser,
     isAuthenticated: !!user,
     isAdmin: user?.role === "Admin",
     isManager: user?.role === "Manager",

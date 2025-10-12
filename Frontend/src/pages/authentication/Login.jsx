@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../../contexts/AuthContext";
 
 function Login() {
@@ -44,14 +43,15 @@ function Login() {
       const data = response.data;
       if (data && data.token) {
         localStorage.setItem("auth_token", data.token);
-        const decodedToken = jwtDecode(data.token);
+        
+        // ✅ Get user info from response
         const userInfo = {
-          id: decodedToken.sub,
-          role: decodedToken.role,
-          name: decodedToken.name,
-          avatar: decodedToken.avatar,
-          email: decodedToken.email,
-          profileCompleted: decodedToken.profileCompleted,
+          id: data.user?.id,
+          role: data.user?.role,
+          name: data.user?.name,
+          avatar: data.user?.avatar,
+          email: data.user?.email,
+          profileCompleted: data.user?.profileCompleted,
         };
 
         login(data.token, userInfo);

@@ -81,7 +81,7 @@ const Header = () => {
   };
 
   const handleMyProfile = () => {
-    navigate("/profile");
+    navigate("/my-profile");
     setIsDropdownOpen(false);
   };
 
@@ -112,7 +112,24 @@ const Header = () => {
           <div className="header-profile" onClick={toggleDropdown}>
             <div className="profile-container">
               <div className="profile-avatar">
-                <img src={user.avatar} alt="User Avatar" />
+                {user.avatar ? (
+                  <img src={user.avatar} alt="User Avatar" />
+                ) : (
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: '#7152F3',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: '600',
+                    fontSize: '16px'
+                  }}>
+                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
               </div>
               <div className="profile-info">
                 <div className="profile-name">{user.name}</div>

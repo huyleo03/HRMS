@@ -139,27 +139,29 @@
 }
 
 /* Layout 2 cột: Avatar bên trái, Fields bên phải */
-.form-layout-horizontal {
+.add-employee-container .form-layout-horizontal {
   display: flex;
   gap: 40px;
   align-items: flex-start;
+  width: 100%;
 }
 
-/* Cột Avatar - 30% */
-.avatar-column {
-  flex: 0 0 30%;
+/* Cột Avatar - Fixed width */
+.add-employee-container .avatar-column {
+  flex: 0 0 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 24px 0;
   position: sticky;
-  top: 24px; /* Sticky khi scroll */
+  top: 24px;
 }
 
-/* Cột Fields - 70% */
-.fields-column {
+/* Cột Fields - Take remaining space */
+.add-employee-container .fields-column {
   flex: 1;
-  min-width: 0; /* Để tránh overflow */
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Avatar Section - Cập nhật cho layout dọc */
@@ -294,28 +296,28 @@
 
 
 /* Form Rows - mỗi trường một hàng trong layout dọc */
-.form-rows {
+.add-employee-container .form-rows {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.form-row {
-  display: block; /* Thay vì grid 2 cột */
+.add-employee-container .form-row {
+  display: block;
   width: 100%;
 }
 
 /* Input Group */
-.input-group {
+.add-employee-container .input-group {
   position: relative;
   width: 100%;
 }
 
 /* Inputs & Selects */
-.input-group input,
-.input-group select {
+.add-employee-container .input-group input,
+.add-employee-container .input-group select {
   width: 100%;
-  height: 48px; /* Tăng chiều cao cho dễ nhìn */
+  height: 48px;
   padding: 12px 16px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
@@ -326,23 +328,23 @@
   box-sizing: border-box;
 }
 
-.input-group input::placeholder {
+.add-employee-container .input-group input::placeholder {
   color: #9ca3af;
 }
 
-.input-group input:focus,
-.input-group select:focus {
+.add-employee-container .input-group input:focus,
+.add-employee-container .input-group select:focus {
   outline: none;
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-.input-group input.error,
-.input-group select.error {
+.add-employee-container .input-group input.error,
+.add-employee-container .input-group select.error {
   border-color: #ef4444;
 }
 
-.error-text {
+.add-employee-container .error-text {
   position: absolute;
   top: 100%;
   margin-top: 6px;
@@ -351,7 +353,7 @@
   color: #ef4444;
 }
 
-.input-group select {
+.add-employee-container .input-group select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 0.75rem center;
