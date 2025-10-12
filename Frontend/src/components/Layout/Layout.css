@@ -8,7 +8,7 @@
 /* Content Area (Header + Main Content) */
 .content-area {
     flex: 1;
-    margin-left: 280px;
+    margin-left: 250px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;

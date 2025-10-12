@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../../contexts/AuthContext";
 
 function Login() {
@@ -42,17 +41,17 @@ function Login() {
         }
       );
       const data = response.data;
-      console.log("Received Token:", data.token);
       if (data && data.token) {
         localStorage.setItem("auth_token", data.token);
-        const decodedToken = jwtDecode(data.token);
+        
+        // ✅ Get user info from response
         const userInfo = {
-          id: decodedToken.sub,
-          role: decodedToken.role,
-          name: decodedToken.name,
-          avatar: decodedToken.avatar,
-          email: decodedToken.email,
-          profileCompleted: decodedToken.profileCompleted,
+          id: data.user?.id,
+          role: data.user?.role,
+          name: data.user?.name,
+          avatar: data.user?.avatar,
+          email: data.user?.email,
+          profileCompleted: data.user?.profileCompleted,
         };
 
         login(data.token, userInfo);
@@ -63,9 +62,10 @@ function Login() {
         }
         toast.success("Đăng nhập thành công!");
         setTimeout(() => {
-          // Redirect based on user role
-          if (userInfo.role === 'Manager') {
+          if (userInfo.role === "Manager") {
             navigate("/manager/dashboard");
+          } else if (userInfo.role === "Employee") {
+            navigate("/employee/dashboard");
           } else {
             navigate("/dashboard");
           }

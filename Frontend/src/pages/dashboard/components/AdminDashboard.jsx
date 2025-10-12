@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Dashboard = () => {
+const AdminDashboard = () => {
     return (
         <div className="content-wrapper">
             <div style={{ 
@@ -182,4 +182,4 @@ const Dashboard = () => {
     );
 };
 
-export default Dashboard;
+export default AdminDashboard;

@@ -1,6 +1,6 @@
 /* Sidebar Container */
 .side-menu {
-    width: 280px;
+    width: 250px;
     height: 100vh;
     position: fixed;
     left: 0;
@@ -11,7 +11,7 @@
 
 /* Background */
 .sidebar-background {
-    width: 280px;
+    width: 250px;
     height: 100vh;
     position: absolute;
     left: 0;

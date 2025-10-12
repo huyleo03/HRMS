@@ -94,6 +94,14 @@
   gap: 24px;
 }
 
+.profile-avatar-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
 .profile-avatar {
   position: relative;
 }
@@ -250,26 +258,26 @@
   border: 1px solid #E5E4E9;
 }
 
-.info-grid {
+.my-profile .info-grid {
   display: flex;
   flex-direction: column;
   gap: 32px;
 }
 
-.info-row {
+.my-profile .info-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 48px;
 }
 
-.info-field {
+.my-profile .info-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
   position: relative;
 }
 
-.info-field label {
+.my-profile .info-field label {
   font-size: 14px;
   font-weight: 500;
   color: #A2A1A8;
@@ -277,7 +285,7 @@
   letter-spacing: 0.5px;
 }
 
-.field-value {
+.my-profile .field-value {
   font-size: 16px;
   color: #16151C;
   font-weight: 400;
@@ -285,13 +293,13 @@
   min-height: 24px;
 }
 
-.field-line {
+.my-profile .field-line {
   height: 1px;
   background: #E5E4E9;
   margin-top: 8px;
 }
 
-.field-input {
+.my-profile .field-input {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid #E5E4E9;
@@ -303,13 +311,13 @@
   box-sizing: border-box;
 }
 
-.field-input:focus {
+.my-profile .field-input:focus {
   outline: none;
   border-color: #7152F3;
   box-shadow: 0 0 0 3px rgba(113, 82, 243, 0.1);
 }
 
-.field-select {
+.my-profile .field-select {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid #E5E4E9;
@@ -322,14 +330,186 @@
   box-sizing: border-box;
 }
 
-.field-select:focus {
+.my-profile .field-select:focus {
   outline: none;
   border-color: #7152F3;
   box-shadow: 0 0 0 3px rgba(113, 82, 243, 0.1);
 }
 
-.field-select option {
+.my-profile .field-select option {
   padding: 8px;
+}
+
+/* Avatar Upload Controls */
+.my-profile .avatar-upload-controls-external {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.my-profile .upload-btn-external {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #7152F3 0%, #5a3dd1 100%);
+  color: white;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 0;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  width: 48px;
+  height: 48px;
+  box-shadow: 0 4px 12px rgba(113, 82, 243, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.my-profile .upload-btn-external::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.my-profile .upload-btn-external:hover::before {
+  opacity: 1;
+}
+
+.my-profile .upload-btn-external:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(113, 82, 243, 0.5);
+}
+
+.my-profile .upload-btn-external:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.my-profile .upload-btn-external svg {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.my-profile .upload-actions-external {
+  display: flex;
+  gap: 10px;
+}
+
+.my-profile .upload-confirm-btn-external {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 0;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 0;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.my-profile .upload-confirm-btn-external::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.my-profile .upload-confirm-btn-external:hover:not(:disabled)::before {
+  opacity: 1;
+}
+
+.my-profile .upload-confirm-btn-external:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.08);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+
+.my-profile .upload-confirm-btn-external:active:not(:disabled) {
+  transform: translateY(-1px) scale(0.95);
+}
+
+.my-profile .upload-confirm-btn-external:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.my-profile .upload-confirm-btn-external svg {
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.my-profile .upload-cancel-btn-external {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+  border: none;
+  padding: 0;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 0;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.my-profile .upload-cancel-btn-external::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.my-profile .upload-cancel-btn-external:hover::before {
+  opacity: 1;
+}
+
+.my-profile .upload-cancel-btn-external:hover {
+  transform: translateY(-3px) scale(1.08);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+.my-profile .upload-cancel-btn-external:active {
+  transform: translateY(-1px) scale(0.95);
+}
+
+.my-profile .upload-cancel-btn-external svg {
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
 }
 
 /* Responsive Design */
@@ -345,7 +525,7 @@
     text-align: center;
   }
 
-  .info-row {
+  .my-profile .info-row {
     grid-template-columns: 1fr;
     gap: 24px;
   }

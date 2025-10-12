@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema(
   {
@@ -23,7 +24,7 @@ const userSchema = new mongoose.Schema(
     passwordHash: {
       type: String,
       required: [true, "Mật khẩu là bắt buộc"],
-      select: false, // Không trả về mật khẩu khi query
+      select: false,
     },
     full_name: {
       type: String,
@@ -79,10 +80,6 @@ const userSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
-    manager_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
     status: {
       type: String,
       enum: ["Active", "Inactive", "Suspended"],
@@ -92,7 +89,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // ===== Thêm 2 trường cho OTP =====
     otp: {
       type: String,
       select: false,
@@ -101,13 +97,202 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+
+    // ===== EMAIL SETTINGS =====
+    emailSettings: {
+      signature: {
+        type: String,
+        default: "",
+        maxlength: [500, "Chữ ký không được vượt quá 500 ký tự"],
+        trim: true,
+      },
+      autoReply: {
+        enabled: {
+          type: Boolean,
+          default: false,
+        },
+        subject: {
+          type: String,
+          default: "Tôi hiện không có mặt",
+          trim: true,
+        },
+        message: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+        startDate: {
+          type: Date,
+        },
+        endDate: {
+          type: Date,
+        },
+      },
+      notifications: {
+        newMail: {
+          type: Boolean,
+          default: true,
+        },
+        mentions: {
+          type: Boolean,
+          default: true,
+        },
+        important: {
+          type: Boolean,
+          default: true,
+        },
+        sound: {
+          type: Boolean,
+          default: true,
+        },
+        newRequest: {
+          type: Boolean,
+          default: true,
+        },
+        requestApproved: {
+          type: Boolean,
+          default: true,
+        },
+        requestRejected: {
+          type: Boolean,
+          default: true,
+        },
+        requestComment: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      displaySettings: {
+        emailsPerPage: {
+          type: Number,
+          default: 25,
+          enum: [10, 25, 50, 100],
+        },
+        showAvatars: {
+          type: Boolean,
+          default: true,
+        },
+        conversationView: {
+          type: Boolean,
+          default: true,
+        },
+        showPreview: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      sendSettings: {
+        confirmBeforeSend: {
+          type: Boolean,
+          default: false,
+        },
+        sendDelay: {
+          type: Number,
+          default: 0,
+          min: 0,
+          max: 30,
+        },
+        alwaysCcMyself: {
+          type: Boolean,
+          default: false,
+        },
+        defaultReplyAll: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      vacationResponder: {
+        enabled: {
+          type: Boolean,
+          default: false,
+        },
+        subject: {
+          type: String,
+          default: "Tôi đang trong kỳ nghỉ",
+          trim: true,
+        },
+        message: {
+          type: String,
+          trim: true,
+        },
+        startDate: {
+          type: Date,
+        },
+        endDate: {
+          type: Date,
+        },
+        contactsOnly: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    },
+
+    // ===== MAIL STATISTICS =====
+    mailStats: {
+      totalSent: {
+        type: Number,
+        default: 0,
+      },
+      totalReceived: {
+        type: Number,
+        default: 0,
+      },
+      totalDrafts: {
+        type: Number,
+        default: 0,
+      },
+      storageUsed: {
+        type: Number,
+        default: 0,
+      },
+      lastActivityAt: {
+        type: Date,
+      },
+    },
+
+    // ===== REQUEST STATISTICS =====
+    requestStats: {
+      totalSubmitted: {
+        type: Number,
+        default: 0,
+      },
+      totalApproved: {
+        type: Number,
+        default: 0,
+      },
+      totalRejected: {
+        type: Number,
+        default: 0,
+      },
+      totalPending: {
+        type: Number,
+        default: 0,
+      },
+      totalApprovalRequired: {
+        type: Number,
+        default: 0,
+      },
+      totalApprovalCompleted: {
+        type: Number,
+        default: 0,
+      },
+      lastRequestAt: {
+        type: Date,
+      },
+      lastApprovalAt: {
+        type: Date,
+      },
+    },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
   }
 );
 
-// Hook để tự động tạo employeeId trước khi lưu
+// ===== HOOKS =====
+
+// Tự động tạo employeeId
 userSchema.pre("save", function (next) {
   if (this.isNew && !this.employeeId) {
     this.employeeId = crypto.randomUUID().split("-")[0].toUpperCase();
@@ -115,7 +300,7 @@ userSchema.pre("save", function (next) {
   next();
 });
 
-// Middleware để hash mật khẩu trước khi lưu
+// Hash mật khẩu
 userSchema.pre("save", async function (next) {
   if (!this.isModified("passwordHash")) return next();
 
@@ -128,10 +313,201 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// Method để so sánh mật khẩu đã nhập với mật khẩu đã hash
+userSchema.pre("save", async function (next) {
+  if (
+    this.isNew &&
+    this.role === "Employee" &&
+    this.department &&
+    this.department.department_id &&
+    !this.manager_id
+  ) {
+    try {
+      const Department = mongoose.model("Department");
+      const department = await Department.findById(
+        this.department.department_id
+      );
+
+      // Nếu phòng ban có managerId, gán vào
+      if (department && department.managerId) {
+        this.manager_id = department.managerId;
+        console.log(
+          `✅ Tự động gán Manager ${department.managerId} cho Employee ${this.full_name}`
+        );
+      } else {
+        console.log(
+          `⚠️ Phòng ban "${this.department.department_name}" chưa có Manager. Employee ${this.full_name} sẽ có manager_id = null.`
+        );
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi tự động gán manager:", error);
+    }
+  }
+  next();
+});
+
+// ===== BASIC METHODS =====
+
+// So sánh mật khẩu
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.passwordHash);
 };
+
+// Lấy danh sách nhân viên dưới quyền
+userSchema.methods.getSubordinates = async function () {
+  return await this.model("User").find({ manager_id: this._id });
+};
+
+// Kiểm tra xem user có phải là manager của targetUser không
+userSchema.methods.isManagerOf = function (targetUserId) {
+  return this._id.equals(targetUserId);
+};
+
+// ===== EMAIL METHODS =====
+
+// Cập nhật mail stats
+userSchema.methods.updateMailStats = async function (stats) {
+  if (stats.sentCount) this.mailStats.totalSent += stats.sentCount;
+  if (stats.receivedCount) this.mailStats.totalReceived += stats.receivedCount;
+  if (stats.draftCount) this.mailStats.totalDrafts += stats.draftCount;
+  if (stats.storageUsed) this.mailStats.storageUsed += stats.storageUsed;
+
+  this.mailStats.lastActivityAt = new Date();
+  await this.save();
+  return this;
+};
+
+// ===== REQUEST METHODS =====
+
+// Cập nhật request stats
+userSchema.methods.updateRequestStats = async function (action) {
+  if (action === "submit") {
+    this.requestStats.totalSubmitted += 1;
+    this.requestStats.totalPending += 1;
+    this.requestStats.lastRequestAt = new Date();
+  } else if (action === "approve") {
+    this.requestStats.totalApprovalCompleted += 1;
+    this.requestStats.lastApprovalAt = new Date();
+  } else if (action === "approved") {
+    this.requestStats.totalApproved += 1;
+    this.requestStats.totalPending -= 1;
+  } else if (action === "rejected") {
+    this.requestStats.totalRejected += 1;
+    this.requestStats.totalPending -= 1;
+  } else if (action === "cancelled") {
+    this.requestStats.totalPending -= 1;
+  }
+
+  await this.save();
+  return this;
+};
+
+// Lấy danh sách người có thể approve request
+userSchema.methods.getAvailableApprovers = async function () {
+  const approvers = [];
+
+  // Manager trực tiếp
+  if (this.manager_id) {
+    const manager = await this.model("User").findById(this.manager_id);
+    if (manager && manager.status === "Active") {
+      approvers.push(manager);
+    }
+  }
+
+  // Admins và Managers trong cùng department
+  if (this.department && this.department.department_id) {
+    const departmentApprovers = await this.model("User").find({
+      "department.department_id": this.department.department_id,
+      role: { $in: ["Admin", "Manager"] },
+      status: "Active",
+      _id: { $ne: this._id },
+    });
+
+    approvers.push(...departmentApprovers);
+  }
+
+  // Loại bỏ duplicate
+  const uniqueApprovers = approvers.filter(
+    (approver, index, self) =>
+      index ===
+      self.findIndex((a) => a._id.toString() === approver._id.toString())
+  );
+
+  return uniqueApprovers;
+};
+
+// Kiểm tra user có quyền approve request không
+userSchema.methods.canApproveRequest = function (request) {
+  const isApprover = request.approvalFlow.some(
+    (a) =>
+      a.approverId.toString() === this._id.toString() &&
+      a.role === "Approver" &&
+      a.status === "Pending"
+  );
+
+  return isApprover;
+};
+
+// Lấy số request pending cần user approve
+userSchema.methods.getPendingRequestCount = async function () {
+  const Request = mongoose.model("Request");
+  const count = await Request.countDocuments({
+    "approvalFlow.approverId": this._id,
+    "approvalFlow.status": "Pending",
+    status: { $in: ["Pending", "Manager_Approved"] },
+  });
+
+  return count;
+};
+
+// Lấy số request pending của user (người gửi)
+userSchema.methods.getMyPendingRequestCount = async function () {
+  const Request = mongoose.model("Request");
+  const count = await Request.countDocuments({
+    submittedBy: this._id,
+    status: { $in: ["Pending", "Manager_Approved"] },
+  });
+
+  return count;
+};
+
+// Kiểm tra user có phải subordinate của managerId không
+userSchema.methods.isSubordinateOf = function (managerId) {
+  if (!this.manager_id) return false;
+  return this.manager_id.toString() === managerId.toString();
+};
+
+// Lấy full hierarchy chain (từ user lên đến top manager)
+userSchema.methods.getManagerChain = async function () {
+  const chain = [];
+  let currentUser = this;
+
+  while (currentUser.manager_id) {
+    const manager = await this.model("User").findById(currentUser.manager_id);
+    if (!manager) break;
+
+    chain.push({
+      _id: manager._id,
+      full_name: manager.full_name,
+      email: manager.email,
+      role: manager.role,
+      jobTitle: manager.jobTitle,
+    });
+
+    currentUser = manager;
+  }
+
+  return chain;
+};
+
+// ===== INDEXES =====
+userSchema.index({ email: 1 });
+userSchema.index({ employeeId: 1 });
+userSchema.index({ manager_id: 1 });
+userSchema.index({ "department.department_id": 1 });
+userSchema.index({ role: 1, status: 1 });
+userSchema.index({ "requestStats.totalPending": 1 });
+userSchema.index({ "requestStats.totalApprovalRequired": 1 });
+userSchema.index({ full_name: "text" });
 
 const User = mongoose.model("User", userSchema, "User");
 

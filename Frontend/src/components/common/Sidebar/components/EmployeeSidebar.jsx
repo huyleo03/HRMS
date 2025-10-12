@@ -1,21 +1,27 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import '../common/Sidebar/Sidebar.css';
+import { useAuth } from '../../../../contexts/AuthContext';
+import "../css/Sidebar.css";
 
-const ManagerSidebar = () => {
+const EmployeeSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isEmployee } = useAuth();
+
+  if (!isEmployee) {
+    return null;
+  }
 
   const menuItems = [
     {
-      path: '/manager/dashboard',
+      path: '/employee/dashboard',
       label: 'Dashboard',
       icon: '📊'
     },
     {
-      path: '/manager/employees',
-      label: 'All Employees',
-      icon: '👥'
+      path: '/employee/requests',
+      label: 'Request',
+      icon: '🏖️'
     }
   ];
 
@@ -25,7 +31,7 @@ const ManagerSidebar = () => {
 
   const isActiveRoute = (path) => {
     return location.pathname === path || 
-           (path === '/manager/employees' && location.pathname.startsWith('/manager/employees'));
+           (path === '/employee/requests' && location.pathname.startsWith('/employee/requests'));
   };
 
   return (
@@ -77,4 +83,4 @@ const ManagerSidebar = () => {
   );
 };
 
-export default ManagerSidebar;
+export default EmployeeSidebar;

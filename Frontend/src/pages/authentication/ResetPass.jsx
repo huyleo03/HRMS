@@ -26,14 +26,12 @@ export default function ResetPasswordPage() {
     localStorage.getItem("reset_otp");
 
   useEffect(() => {
-    if (email) localStorage.setItem("reset_email", email);
-    if (otp) localStorage.setItem("reset_otp", otp);
-
-    if (!email || !otp) {
-      toast.error("Quy trình đặt lại mật khẩu không hợp lệ");
-      navigate("/forgot-password");
-    }
-  }, [email, otp, navigate]);
+  const resetToken = localStorage.getItem("reset_token");
+  if (!resetToken || !email) {
+    toast.error("Quy trình đặt lại mật khẩu không hợp lệ");
+    navigate("/forgot-password");
+  }
+}, [email, navigate]);
 
   const handleReset = async () => {
     if (!newPassword || !confirmPassword) {

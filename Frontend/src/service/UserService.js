@@ -1,175 +1,115 @@
-// src/services/user.service.js
-import axios from "axios";
-
-const API = process.env.REACT_APP_API_URL_BACKEND;
+import { apiCall, API_CONFIG } from "./api";
 
 // Lấy danh sách users (GET /api/users)
-export const getUsers = async (
-  {
-    page = 1,
-    limit = 10,
-    sortBy = "created_at",
-    sortOrder = "asc",
-    name,
-    role,
-    status,
-    department,
-  },
-  token
-) => {
+export const getUsers = async (params = {}) => {
   try {
-    const res = await axios.get(`${API}/users`, {
-      headers: { Authorization: `Bearer ${token}` },
-      params: {
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-        name,
-        role,
-        status,
-        department,
-      },
+    return await apiCall(API_CONFIG.ENDPOINTS.GET_USERS, {
+      method: "GET",
+      params: params,
     });
-    return res.data;
   } catch (error) {
-    console.error("getUsers error:", error?.response?.data || error.message);
+    console.error("getUsers service error:", error);
     throw error;
   }
 };
 
 // Tạo user (POST /api/users/create)
-export const createUser = async (payload, token) => {
+export const createUser = async (payload) => {
   try {
-    const res = await axios.post(`${API}/users/create`, payload, {
-      headers: { Authorization: `Bearer ${token}` },
+    return await apiCall(API_CONFIG.ENDPOINTS.CREATE_USER, {
+      method: "POST",
+      body: JSON.stringify(payload),
     });
-    return res.data; // { message, user, temporaryPassword }
   } catch (error) {
-    console.error("createUser error:", error?.response?.data || error.message);
+    console.error("createUser service error:", error);
     throw error;
   }
 };
 
 // Đổi trạng thái (PUT /api/users/status/:id)
-export const changeUserStatus = async (id, status, token) => {
+export const changeUserStatus = async (id, status) => {
   try {
-    const res = await axios.put(
-      `${API}/users/status/${id}`,
-      { status },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return res.data; // { message, user }
+    return await apiCall(API_CONFIG.ENDPOINTS.CHANGE_USER_STATUS(id), {
+      method: "PUT",
+      body: JSON.stringify({ status }),
+    });
   } catch (error) {
-    console.error(
-      "changeUserStatus error:",
-      error?.response?.data || error.message
-    );
+    console.error("changeUserStatus service error:", error);
     throw error;
   }
 };
 
 // Đổi vai trò (PUT /api/users/role/:id)
-export const changeUserRole = async (id, role, token) => {
+export const changeUserRole = async (id, role) => {
   try {
-    const res = await axios.put(
-      `${API}/users/role/${id}`,
-      { role },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return res.data; // { message, user }
+    return await apiCall(API_CONFIG.ENDPOINTS.CHANGE_USER_ROLE(id), {
+      method: "PUT",
+      body: JSON.stringify({ role }),
+    });
   } catch (error) {
-    console.error(
-      "changeUserRole error:",
-      error?.response?.data || error.message
-    );
+    console.error("changeUserRole service error:", error);
     throw error;
   }
 };
 
 // Cập nhật thông tin user (PUT /api/users/update/:id)
-export const updateUser = async (id, userData, token) => {
+export const updateUser = async (id, userData) => {
   try {
-    const res = await axios.put(
-      `${API}/users/update/${id}`,
-      userData,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return res.data; // { message, user }
+    return await apiCall(API_CONFIG.ENDPOINTS.UPDATE_USER(id), {
+      method: "PUT",
+      body: JSON.stringify(userData),
+    });
   } catch (error) {
-    console.error(
-      "updateUser error:",
-      error?.response?.data || error.message
-    );
+    console.error("updateUser service error:", error);
     throw error;
   }
 };
 
 // Xoá user (DELETE /api/users/:id)
-export const deleteUser = async (id, token) => {
+export const deleteUser = async (id) => {
   try {
-    const res = await axios.delete(`${API}/users/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    return await apiCall(API_CONFIG.ENDPOINTS.DELETE_USER(id), {
+      method: "DELETE",
     });
-    return res.data; // { message }
   } catch (error) {
-    console.error("deleteUser error:", error?.response?.data || error.message);
+    console.error("deleteUser service error:", error);
     throw error;
   }
 };
 
-// Lấy chi tiết user (GET /api/users/detail/:id) 
-export const getUserById = async (id, token) => {
+// Lấy chi tiết user (GET /api/users/detail/:id)
+export const getUserById = async (id) => {
   try {
-    const res = await axios.get(`${API}/users/detail/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    return await apiCall(API_CONFIG.ENDPOINTS.GET_USER_BY_ID(id), {
+      method: "GET",
     });
-    return res.data; // { user }
   } catch (error) {
-    console.error("getUserById error:", error?.response?.data || error.message);
+    console.error("getUserById service error:", error);
     throw error;
   }
 };
 
-// Lấy own profile (GET /api/users/:id)
-export const getOwnProfile = async (userId, token) => {
+// Lấy own profile (GET /api/users/me)
+export const getOwnProfile = async () => {
   try {
-    console.log('getOwnProfile API call:', {
-      url: `${API}/users/${userId}`,
-      hasToken: !!token
+    return await apiCall(API_CONFIG.ENDPOINTS.GET_OWN_PROFILE, {
+      method: "GET",
     });
-    
-    const res = await axios.get(`${API}/users/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    
-    console.log('getOwnProfile response:', res.data);
-    return res.data; // { user }
   } catch (error) {
-    console.error("getOwnProfile error:", error?.response?.data || error.message);
-    console.error("Full error:", error);
+    console.error("getOwnProfile service error:", error);
     throw error;
   }
 };
 
-// Cập nhật own profile (PUT /api/users/:id)
-export const updateOwnProfile = async (userId, userData, token) => {
+// Cập nhật own profile (PUT /api/users/me)
+export const updateOwnProfile = async (userData) => {
   try {
-    console.log('updateOwnProfile API call:', {
-      url: `${API}/users/${userId}`,
-      userData,
-      hasToken: !!token
+    return await apiCall(API_CONFIG.ENDPOINTS.UPDATE_OWN_PROFILE, {
+      method: "PUT",
+      body: JSON.stringify(userData),
     });
-    
-    const res = await axios.put(`${API}/users/${userId}`, userData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    
-    console.log('updateOwnProfile response:', res.data);
-    return res.data; // { message, user }
   } catch (error) {
-    console.error("updateOwnProfile error:", error?.response?.data || error.message);
-    console.error("Full error:", error);
+    console.error("updateOwnProfile service error:", error);
     throw error;
   }
 };
