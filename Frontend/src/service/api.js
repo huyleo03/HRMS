@@ -10,11 +10,10 @@ export const API_CONFIG = {
     CREATE_USER: "/api/users/create",
     GET_USER_BY_ID: (id) => `/api/users/detail/${id}`,
     UPDATE_USER: (id) => `/api/users/update/${id}`,
-    DELETE_USER: (id) => `/api/users/${id}`,
-    CHANGE_USER_STATUS: (id) => `/api/users/status/${id}`,
-    CHANGE_USER_ROLE: (id) => `/api/users/role/${id}`,
     GET_OWN_PROFILE: (userId) => `/api/users/${userId}`,
     UPDATE_OWN_PROFILE: (userId) => `/api/users/${userId}`,
+    GET_CC_SUGGESTIONS: "/api/users/cc-suggestions",
+    SEARCH_USERS_FOR_CC: "/api/users/search",
 
     // Departments
     GET_DEPARTMENTS: "/api/departments",

@@ -12,13 +12,19 @@ import {
   Plus,
   Trash2,
   Loader,
+  Search,
 } from "lucide-react";
 import "../css/CreateRequestModal.css";
 import { getWorkflowTemplate } from "../../../service/WorkflowService";
 import RequestTypeGrid from "./RequestTypeGrid";
-import { toast } from 'react-toastify'; 
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { createRequest } from "../../../service/RequestService";
+import {
+  getCcSuggestions,
+  searchUsersForCc,
+} from "../../../service/UserService";
+import { uploadFileToCloudinary } from "../../../service/CloudinaryService";
 
 const CreateRequestModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -42,39 +48,15 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
   const [errors, setErrors] = useState({});
   const [showCCForm, setShowCCForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [ccSuggestions, setCcSuggestions] = useState([]);
+  const [isCcLoading, setIsCcLoading] = useState(false);
+  const [ccSearchTerm, setCcSearchTerm] = useState("");
 
   const priorityOptions = [
     { value: "Low", label: "Thấp", color: "#6b7280" },
     { value: "Normal", label: "Bình thường", color: "#3b82f6" },
     { value: "High", label: "Cao", color: "#f59e0b" },
     { value: "Urgent", label: "Khẩn cấp", color: "#ef4444" },
-  ];
-
-  const mockUsers = [
-    {
-      id: "user1",
-      name: "Nguyễn Văn A",
-      email: "nguyenvana@company.com",
-      role: "Manager",
-    },
-    {
-      id: "user2",
-      name: "Trần Thị B",
-      email: "tranthib@company.com",
-      role: "Manager",
-    },
-    {
-      id: "user3",
-      name: "Lê Văn C",
-      email: "levanc@company.com",
-      role: "Director",
-    },
-    {
-      id: "user4",
-      name: "Phạm Thị D",
-      email: "phamthid@company.com",
-      role: "HR",
-    },
   ];
 
   useEffect(() => {
@@ -118,6 +100,43 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     fetchWorkflow();
   }, [formData.type]);
 
+  useEffect(() => {
+    const fetchInitialSuggestions = async () => {
+      setIsCcLoading(true);
+      try {
+        const data = await getCcSuggestions();
+        setCcSuggestions(data);
+      } catch (error) {
+        toast.error("Không thể tải danh sách người dùng.");
+        console.error("Failed to fetch CC suggestions:", error);
+      } finally {
+        setIsCcLoading(false);
+      }
+    };
+    if (showCCForm && ccSearchTerm.trim() === "") {
+      fetchInitialSuggestions();
+    }
+  }, [showCCForm, ccSearchTerm]);
+
+  useEffect(() => {
+    if (ccSearchTerm.trim().length < 2) {
+      return;
+    }
+    const debounceTimer = setTimeout(async () => {
+      setIsCcLoading(true);
+      try {
+        const data = await searchUsersForCc(ccSearchTerm);
+        setCcSuggestions(data);
+      } catch (error) {
+        toast.error("Lỗi khi tìm kiếm người dùng.");
+        console.error("Failed to search CC users:", error);
+      } finally {
+        setIsCcLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [ccSearchTerm]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -152,11 +171,15 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
   };
 
   const addCC = (user) => {
+    if (formData.cc.some((ccUser) => ccUser.userId === user._id)) {
+      toast.info(`${user.full_name} đã có trong danh sách.`);
+      return;
+    }
     const ccUser = {
-      userId: user.id,
-      name: user.name,
+      userId: user._id,
+      name: user.full_name,
       email: user.email,
-      department: "IT",
+      avatar: user.avatar,
     };
     setFormData((prev) => ({
       ...prev,
@@ -205,23 +228,32 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
       toast.warn("Vui lòng điền đầy đủ các trường bắt buộc.");
       return;
     }
-    setIsSubmitting(true); 
+    setIsSubmitting(true);
     try {
-      const { approvers, ...dataToSend } = formData;
+      const uploadedAttachments = await Promise.all(
+        formData.attachments.map(async (att) => {
+          const realFileUrl = await uploadFileToCloudinary(att.file);
+          return {
+            fileName: att.fileName,
+            fileUrl: realFileUrl, 
+            fileSize: att.fileSize,
+            fileType: att.fileType,
+          };
+        })
+      );
+
+
+      const { approvers, attachments, ...dataToSend } = formData;
       const requestData = {
         ...dataToSend,
-        attachments: formData.attachments.map((att) => ({
-          fileName: att.fileName,
-          fileUrl: "https://storage.example.com/" + att.fileName, 
-          fileSize: att.fileSize,
-          fileType: att.fileType,
-        })),
+        attachments: uploadedAttachments, 
         cc: formData.cc.map((user) => ({
           userId: user.userId,
           name: user.name,
           email: user.email,
         })),
       };
+
       const response = await createRequest(requestData);
       toast.success(response.message || "Gửi đơn thành công!");
       if (onSubmit) {
@@ -236,7 +268,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
         "Có lỗi xảy ra khi tạo đơn. Vui lòng thử lại.";
       toast.error(errorMessage);
     } finally {
-      setIsSubmitting(false); 
+      setIsSubmitting(false);
     }
   };
 
@@ -525,13 +557,12 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
               <Users size={16} />
               CC - Người nhận bản sao
             </label>
-
             {formData.cc.length > 0 && (
               <div className="user-list">
                 {formData.cc.map((ccUser, index) => (
                   <div key={index} className="user-item">
                     <div className="user-avatar">
-                      {ccUser.name.charAt(0).toUpperCase()}
+                      {ccUser.name ? ccUser.name.charAt(0).toUpperCase() : "?"}
                     </div>
                     <div className="user-info">
                       <span className="user-name">{ccUser.name}</span>
@@ -548,33 +579,54 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
                 ))}
               </div>
             )}
-
             <button
               type="button"
               className="add-btn"
               onClick={() => setShowCCForm(!showCCForm)}
             >
               <Plus size={16} />
-              Thêm người nhận CC
+              {showCCForm ? "Đóng" : "Thêm người nhận CC"}
             </button>
-
             {showCCForm && (
               <div className="user-select-dropdown">
-                {mockUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="user-select-item"
-                    onClick={() => addCC(user)}
-                  >
-                    <div className="user-avatar">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="user-info">
-                      <span className="user-name">{user.name}</span>
-                      <span className="user-email">{user.email}</span>
-                    </div>
+                <div className="user-search-input-wrapper">
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm theo tên hoặc email..."
+                    className="user-search-input"
+                    value={ccSearchTerm}
+                    onChange={(e) => setCcSearchTerm(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+                {isCcLoading ? (
+                  <div className="user-select-item loading">
+                    <Loader size={16} className="animate-spin" />
+                    <span>Đang tải...</span>
                   </div>
-                ))}
+                ) : ccSuggestions.length > 0 ? (
+                  ccSuggestions.map((user) => (
+                    <div
+                      key={user._id}
+                      className="user-select-item"
+                      onClick={() => addCC(user)}
+                    >
+                      <div className="user-avatar">
+                        {user.full_name
+                          ? user.full_name.charAt(0).toUpperCase()
+                          : "?"}
+                      </div>
+                      <div className="user-info">
+                        <span className="user-name">{user.full_name}</span>
+                        <span className="user-email">{user.email}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="user-select-item empty">
+                    <span>Không tìm thấy người dùng nào.</span>
+                  </div>
+                )}
               </div>
             )}
           </div>

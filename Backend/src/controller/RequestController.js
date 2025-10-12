@@ -34,24 +34,18 @@ exports.createRequest = async (req, res) => {
       type,
       submitter.department?.department_id?._id
     );
-
     if (!workflow) {
       return res.status(400).json({
         message: `Không tìm thấy quy trình phê duyệt nào cho loại đơn "${type}". Vui lòng liên hệ Admin.`,
       });
     }
-
-    // Bước 3: "Giải quyết" (Resolve) Workflow Template thành một danh sách người duyệt cụ thể
     const resolvedApprovalFlow = await workflow.resolveApprovers(submitter);
-
     if (!resolvedApprovalFlow || resolvedApprovalFlow.length === 0) {
       return res.status(400).json({
         message: `Quy trình phê duyệt cho loại đơn "${type}" không hợp lệ hoặc không tìm thấy người duyệt.`,
       });
     }
-
     const ccUserIds = (cc || []).map((c) => c.userId);
-    // Bước 4: Tạo đơn mới với 'approvalFlow' đã được giải quyết tự động
     const newRequest = new Request({
       submittedBy: submitter._id,
       submittedByName: submitter.full_name,
@@ -101,7 +95,7 @@ exports.createRequest = async (req, res) => {
 
     // Gửi thông báo cho CC (nếu có)
     if (ccUserIds.length > 0) {
-      await createNotificationForMultipleUsers(ccIds, {
+      await createNotificationForMultipleUsers(ccUserIds, {
         senderId: submitter._id,
         senderName: submitter.full_name,
         senderAvatar: submitter.avatar,

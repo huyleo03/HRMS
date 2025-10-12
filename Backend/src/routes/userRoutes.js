@@ -10,50 +10,25 @@ router.post(
   userController.createUserByAdmin
 );
 router.get(
-  "/", 
-  authenticate, 
-  authorize("Admin", "Manager"), 
+  "/",
+  authenticate,
+  authorize("Admin", "Manager"),
   userController.getAllUsers
 );
-
-router.put(
-  "/status/:id",
-  authenticate,
-  authorize("Admin"),
-  userController.changeUserStatus
-);
-
-router.put(
-  "/role/:id",
-  authenticate,
-  authorize("Admin"),
-  userController.changeUserRole
-);
-
 router.put(
   "/update/:id",
   authenticate,
   authorize("Admin"),
   userController.updateUserByAdmin
 );
-
 router.get(
   "/detail/:id",
   authenticate,
   authorize("Admin", "Manager"),
   userController.getUserById
 );
-
-router.get(
-  "/:id",
-  authenticate,
-  userController.getOwnProfile
-);
-
-router.put(
-  "/:id",
-  authenticate,
-  userController.updateOwnProfile
-);
-
+router.get("/cc-suggestions", authenticate, userController.getCcUserList);
+router.get("/search", authenticate, userController.searchUsersForCc);
+router.get("/:id", authenticate, userController.getOwnProfile);
+router.put("/:id", authenticate, userController.updateOwnProfile);
 module.exports = router;

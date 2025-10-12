@@ -26,32 +26,6 @@ export const createUser = async (payload) => {
   }
 };
 
-// Đổi trạng thái (PUT /api/users/status/:id)
-export const changeUserStatus = async (id, status) => {
-  try {
-    return await apiCall(API_CONFIG.ENDPOINTS.CHANGE_USER_STATUS(id), {
-      method: "PUT",
-      body: JSON.stringify({ status }),
-    });
-  } catch (error) {
-    console.error("changeUserStatus service error:", error);
-    throw error;
-  }
-};
-
-// Đổi vai trò (PUT /api/users/role/:id)
-export const changeUserRole = async (id, role) => {
-  try {
-    return await apiCall(API_CONFIG.ENDPOINTS.CHANGE_USER_ROLE(id), {
-      method: "PUT",
-      body: JSON.stringify({ role }),
-    });
-  } catch (error) {
-    console.error("changeUserRole service error:", error);
-    throw error;
-  }
-};
-
 // Cập nhật thông tin user (PUT /api/users/update/:id)
 export const updateUser = async (id, userData) => {
   try {
@@ -61,18 +35,6 @@ export const updateUser = async (id, userData) => {
     });
   } catch (error) {
     console.error("updateUser service error:", error);
-    throw error;
-  }
-};
-
-// Xoá user (DELETE /api/users/:id)
-export const deleteUser = async (id) => {
-  try {
-    return await apiCall(API_CONFIG.ENDPOINTS.DELETE_USER(id), {
-      method: "DELETE",
-    });
-  } catch (error) {
-    console.error("deleteUser service error:", error);
     throw error;
   }
 };
@@ -110,6 +72,34 @@ export const updateOwnProfile = async (userId, userData) => {
     });
   } catch (error) {
     console.error("updateOwnProfile service error:", error);
+    throw error;
+  }
+};
+
+// Lấy danh sách gợi ý CC (GET /api/users/cc-suggestions)
+export const getCcSuggestions = async () => {
+  try {
+    return await apiCall(API_CONFIG.ENDPOINTS.GET_CC_SUGGESTIONS, {
+      method: "GET",
+    });
+  } catch (error) {
+    console.error("getCcSuggestions service error:", error);
+    throw error;
+  }
+};
+
+// Tìm kiếm người dùng để CC (GET /api/users/search?q=)
+export const searchUsersForCc = async (query) => {
+  try {
+    if (!query || query.trim() === "") {
+      return [];
+    }
+    return await apiCall(API_CONFIG.ENDPOINTS.SEARCH_USERS_FOR_CC, {
+      method: "GET",
+      params: { q: query },
+    });
+  } catch (error) {
+    console.error("searchUsersForCc service error:", error);
     throw error;
   }
 };
