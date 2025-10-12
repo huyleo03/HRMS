@@ -1,246 +1,149 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import RequestSidebar from "../components/RequestSidebar";
 import RequestToolbar from "../components/RequestToolbar";
 import RequestList from "../components/RequestList";
 import RequestDetail from "../components/RequestDetail";
 import CreateRequestModal from "../components/CreateRequestModal";
+import { getUserRequests } from "../../../service/RequestService";
+import { toast } from "react-toastify";
 import "../css/Request.css";
 
-// Mock Data
-const mockRequests = [
-  {
-    id: "REQ-001",
-    type: "Leave",
-    subject: "Xin nghỉ phép",
-    reason: "Tôi xin phép được nghỉ để giải quyết công việc cá nhân",
-    submittedBy: {
-      id: "user1",
-      name: "Nguyễn Văn A",
-      email: "nguyenvana@company.com",
-      avatar: "https://i.pravatar.cc/150?img=1",
-    },
-    startDate: "2025-10-15",
-    endDate: "2025-10-17",
-    priority: "Normal",
-    status: "Pending",
-    isRead: false,
-    isStarred: false,
-    attachments: [],
-    createdAt: "2025-10-09T08:30:00Z",
-    approvalFlow: [
-      {
-        level: 1,
-        approverName: "Trần Thị B",
-        status: "Pending",
-      },
-    ],
-  },
-  {
-    id: "REQ-002",
-    type: "Overtime",
-    subject: "Đề xuất tăng ca dự án ABC",
-    reason: "Dự án ABC cần hoàn thành trước deadline",
-    submittedBy: {
-      id: "user2",
-      name: "Lê Văn C",
-      email: "levanc@company.com",
-      avatar: "https://i.pravatar.cc/150?img=2",
-    },
-    startDate: "2025-10-10",
-    endDate: "2025-10-10",
-    hour: 4,
-    priority: "High",
-    status: "Pending",
-    isRead: true,
-    isStarred: true,
-    attachments: [
-      {
-        fileName: "project-timeline.pdf",
-        fileSize: 1024000,
-      },
-    ],
-    createdAt: "2025-10-08T14:20:00Z",
-    approvalFlow: [
-      {
-        level: 1,
-        approverName: "Trần Thị B",
-        status: "Pending",
-      },
-    ],
-  },
-  {
-    id: "REQ-003",
-    type: "RemoteWork",
-    subject: "Xin làm việc từ xa",
-    reason: "Cần chăm sóc người thân ốm",
-    submittedBy: {
-      id: "user3",
-      name: "Phạm Thị D",
-      email: "phamthid@company.com",
-      avatar: "https://i.pravatar.cc/150?img=3",
-    },
-    startDate: "2025-10-12",
-    endDate: "2025-10-14",
-    priority: "Normal",
-    status: "NeedsReview",
-    isRead: true,
-    isStarred: false,
-    attachments: [],
-    createdAt: "2025-10-07T10:15:00Z",
-    approvalFlow: [
-      {
-        level: 1,
-        approverName: "Trần Thị B",
-        status: "NeedsReview",
-      },
-    ],
-  },
-  {
-    id: "REQ-004",
-    type: "Equipment",
-    subject: "Xin cấp laptop mới",
-    reason: "Laptop hiện tại đã quá cũ, ảnh hưởng hiệu suất làm việc",
-    submittedBy: {
-      id: "user4",
-      name: "Hoàng Văn E",
-      email: "hoangvane@company.com",
-      avatar: "https://i.pravatar.cc/150?img=4",
-    },
-    startDate: "2025-10-15",
-    priority: "High",
-    status: "Pending",
-    isRead: false,
-    isStarred: false,
-    attachments: [
-      {
-        fileName: "laptop-specs.xlsx",
-        fileSize: 256000,
-      },
-    ],
-    createdAt: "2025-10-09T09:00:00Z",
-    approvalFlow: [
-      {
-        level: 1,
-        approverName: "Trần Thị B",
-        status: "Pending",
-      },
-      {
-        level: 2,
-        approverName: "Vũ Văn F",
-        status: "Pending",
-      },
-    ],
-  },
-  {
-    id: "REQ-005",
-    type: "Expense",
-    subject: "Thanh toán chi phí công tác",
-    reason: "Chi phí đi công tác Hà Nội từ 01-05/10",
-    submittedBy: {
-      id: "user5",
-      name: "Đỗ Thị G",
-      email: "dothig@company.com",
-      avatar: "https://i.pravatar.cc/150?img=5",
-    },
-    startDate: "2025-10-01",
-    endDate: "2025-10-05",
-    priority: "Normal",
-    status: "Pending",
-    isRead: true,
-    isStarred: false,
-    attachments: [
-      {
-        fileName: "expense-report.xlsx",
-        fileSize: 768000,
-      },
-      {
-        fileName: "receipts.pdf",
-        fileSize: 2048000,
-      },
-    ],
-    createdAt: "2025-10-06T16:45:00Z",
-    approvalFlow: [
-      {
-        level: 1,
-        approverName: "Trần Thị B",
-        status: "Pending",
-      },
-    ],
-  },
-];
+const REQUESTS_PER_PAGE = 20;
 
 const Request = () => {
+  // State Management
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const [requests, setRequests] = useState(mockRequests);
+  const [requests, setRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
   const [activeTab, setActiveTab] = useState("inbox");
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Filter requests
-  const filteredRequests = requests.filter((req) => {
-    const matchSearch =
-      req.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      req.submittedBy.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchStatus = filterStatus === "all" || req.status === filterStatus;
-    const matchPriority =
-      filterPriority === "all" || req.priority === filterPriority;
-
-    return matchSearch && matchStatus && matchPriority;
+  const [isLoading, setIsLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalRequests: 0,
+    limit: REQUESTS_PER_PAGE,
   });
 
-  // Count unread
-  const unreadCount = requests.filter((req) => !req.isRead).length;
+  // Data Fetching
+  const fetchRequests = useCallback(async (box = "inbox", page = 1) => {
+    setIsLoading(true);
+    try {
+      const response = await getUserRequests({
+        box,
+        page,
+        limit: REQUESTS_PER_PAGE,
+        sortBy: "created_at",
+        sortOrder: "desc",
+      });
 
-  // Toggle star
-  const handleToggleStar = (requestId) => {
-    setRequests(
-      requests.map((req) =>
-        req.id === requestId ? { ...req, isStarred: !req.isStarred } : req
-      )
-    );
-  };
+      setRequests(response.data.requests);
+      setPagination(response.data.pagination);
+    } catch (error) {
+      console.error("❌ Lỗi khi tải danh sách đơn:", error);
+      toast.error("Không thể tải danh sách đơn. Vui lòng thử lại.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  // Select request and mark as read
-  const handleSelectRequest = (request) => {
-    setSelectedRequest(request);
-    setRequests(
-      requests.map((req) =>
-        req.id === request.id ? { ...req, isRead: true } : req
-      )
-    );
-  };
-
-  // Close detail panel
-  const handleCloseDetail = () => {
+  // Effects
+  useEffect(() => {
+    fetchRequests(activeTab, 1);
     setSelectedRequest(null);
-  };
+  }, [activeTab, fetchRequests]);
 
-  // Open create request modal
-  const handleOpenModal = () => {
+  // Memoized Filtering Logic (Client-side)
+  const filteredRequests = useMemo(() => {
+    return requests.filter((request) => {
+      const lowerCaseQuery = searchQuery.toLowerCase();
+
+      const matchesSearch =
+        !searchQuery ||
+        request.title?.toLowerCase().includes(lowerCaseQuery) ||
+        request.sender?.fullName?.toLowerCase().includes(lowerCaseQuery);
+
+      const matchesStatus =
+        filterStatus === "all" || request.status === filterStatus;
+
+      const matchesPriority =
+        filterPriority === "all" || request.priority === filterPriority;
+
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [requests, searchQuery, filterStatus, filterPriority]);
+
+  // Memoized Handlers
+  const handleToggleStar = useCallback((requestId) => {
+    setRequests((prev) =>
+      prev.map((req) =>
+        req._id === requestId
+          ? {
+              ...req,
+              senderStatus: {
+                ...req.senderStatus,
+                isStarred: !req.senderStatus?.isStarred,
+              },
+            }
+          : req
+      )
+    );
+    // TODO: Gọi API để cập nhật star status
+    // toggleStarRequest(requestId);
+  }, []);
+
+  const handleSelectRequest = useCallback((request) => {
+    setSelectedRequest(request);
+    // TODO: Nếu có API đánh dấu đã đọc, gọi ở đây
+  }, []);
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedRequest(null);
+  }, []);
+
+  const handleOpenModal = useCallback(() => {
     setIsModalOpen(true);
-  };
+  }, []);
 
-  // Close modal
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
-  };
+  }, []);
 
-  // Handle create request submit
-  const handleCreateRequest = (requestData) => {
-    console.log("Creating request:", requestData);
-    // TODO: Call API to create request
-    // After success, add new request to list and close modal
+  const handleCreateRequest = useCallback(() => {
+    if (activeTab === "sent") {
+      fetchRequests(activeTab, 1);
+    }
     handleCloseModal();
-  };
+  }, [activeTab, fetchRequests, handleCloseModal]);
+
+  const handleActionSuccess = useCallback((updatedRequest) => {
+    setSelectedRequest(updatedRequest);
+    setRequests((prev) =>
+      prev.map((req) => (req._id === updatedRequest._id ? updatedRequest : req))
+    );
+  }, []);
+
+  const handlePageChange = useCallback(
+    (newPage) => {
+      fetchRequests(activeTab, newPage);
+    },
+    [activeTab, fetchRequests]
+  );
+
+  const handleTabChange = useCallback((tabId) => {
+    setActiveTab(tabId);
+  }, []);
+
+  // Derived State
+  const unreadCount = activeTab === "inbox" ? pagination.totalRequests : 0;
 
   return (
     <div className="request-container">
       <RequestSidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         unreadCount={unreadCount}
         onComposeClick={handleOpenModal}
       />
@@ -255,19 +158,29 @@ const Request = () => {
           setFilterPriority={setFilterPriority}
         />
 
-        <div className={`request-content ${selectedRequest ? "split-view" : "full-view"}`}>
+        <div
+          className={`request-content ${
+            selectedRequest ? "split-view" : "full-view"
+          }`}
+        >
           <RequestList
             requests={filteredRequests}
             selectedRequest={selectedRequest}
             onSelectRequest={handleSelectRequest}
             onToggleStar={handleToggleStar}
             hasSelectedRequest={!!selectedRequest}
+            isLoading={isLoading}
+            activeTab={activeTab}
+            pagination={pagination}
+            onPageChange={handlePageChange}
           />
 
           {selectedRequest && (
-            <RequestDetail 
-              request={selectedRequest} 
+            <RequestDetail
+              key={`${selectedRequest._id}-${selectedRequest.status}-${selectedRequest.updated_at}`}
+              request={selectedRequest}
               onClose={handleCloseDetail}
+              onActionSuccess={handleActionSuccess}
             />
           )}
         </div>

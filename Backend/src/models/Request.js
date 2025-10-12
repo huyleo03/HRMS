@@ -273,13 +273,15 @@ requestSchema.pre("save", function (next) {
 
 // Tự động cập nhật status dựa trên approvalFlow
 requestSchema.pre("save", function (next) {
+  const specialStatuses = ["Cancelled", "NeedsReview", "Completed"];
+  if (specialStatuses.includes(this.status)) {
+    return next();
+  }
   if (this.approvalFlow && this.approvalFlow.length > 0) {
     const approvers = this.approvalFlow.filter((a) => a.role === "Approver");
-
     if (approvers.length > 0) {
       const allApproved = approvers.every((a) => a.status === "Approved");
       const anyRejected = approvers.some((a) => a.status === "Rejected");
-
       if (anyRejected) {
         this.status = "Rejected";
       } else if (allApproved) {

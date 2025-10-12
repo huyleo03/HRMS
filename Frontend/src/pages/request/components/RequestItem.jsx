@@ -1,6 +1,24 @@
 import React from "react";
-import { Star, Paperclip, Calendar, Users, MoreVertical, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { getStatusInfo, getPriorityColor, formatDate } from "../../../utils/requestHelpers";
+import {
+  Star,
+  Paperclip,
+  Calendar,
+  Users,
+  MoreVertical,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Ban,
+  FileText,
+  CheckCircle2,
+  XOctagon,
+} from "lucide-react";
+import {
+  getStatusInfo,
+  getPriorityColor,
+  formatDate,
+} from "../../../utils/requestHelpers";
 
 const RequestItem = ({ request, isSelected, onSelect, onToggleStar }) => {
   const statusInfo = getStatusInfo(request.status);
@@ -10,6 +28,10 @@ const RequestItem = ({ request, isSelected, onSelect, onToggleStar }) => {
     CheckCircle,
     XCircle,
     AlertCircle,
+    Ban,
+    FileText,
+    CheckCircle2,
+    XOctagon,
   }[statusInfo.icon];
 
   return (
@@ -43,7 +65,9 @@ const RequestItem = ({ request, isSelected, onSelect, onToggleStar }) => {
           <span className={`badge-type type-${request.type.toLowerCase()}`}>
             {request.type}
           </span>
-          <span className={`badge-priority ${getPriorityColor(request.priority)}`}>
+          <span
+            className={`badge-priority ${getPriorityColor(request.priority)}`}
+          >
             {request.priority}
           </span>
         </div>

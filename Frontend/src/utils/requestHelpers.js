@@ -20,9 +20,30 @@ export const getStatusInfo = (status) => {
       color: "info",
       icon: "AlertCircle",
     },
+    Cancelled: {
+      label: "Đã hủy",
+      color: "secondary", 
+      icon: "Ban", 
+    },
+    Draft: {
+      label: "Bản nháp",
+      color: "secondary",
+      icon: "FileText",
+    },
+    Manager_Approved: {
+      label: "Quản lý đã duyệt",
+      color: "info",
+      icon: "CheckCircle",
+    },
+    Completed: {
+      label: "Hoàn thành",
+      color: "success",
+      icon: "CheckCircle2",
+    },
   };
   return statusMap[status] || statusMap.Pending;
 };
+// ...existing code...
 
 export const getPriorityColor = (priority) => {
   const priorityMap = {

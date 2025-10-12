@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   MoreVertical,
   Paperclip,
@@ -7,6 +7,11 @@ import {
   AlertCircle,
   Clock,
   X,
+  Trash2,
+  Ban,
+  FileText,
+  CheckCircle2,
+  XOctagon,
 } from "lucide-react";
 import {
   getStatusInfo,
@@ -14,15 +19,83 @@ import {
   formatDate,
   formatFileSize,
 } from "../../../utils/requestHelpers";
+import { useAuth } from "../../../contexts/AuthContext";
+import { cancelRequest, approveRequest } from "../../../service/RequestService";
+import { toast } from "react-toastify";
+import CancelRequestModal from "./CancelRequestModal";
+import ApproveRequestModal from "./ApproveRequestModal";
 
-const RequestDetail = ({ request, onClose }) => {
+const RequestDetail = ({ request, onClose, onActionSuccess }) => {
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  useEffect(() => {}, [request?.status]);
+
   if (!request) return null;
+  const pendingStep = request.approvalFlow.find(
+    (step) => step.status === "Pending"
+  );
+  const isCurrentUserApprover =
+    pendingStep &&
+    (typeof pendingStep.approverId === "object"
+      ? pendingStep.approverId._id === user.id
+      : pendingStep.approverId === user.id);
+  const isCurrentUserSubmitter = request.submittedBy._id === user.id;
+  const canCancel =
+    isCurrentUserSubmitter &&
+    ["Pending", "Manager_Approved"].includes(request.status);
 
   const StatusIcon = {
     CheckCircle,
     XCircle,
     AlertCircle,
     Clock,
+    Ban,
+    FileText,
+    CheckCircle2,
+    XOctagon,
+  };
+
+  const handleConfirmCancel = async (cancelReason) => {
+    setIsSubmitting(true);
+    try {
+      const response = await cancelRequest(request._id, cancelReason);
+      toast.success(response.message || "Đã hủy đơn thành công!");
+      setIsCancelModalOpen(false);
+      if (onActionSuccess) {
+        onActionSuccess(response.request);
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi hủy đơn.";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmApprove = async (comment) => {
+    setIsSubmitting(true);
+    try {
+      const response = await approveRequest(request._id, comment);
+      toast.success(response.message || "Phê duyệt đơn thành công!");
+
+      if (onActionSuccess) {
+        onActionSuccess(response.request);
+      }
+      setIsApproveModalOpen(false); // Đóng modal sau khi thành công
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi phê duyệt đơn.";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -30,7 +103,9 @@ const RequestDetail = ({ request, onClose }) => {
       <div className="detail-header">
         <div className="detail-title">
           <h2>{request.subject}</h2>
-          <span className={`badge-priority ${getPriorityColor(request.priority)}`}>
+          <span
+            className={`badge-priority ${getPriorityColor(request.priority)}`}
+          >
             {request.priority}
           </span>
         </div>
@@ -45,15 +120,16 @@ const RequestDetail = ({ request, onClose }) => {
       </div>
 
       <div className="detail-content">
-        {/* Sender Info */}
         <div className="detail-sender">
           <img
             src={request.submittedBy.avatar}
-            alt={request.submittedBy.name}
+            alt={request.submittedBy.full_name || request.submittedBy.name}
             className="sender-avatar"
           />
           <div className="sender-info">
-            <div className="sender-name">{request.submittedBy.name}</div>
+            <div className="sender-name">
+              {request.submittedBy.full_name || request.submittedBy.name}
+            </div>
             <div className="sender-email">{request.submittedBy.email}</div>
           </div>
           <div className="detail-date">{formatDate(request.createdAt)}</div>
@@ -61,7 +137,6 @@ const RequestDetail = ({ request, onClose }) => {
 
         {/* Body */}
         <div className="detail-body">
-          {/* Info Grid */}
           <div className="info-grid">
             <div className="info-item">
               <label>Loại đơn:</label>
@@ -166,20 +241,54 @@ const RequestDetail = ({ request, onClose }) => {
 
         {/* Actions */}
         <div className="detail-actions">
-          <button className="btn btn-success">
-            <CheckCircle size={18} />
-            Phê duyệt
-          </button>
-          <button className="btn btn-danger">
-            <XCircle size={18} />
-            Từ chối
-          </button>
-          <button className="btn btn-info">
-            <AlertCircle size={18} />
-            Yêu cầu chỉnh sửa
-          </button>
+          {isCurrentUserApprover && (
+            <>
+              <button
+                className="btn btn-success"
+                onClick={() => setIsApproveModalOpen(true)}
+                disabled={isSubmitting}
+              >
+                <CheckCircle size={18} />
+                {isSubmitting ? "Đang xử lý..." : "Phê duyệt"}
+              </button>
+              <button className="btn btn-danger">
+                <XCircle size={18} />
+                Từ chối
+              </button>
+              <button className="btn btn-info">
+                <AlertCircle size={18} />
+                Yêu cầu chỉnh sửa
+              </button>
+            </>
+          )}
+
+          {canCancel && (
+            <button
+              className="btn btn-outline-danger"
+              onClick={() => setIsCancelModalOpen(true)}
+              disabled={isSubmitting}
+            >
+              <Trash2 size={18} />
+              {isSubmitting ? "Đang hủy..." : "Hủy đơn"}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Cancel Request Modal */}
+      <CancelRequestModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={handleConfirmCancel}
+        isSubmitting={isSubmitting}
+      />
+
+      <ApproveRequestModal
+        isOpen={isApproveModalOpen}
+        onClose={() => setIsApproveModalOpen(false)}
+        onConfirm={handleConfirmApprove}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 };

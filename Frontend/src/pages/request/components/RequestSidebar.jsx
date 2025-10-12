@@ -1,7 +1,20 @@
 import React, { useState } from "react";
-import { Inbox, Send, FileText, Star, Trash2, Edit, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Inbox,
+  Send,
+  Star,
+  Edit,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+} from "lucide-react";
 
-const RequestSidebar = ({ activeTab, setActiveTab, unreadCount, onComposeClick }) => {
+const RequestSidebar = ({
+  activeTab,
+  setActiveTab,
+  counts = {},
+  onComposeClick,
+}) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const sidebarItems = [
@@ -9,32 +22,26 @@ const RequestSidebar = ({ activeTab, setActiveTab, unreadCount, onComposeClick }
       id: "inbox",
       label: "Hộp thư đến",
       icon: <Inbox size={20} />,
-      count: unreadCount,
+      count: counts.inbox || 0,
     },
     {
       id: "sent",
       label: "Đã gửi",
       icon: <Send size={20} />,
-      count: 0,
+      count: counts.sent || 0,
     },
     {
-      id: "drafts",
-      label: "Nháp",
-      icon: <FileText size={20} />,
-      count: 0,
+      id: "cc",
+      label: "Đơn CC",
+      icon: <Users size={20} />,
+      count: counts.cc || 0,
     },
     {
       id: "starred",
       label: "Đã đánh dấu",
       icon: <Star size={20} />,
-      count: 0,
-    },
-    {
-      id: "trash",
-      label: "Thùng rác",
-      icon: <Trash2 size={20} />,
-      count: 0,
-    },
+      count: counts.starred || 0,
+    }
   ];
 
   const toggleSidebar = () => {
@@ -60,7 +67,7 @@ const RequestSidebar = ({ activeTab, setActiveTab, unreadCount, onComposeClick }
         </button>
       </div>
 
-      {/* Compose Button - Expanded Mode */}
+      {/* Compose Button */}
       {!isCollapsed && (
         <div className="compose-button-wrapper">
           <button className="compose-button" onClick={handleComposeClick}>
@@ -70,7 +77,6 @@ const RequestSidebar = ({ activeTab, setActiveTab, unreadCount, onComposeClick }
         </div>
       )}
 
-      {/* Compose Button - Collapsed Mode */}
       {isCollapsed && (
         <div className="compose-button-wrapper">
           <button

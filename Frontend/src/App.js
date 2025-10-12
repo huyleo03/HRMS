@@ -69,10 +69,8 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={["Manager"]} />}>
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/employees" element={<ManagerEmployees />} />
-            <Route
-              path="/manager/employees/:id"
-              element={<ManagerViewEmployeeDetails />}
-            />
+            <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />}/>
+            <Route path="/manager/requests" element={<Request />} />
           </Route>
 
           {/* --- Employee Routes --- */}

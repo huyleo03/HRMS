@@ -148,7 +148,6 @@
 
 .request-sidebar.collapsed .sidebar-item {
   justify-content: center;
-  padding: 12px 8px;
 }
 
 .sidebar-item:hover {
@@ -967,6 +966,98 @@
   box-shadow: 0 4px 8px rgba(124, 58, 237, 0.3);
 }
 
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.loading-state p {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.empty-state svg {
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #4b5563;
+}
+
+.empty-state p {
+  font-size: 14px;
+}
+
+/* Pagination */
+.list-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: white;
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #6b7280;
+}
+
 /* ===== SCROLLBAR ===== */
 .list-items::-webkit-scrollbar,
 .detail-content::-webkit-scrollbar {
@@ -988,7 +1079,6 @@
 .detail-content::-webkit-scrollbar-thumb:hover {
   background: #959da5;
 }
-
 
 /* ===== ANIMATIONS ===== */
 @keyframes slideInRight {
@@ -1016,7 +1106,7 @@
   .request-content.split-view .request-list {
     width: 35%;
   }
-  
+
   .request-content.split-view .request-detail {
     width: 65%;
   }
