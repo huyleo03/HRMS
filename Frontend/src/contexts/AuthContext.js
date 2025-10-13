@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }) => {
     const storedToken = localStorage.getItem("auth_token");
     if (storedToken) {
       try {
-        // Giữ lại jwtDecode để không ảnh hưởng code người khác
         const decodedToken = jwtDecode(storedToken);
         if (decodedToken.exp * 1000 > Date.now()) {
           const userInfo = JSON.parse(localStorage.getItem("user_info"));

@@ -34,24 +34,18 @@ exports.createRequest = async (req, res) => {
       type,
       submitter.department?.department_id?._id
     );
-
     if (!workflow) {
       return res.status(400).json({
         message: `Không tìm thấy quy trình phê duyệt nào cho loại đơn "${type}". Vui lòng liên hệ Admin.`,
       });
     }
-
-    // Bước 3: "Giải quyết" (Resolve) Workflow Template thành một danh sách người duyệt cụ thể
     const resolvedApprovalFlow = await workflow.resolveApprovers(submitter);
-
     if (!resolvedApprovalFlow || resolvedApprovalFlow.length === 0) {
       return res.status(400).json({
         message: `Quy trình phê duyệt cho loại đơn "${type}" không hợp lệ hoặc không tìm thấy người duyệt.`,
       });
     }
-
     const ccUserIds = (cc || []).map((c) => c.userId);
-    // Bước 4: Tạo đơn mới với 'approvalFlow' đã được giải quyết tự động
     const newRequest = new Request({
       submittedBy: submitter._id,
       submittedByName: submitter.full_name,
@@ -101,7 +95,7 @@ exports.createRequest = async (req, res) => {
 
     // Gửi thông báo cho CC (nếu có)
     if (ccUserIds.length > 0) {
-      await createNotificationForMultipleUsers(ccIds, {
+      await createNotificationForMultipleUsers(ccUserIds, {
         senderId: submitter._id,
         senderName: submitter.full_name,
         senderAvatar: submitter.avatar,
@@ -131,6 +125,96 @@ exports.createRequest = async (req, res) => {
     });
   }
 };
+
+// Lấy ra các request của user hiện tại
+exports.getUserRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const {
+      box = "inbox",
+      page = 1,
+      limit = 20,
+      sortBy = "sentAt",
+      sortOrder = "desc",
+    } = req.query;
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
+    let baseQuery = {};
+    switch (box.toLowerCase()) {
+      case "inbox":
+        baseQuery = {
+          "approvalFlow.approverId": userId,
+          "approvalFlow.status": "Pending",
+          status: { $in: ["Pending", "Manager_Approved"] },
+        };
+        break;
+      case "sent":
+        baseQuery = {
+          submittedBy: userId,
+          "senderStatus.isDraft": false,
+        };
+        break;
+      case "cc":
+        baseQuery = { cc: userId };
+        break;
+      case "starred":
+        baseQuery = {
+          submittedBy: userId,
+          "senderStatus.isStarred": true,
+        };
+        break;
+      case "drafts":
+        baseQuery = {
+          submittedBy: userId,
+          "senderStatus.isDraft": true,
+        };
+        break;
+      case "all":
+        baseQuery = {
+          $or: [
+            { "approvalFlow.approverId": userId },
+            { submittedBy: userId },
+            { cc: userId },
+          ],
+        };
+        break;
+      default:
+        return res.status(400).json({ message: "Hộp thư không hợp lệ." });
+    }
+    const sortOptions = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+    const [requests, totalRequests] = await Promise.all([
+      Request.find(baseQuery)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limitNum)
+        .populate("submittedBy", "full_name avatar")
+        .populate("approvalFlow.approverId", "full_name avatar")
+        .populate("cc", "full_name avatar")
+        .lean(),
+      Request.countDocuments(baseQuery),
+    ]);
+    res.status(200).json({
+      message: `Lấy danh sách đơn trong hộp thư '${box}' thành công`,
+      data: {
+        requests,
+        pagination: {
+          currentPage: pageNum,
+          totalPages: Math.ceil(totalRequests / limitNum),
+          totalRequests,
+          limit: limitNum,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách đơn:", error);
+    res.status(500).json({
+      message: "Lỗi server khi lấy danh sách đơn",
+      error: error.message,
+    });
+  }
+};
+
 
 // ===== 2. PHÊ DUYỆT ĐƠN (APPROVE) =====
 exports.approveRequest = async (req, res) => {
@@ -350,21 +434,15 @@ exports.cancelRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { comment } = req.body;
-
     const request = await Request.findById(requestId);
     if (!request) {
       return res.status(404).json({ message: "Không tìm thấy đơn" });
     }
-
     await request.cancel(req.user.id, comment || "");
-
     const submitter = await User.findById(req.user.id);
-
-    // ✅ TẠO THÔNG BÁO CHO APPROVERS ĐANG PENDING
     const pendingApprovers = request.approvalFlow
       .filter((a) => a.role === "Approver" && a.status === "Pending")
       .map((a) => a.approverId);
-
     if (pendingApprovers.length > 0) {
       await createNotificationForMultipleUsers(pendingApprovers, {
         senderId: submitter._id,
@@ -383,13 +461,17 @@ exports.cancelRequest = async (req, res) => {
         },
       });
     }
-
+    await request.populate([
+      { path: "submittedBy", select: "full_name avatar email" },
+      { path: "approvalFlow.approverId", select: "full_name avatar" },
+      { path: "cc", select: "full_name avatar" }
+    ]);
     res.status(200).json({
       message: "Hủy đơn thành công",
       request,
     });
   } catch (error) {
-    console.error("Lỗi khi hủy đơn:", error);
+    console.error("❌ [Cancel Request] Lỗi khi hủy đơn:", error);
     res.status(500).json({
       message: error.message || "Lỗi server",
     });

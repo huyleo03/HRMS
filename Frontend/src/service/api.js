@@ -10,6 +10,8 @@ export const API_CONFIG = {
     CREATE_USER: "/api/users/create",
     GET_USER_BY_ID: (id) => `/api/users/detail/${id}`,
     UPDATE_USER: (id) => `/api/users/update/${id}`,
+    GET_CC_SUGGESTIONS: "/api/users/cc-suggestions",
+    SEARCH_USERS_FOR_CC: "/api/users/search",
     GET_OWN_PROFILE: `/api/users/me`,
     UPDATE_OWN_PROFILE: `/api/users/me`,
 
@@ -24,6 +26,8 @@ export const API_CONFIG = {
 
     // REQUESTS
     CREATE_REQUEST: "/api/requests/create",
+    GET_REQUESTS: "/api/requests",
+    APPROVE_REQUEST: (id) => `/api/requests/${id}/approve`,
 
     // WORKFLOWS
     GET_WORKFLOWS: "/api/workflows",

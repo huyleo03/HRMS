@@ -19,6 +19,7 @@ const notificationSchema = new mongoose.Schema(
         "NewRequest", // ✅ THÊM MỚI
         "AttendanceUpdate",
         "General",
+        "RequestUpdate",
       ],
       required: true,
     },

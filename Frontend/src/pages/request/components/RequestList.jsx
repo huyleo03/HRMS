@@ -1,6 +1,6 @@
 import React from "react";
 import RequestItem from "./RequestItem";
-import EmptyState from "./EmptyState";
+import { Loader, Inbox } from "lucide-react";
 
 const RequestList = ({
   requests,
@@ -8,27 +8,89 @@ const RequestList = ({
   onSelectRequest,
   onToggleStar,
   hasSelectedRequest,
+  isLoading,
+  activeTab,
+  pagination,
+  onPageChange,
 }) => {
+  const getTabTitle = () => {
+    const titles = {
+      inbox: "Hộp thư đến",
+      sent: "Đã gửi",
+      cc: "Đơn CC",
+      starred: "Đã đánh dấu",
+      all: "Tất cả",
+    };
+    return titles[activeTab] || "Danh sách đơn";
+  };
+
+  const getEmptyMessage = () => {
+    const messages = {
+      inbox: "Không có đơn cần duyệt",
+      sent: "Chưa gửi đơn nào",
+      cc: "Không có đơn CC",
+      starred: "Chưa có đơn đánh dấu",
+    };
+    return messages[activeTab] || "Không có đơn nào";
+  };
+
   return (
     <div className={`request-list ${hasSelectedRequest ? "compact" : "full"}`}>
       <div className="list-header">
-        <h3>Hộp thư đến ({requests.length})</h3>
+        <h3>
+          {getTabTitle()} 
+          {!isLoading && ` (${pagination.totalRequests})`}
+        </h3>
       </div>
 
-      {requests.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="list-items">
-          {requests.map((request) => (
-            <RequestItem
-              key={request.id}
-              request={request}
-              isSelected={selectedRequest?.id === request.id}
-              onSelect={onSelectRequest}
-              onToggleStar={onToggleStar}
-            />
-          ))}
+      {isLoading ? (
+        <div className="loading-state">
+          <Loader size={32} className="animate-spin" />
+          <p>Đang tải...</p>
         </div>
+      ) : requests.length === 0 ? (
+        <div className="empty-state">
+          <Inbox size={64} />
+          <h3>{getEmptyMessage()}</h3>
+          <p>Không có đơn yêu cầu nào.</p>
+        </div>
+      ) : (
+        <>
+          <div className="list-items">
+            {requests.map((request) => (
+              <RequestItem
+                key={request._id}
+                request={request}
+                isSelected={selectedRequest?._id === request._id}
+                onSelect={onSelectRequest}
+                onToggleStar={onToggleStar}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="list-pagination">
+              <button
+                className="pagination-btn"
+                disabled={pagination.currentPage === 1}
+                onClick={() => onPageChange(pagination.currentPage - 1)}
+              >
+                ← Trước
+              </button>
+              <span className="pagination-info">
+                Trang {pagination.currentPage} / {pagination.totalPages}
+              </span>
+              <button
+                className="pagination-btn"
+                disabled={pagination.currentPage === pagination.totalPages}
+                onClick={() => onPageChange(pagination.currentPage + 1)}
+              >
+                Sau →
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
