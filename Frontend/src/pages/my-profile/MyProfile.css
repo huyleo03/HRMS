@@ -107,32 +107,34 @@
 }
 
 .my-profile .profile-avatar {
-  width: 140px !important;
-  height: 140px !important;
+  width: 120px !important;
+  height: 120px !important;
   flex-shrink: 0;
 }
 
 .my-profile .avatar-circle {
-  width: 140px !important;
-  height: 140px !important;
+  width: 120px !important;
+  height: 120px !important;
   border-radius: 50%;
-  background: #7152F3;
+  background: linear-gradient(135deg, #7152F3 0%, #9D7EF2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(113, 82, 243, 0.2);
 }
 
 .my-profile .avatar-image-container {
-  width: 140px !important;
-  height: 140px !important;
+  width: 120px !important;
+  height: 120px !important;
   border-radius: 50% !important;
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
   background-color: #f8f9fa !important;
   flex-shrink: 0 !important;
-  border: 2px solid #e5e4e9 !important;
+  border: 3px solid #fff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
 .profile-info-container {
@@ -289,14 +291,14 @@
   font-size: 16px;
   color: #16151C;
   font-weight: 400;
-  padding: 8px 0;
+  padding: 4px 0;
   min-height: 24px;
 }
 
 .my-profile .field-line {
   height: 1px;
   background: #E5E4E9;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .my-profile .field-input {

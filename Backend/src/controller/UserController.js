@@ -371,7 +371,7 @@ exports.getOwnProfile = async (req, res) => {
 // Update own profile (for all roles)
 exports.updateOwnProfile = async (req, res) => {
   const userId = req.user._id;
-  const { full_name, jobTitle, phone, address, avatar, gender } = req.body;
+  const { full_name, jobTitle, phone, address, avatar, gender, dateOfBirth } = req.body;
 
   try {
     const user = await User.findById(userId);
@@ -385,6 +385,7 @@ exports.updateOwnProfile = async (req, res) => {
     if (address) user.address = address;
     if (avatar) user.avatar = avatar;
     if (gender) user.gender = gender;
+    if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
 
     user.profileCompleted = true;
 
