@@ -41,21 +41,11 @@ exports.createUserByAdmin = async (req, res) => {
     });
 
     const savedUser = await newUser.save();
-
-    // ===== SỬA LẠI LOGIC ĐỒNG BỘ MANAGER VÀO DEPARTMENT =====
     if (role === "Manager" && department && department.department_id) {
       try {
-        // ❌ KHÔNG DÙNG findByIdAndUpdate (không trigger hook)
-        // await Department.findByIdAndUpdate(
-        //   department.department_id,
-        //   { managerId: savedUser._id },
-        //   { new: true }
-        // );
 
-        // ✅ DÙNG find + save ĐỂ TRIGGER HOOK
         const dept = await Department.findById(department.department_id);
         if (!dept) {
-          // Rollback nếu không tìm thấy department
           await User.findByIdAndDelete(savedUser._id);
           return res.status(404).json({
             message: "Không tìm thấy phòng ban.",
@@ -63,14 +53,10 @@ exports.createUserByAdmin = async (req, res) => {
         }
 
         dept.managerId = savedUser._id;
-        await dept.save(); // ✅ Trigger hook post("save") → Cập nhật tất cả Employee
+        await dept.save(); 
 
-        console.log(
-          `✅ Đã cập nhật managerId cho phòng ban ${department.department_name}`
-        );
       } catch (deptError) {
         console.error("❌ Lỗi khi cập nhật managerId:", deptError);
-        // Rollback: xóa user vừa tạo nếu không cập nhật được department
         await User.findByIdAndDelete(savedUser._id);
         return res.status(500).json({
           message:
@@ -79,11 +65,8 @@ exports.createUserByAdmin = async (req, res) => {
         });
       }
     }
-    // ===== KẾT THÚC LOGIC ĐỒNG BỘ =====
-
     const userResponse = savedUser.toObject();
     delete userResponse.passwordHash;
-
     try {
       const loginUrl = `http://localhost:3000/login`;
       const html = `
@@ -99,7 +82,6 @@ exports.createUserByAdmin = async (req, res) => {
         <p>Trân trọng,</p>
         <p>Phòng Nhân sự</p>
       `;
-
       await sendEmail({
         email: savedUser.email,
         subject: "Thông tin tài khoản HRMS của bạn",
@@ -108,7 +90,6 @@ exports.createUserByAdmin = async (req, res) => {
     } catch (emailError) {
       console.error("Lỗi gửi email:", emailError);
     }
-
     res.status(201).json({
       message: "Tạo người dùng thành công.",
       user: userResponse,
@@ -116,7 +97,6 @@ exports.createUserByAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Lỗi server khi tạo người dùng:", error);
-
     if (error.name === "ValidationError") {
       return res.status(400).json({
         message: "Dữ liệu không hợp lệ.",
@@ -124,14 +104,12 @@ exports.createUserByAdmin = async (req, res) => {
         details: error.errors,
       });
     }
-
     if (error.code === 11000) {
       return res.status(400).json({
         message: "Email đã tồn tại trong hệ thống.",
         error: error.message,
       });
     }
-
     res.status(500).json({
       message: "Lỗi server khi tạo người dùng.",
       error: error.message,
@@ -142,7 +120,6 @@ exports.createUserByAdmin = async (req, res) => {
 // List all users with pagination (for Admin)
 exports.getAllUsers = async (req, res) => {
   try {
-    // Lấy tất cả các tham số từ query
     const {
       page = 1,
       limit = 10,
@@ -153,7 +130,6 @@ exports.getAllUsers = async (req, res) => {
       status,
       department,
     } = req.query;
-
     let query = {};
     if (req.user.role === "Manager") {
       query.role = "Employee";
@@ -163,7 +139,6 @@ exports.getAllUsers = async (req, res) => {
     } else if (req.user.role === "Admin") {
       query.role = { $in: ["Manager", "Employee"] };
     }
-
     if (name) query.full_name = { $regex: name.trim(), $options: "i" };
     if (role) query.role = role;
     if (status) query.status = status;
@@ -172,18 +147,14 @@ exports.getAllUsers = async (req, res) => {
         $regex: department.trim(),
         $options: "i",
       };
-
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
-
     const users = await User.find(query)
       .select("-passwordHash")
       .sort(sortOptions)
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
-
     const total = await User.countDocuments(query);
-
     res.status(200).json({
       users,
       total,
@@ -378,7 +349,6 @@ exports.updateOwnProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng." });
     }
-
     if (full_name) user.full_name = full_name;
     if (jobTitle) user.jobTitle = jobTitle;
     if (phone) user.phone = phone;
@@ -388,12 +358,9 @@ exports.updateOwnProfile = async (req, res) => {
     if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
 
     user.profileCompleted = true;
-
     const updatedUser = await user.save();
-
     const userResponse = updatedUser.toObject();
     delete userResponse.passwordHash;
-
     res
       .status(200)
       .json({ message: "Cập nhật hồ sơ thành công.", user: userResponse });

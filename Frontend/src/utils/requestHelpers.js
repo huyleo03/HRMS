@@ -22,8 +22,8 @@ export const getStatusInfo = (status) => {
     },
     Cancelled: {
       label: "Đã hủy",
-      color: "secondary", 
-      icon: "Ban", 
+      color: "secondary",
+      icon: "Ban",
     },
     Draft: {
       label: "Bản nháp",
@@ -43,7 +43,6 @@ export const getStatusInfo = (status) => {
   };
   return statusMap[status] || statusMap.Pending;
 };
-// ...existing code...
 
 export const getPriorityColor = (priority) => {
   const priorityMap = {
@@ -56,15 +55,54 @@ export const getPriorityColor = (priority) => {
 };
 
 export const formatDate = (dateString) => {
+  if (!dateString) {
+    return "";
+  }
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    console.error("Không thể phân tích chuỗi ngày tháng:", dateString);
+    return "Ngày không hợp lệ";
+  }
+
   const now = new Date();
-  const diffTime = Math.abs(now - date);
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+  const startOfDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+
+  const diffTime = startOfToday.getTime() - startOfDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) return "Hôm nay";
   if (diffDays === 1) return "Hôm qua";
-  if (diffDays < 7) return `${diffDays} ngày trước`;
-  return date.toLocaleDateString("vi-VN");
+  if (diffDays > 1 && diffDays < 7) return `${diffDays} ngày trước`;
+
+  // 4. Định dạng ngày tháng theo chuẩn Việt Nam
+  return date.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+export const formatDateTime = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Thời gian không hợp lệ";
+
+  return date.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 export const formatFileSize = (bytes) => {

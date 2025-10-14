@@ -30,7 +30,6 @@ const departmentSchema = new mongoose.Schema(
 
 // ===== TỰ ĐỘNG CẬP NHẬT MANAGER CHO TẤT CẢ EMPLOYEE TRONG PHÒNG BAN =====
 departmentSchema.post("save", async function (doc) {
-  // Chỉ chạy khi managerId được thay đổi
   if (this.isModified("managerId")) {
     try {
       const User = mongoose.model("User");
@@ -53,12 +52,7 @@ departmentSchema.post("save", async function (doc) {
         employee.manager_id = doc.managerId;
         return employee.save();
       });
-
       await Promise.all(updatePromises);
-
-      console.log(
-        `✅ Đã cập nhật manager_id cho ${employees.length} Employee trong phòng ban "${doc.department_name}"`
-      );
     } catch (error) {
       console.error("❌ Lỗi khi tự động cập nhật manager cho Employee:", error);
     }
@@ -99,10 +93,6 @@ departmentSchema.post("findOneAndUpdate", async function (doc) {
       });
 
       await Promise.all(updatePromises);
-
-      console.log(
-        `✅ [findOneAndUpdate] Đã cập nhật manager_id cho ${employees.length} Employee trong phòng ban "${doc.department_name}"`
-      );
     } catch (error) {
       console.error("❌ Lỗi khi tự động cập nhật manager cho Employee:", error);
     }
@@ -122,10 +112,6 @@ departmentSchema.post("findOneAndUpdate", async function (doc) {
           role: "Employee",
         },
         { $set: { manager_id: null } }
-      );
-
-      console.log(
-        `✅ Đã xóa manager_id cho tất cả Employee trong phòng ban "${doc.department_name}"`
       );
     } catch (error) {
       console.error("❌ Lỗi khi xóa manager_id:", error);

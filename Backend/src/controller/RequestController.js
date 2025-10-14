@@ -215,7 +215,6 @@ exports.getUserRequests = async (req, res) => {
   }
 };
 
-
 // ===== 2. PHÊ DUYỆT ĐƠN (APPROVE) =====
 exports.approveRequest = async (req, res) => {
   try {
@@ -287,17 +286,12 @@ exports.rejectRequest = async (req, res) => {
         message: "Vui lòng cung cấp lý do từ chối",
       });
     }
-
     const request = await Request.findById(requestId);
     if (!request) {
       return res.status(404).json({ message: "Không tìm thấy đơn" });
     }
-
     await request.reject(req.user.id, comment);
-
     const approver = await User.findById(req.user.id);
-
-    // ✅ TẠO THÔNG BÁO CHO NGƯỜI GỬI
     await createNotificationForUser({
       userId: request.submittedBy,
       senderId: approver._id,
@@ -380,51 +374,133 @@ exports.requestChanges = async (req, res) => {
 exports.resubmitRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
-    const { reason, attachments, ...updates } = req.body;
 
+    // 1. Tìm request
     const request = await Request.findById(requestId);
     if (!request) {
       return res.status(404).json({ message: "Không tìm thấy đơn" });
     }
 
-    if (updates.subject) request.subject = updates.subject;
-    if (reason) request.reason = reason;
-    if (updates.startDate) request.startDate = updates.startDate;
-    if (updates.endDate) request.endDate = updates.endDate;
-    if (updates.hour) request.hour = updates.hour;
-    if (attachments) request.attachments = attachments;
+    // 2. Kiểm tra quyền
+    if (request.submittedBy.toString() !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "Không có quyền chỉnh sửa đơn này" });
+    }
 
-    await request.resubmit(req.user.id);
+    // 3. Kiểm tra trạng thái
+    if (request.status !== "NeedsReview") {
+      return res.status(400).json({
+        message: "Chỉ có thể chỉnh sửa đơn ở trạng thái 'Cần chỉnh sửa'",
+      });
+    }
 
+    // 4. Lấy thông tin submitter
     const submitter = await User.findById(req.user.id);
+    if (!submitter) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy thông tin người gửi." });
+    }
 
-    // ✅ TẠO THÔNG BÁO CHO APPROVERS
-    const approverIds = request.approvalFlow
-      .filter((a) => a.role === "Approver")
-      .map((a) => a.approverId);
+    const {
+      subject,
+      reason,
+      startDate,
+      endDate,
+      existingAttachments,
+      newAttachments,
+    } = req.body;
 
-    await createNotificationForMultipleUsers(approverIds, {
-      senderId: submitter._id,
-      senderName: submitter.full_name,
-      senderAvatar: submitter.avatar,
-      type: "RequestResubmitted",
-      message: `${submitter.full_name} đã chỉnh sửa và gửi lại đơn ${request.type}.`,
-      relatedId: request._id,
-      metadata: {
-        requestType: request.type,
-        requestSubject: request.subject,
-        actionUrl: `/requests/${request._id}`,
-      },
-    });
+    // 5. Cập nhật các trường
+    request.subject = subject || request.subject;
+    request.reason = reason || request.reason;
+    request.startDate = startDate || request.startDate;
+    request.endDate = endDate !== undefined ? endDate : request.endDate;
 
+    // 6. Xử lý file đính kèm
+    let finalAttachments = [];
+
+    if (existingAttachments) {
+      try {
+        finalAttachments = JSON.parse(existingAttachments);
+      } catch (e) {
+        console.error("Lỗi parse existingAttachments:", e);
+        return res.status(400).json({
+          message: "Định dạng file đính kèm hiện tại không hợp lệ.",
+          error: e.message,
+        });
+      }
+    }
+
+    if (newAttachments) {
+      try {
+        const parsedNewAttachments = JSON.parse(newAttachments);
+        finalAttachments.push(...parsedNewAttachments);
+      } catch (e) {
+        console.error("Lỗi parse newAttachments:", e);
+        return res.status(400).json({
+          message: "Định dạng file đính kèm mới không hợp lệ.",
+          error: e.message,
+        });
+      }
+    }
+
+    request.attachments = finalAttachments;
+
+    // 7. Reset quy trình phê duyệt
+    try {
+      await request.resubmit(req.user.id);
+    } catch (e) {
+      console.error("Lỗi khi gọi request.resubmit():", e);
+      return res.status(500).json({
+        message: "Lỗi khi reset quy trình phê duyệt",
+        error: e.message,
+      });
+    }
+
+    // 8. Tạo thông báo
+    try {
+      const approverIds = request.approvalFlow
+        .filter((a) => a.role === "Approver")
+        .map((a) => a.approverId);
+
+      if (approverIds.length > 0) {
+        await createNotificationForMultipleUsers(approverIds, {
+          senderId: submitter._id,
+          senderName: submitter.full_name,
+          senderAvatar: submitter.avatar,
+          type: "RequestResubmitted",
+          message: `${submitter.full_name} đã chỉnh sửa và gửi lại đơn ${request.type}.`,
+          relatedId: request._id,
+          metadata: {
+            requestType: request.type,
+            requestSubject: request.subject,
+            actionUrl: `/requests/${request._id}`,
+          },
+        });
+      }
+    } catch (e) {
+      console.error("Lỗi khi tạo thông báo:", e);
+    }
+
+    // 9. Trả về kết quả
+    const finalRequest = await Request.findById(request._id).populate([
+      { path: "submittedBy", select: "full_name avatar email" },
+      { path: "approvalFlow.approverId", select: "full_name avatar" },
+      { path: "cc", select: "full_name avatar" },
+    ]);
     res.status(200).json({
-      message: "Gửi lại đơn thành công",
-      request,
+      message: "Đã cập nhật và gửi lại đơn thành công",
+      request: finalRequest,
     });
   } catch (error) {
-    console.error("Lỗi khi gửi lại đơn:", error);
+    console.error("❌ Lỗi khi gửi lại đơn:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
-      message: error.message || "Lỗi server",
+      message: "Lỗi server",
+      error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
@@ -464,7 +540,7 @@ exports.cancelRequest = async (req, res) => {
     await request.populate([
       { path: "submittedBy", select: "full_name avatar email" },
       { path: "approvalFlow.approverId", select: "full_name avatar" },
-      { path: "cc", select: "full_name avatar" }
+      { path: "cc", select: "full_name avatar" },
     ]);
     res.status(200).json({
       message: "Hủy đơn thành công",

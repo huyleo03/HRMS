@@ -30,24 +30,14 @@ const MyProfile = () => {
   };
 
   useEffect(() => {
-    const fetchMyProfile = async () => {
-      console.log('Fetching profile...', { 
-        hasToken: !!token,
-        user: user,
-        userKeys: user ? Object.keys(user) : 'no user'
-      });
-      
+    const fetchMyProfile = async () => {   
       if (!token) {
-        console.log('Missing token');
-        console.log('Token:', token ? 'exists' : 'missing');
         return;
       }
       
       try {
         setLoading(true);
-        console.log('Calling getOwnProfile (no userId needed)');
         const response = await getOwnProfile();
-        console.log('Profile response:', response);
         setEmployeeData(response.user);
         // Initialize edit form data
         setEditFormData({
