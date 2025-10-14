@@ -1080,6 +1080,69 @@
   background: #959da5;
 }
 
+/* Thêm vào file CSS của RequestDetail */
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.timeline-title {
+  font-weight: 600;
+  color: #343a40;
+}
+
+.timeline-action-time {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.timeline-status {
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+/* Định dạng cho màu chữ của status */
+.status-text-success { color: #28a745; }
+.status-text-danger { color: #dc3545; }
+.status-text-warning { color: #ffc107; }
+.status-text-info { color: #17a2b8; }
+.status-text-secondary { color: #6c757d; }
+
+
+.timeline-comment {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background-color: #f8f9fa;
+  border-left: 3px solid #e9ecef;
+  border-radius: 0 4px 4px 0;
+}
+
+.timeline-comment p {
+  margin: 0;
+  font-style: italic;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.btn.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.btn.btn-primary:hover {
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.btn.btn-primary:disabled {
+  background-color: #007bff;
+  border-color: #007bff;
+  opacity: 0.65;
+}
 /* ===== ANIMATIONS ===== */
 @keyframes slideInRight {
   from {

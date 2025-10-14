@@ -28,6 +28,10 @@ export const API_CONFIG = {
     CREATE_REQUEST: "/api/requests/create",
     GET_REQUESTS: "/api/requests",
     APPROVE_REQUEST: (id) => `/api/requests/${id}/approve`,
+    REJECT_REQUEST: (id) => `/api/requests/${id}/reject`,
+    REQUEST_CHANGE: (id) => `/api/requests/${id}/change-request`,
+    RESUBMIT_REQUEST: (id) => `/api/requests/${id}/resubmit`,
+    GET_REQUEST_BY_ID: (id) => `/api/requests/${id}`,
 
     // WORKFLOWS
     GET_WORKFLOWS: "/api/workflows",

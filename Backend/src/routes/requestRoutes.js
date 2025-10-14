@@ -32,7 +32,7 @@ router.put("/:requestId/approve", authenticate, approveRequest);
 router.put("/:requestId/reject", authenticate, rejectRequest);
 
 // Yêu cầu chỉnh sửa
-router.put("/:requestId/request-changes", authenticate, requestChanges);
+router.put("/:requestId/change-request", authenticate, requestChanges);
 
 // Gửi lại đơn sau khi chỉnh sửa
 router.put("/:requestId/resubmit", authenticate, resubmitRequest);

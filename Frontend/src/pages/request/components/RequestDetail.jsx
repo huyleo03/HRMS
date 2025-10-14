@@ -12,24 +12,39 @@ import {
   FileText,
   CheckCircle2,
   XOctagon,
+  Edit3,
+  Download,
 } from "lucide-react";
 import {
   getStatusInfo,
   getPriorityColor,
   formatDate,
   formatFileSize,
+  formatDateTime,
 } from "../../../utils/requestHelpers";
 import { useAuth } from "../../../contexts/AuthContext";
-import { cancelRequest, approveRequest } from "../../../service/RequestService";
+import {
+  cancelRequest,
+  approveRequest,
+  rejectRequest,
+  requestChanges,
+} from "../../../service/RequestService";
 import { toast } from "react-toastify";
 import CancelRequestModal from "./CancelRequestModal";
 import ApproveRequestModal from "./ApproveRequestModal";
+import RejectRequestModal from "./RejectRequestModal";
+import RequestChangesModal from "./RequestChangesModal";
+import EditRequestForm from "./EditRequestForm";
 
 const RequestDetail = ({ request, onClose, onActionSuccess }) => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isRequestChangesModalOpen, setIsRequestChangesModalOpen] =
+    useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   useEffect(() => {}, [request?.status]);
 
   if (!request) return null;
@@ -45,6 +60,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess }) => {
   const canCancel =
     isCurrentUserSubmitter &&
     ["Pending", "Manager_Approved"].includes(request.status);
+  const canEdit = isCurrentUserSubmitter && request.status === "NeedsReview";
 
   const StatusIcon = {
     CheckCircle,
@@ -98,6 +114,57 @@ const RequestDetail = ({ request, onClose, onActionSuccess }) => {
     }
   };
 
+  const handleConfirmReject = async (reason) => {
+    setIsSubmitting(true);
+    try {
+      const response = await rejectRequest(request._id, reason);
+      toast.success(response.message || "Đã từ chối đơn thành công!");
+      setIsRejectModalOpen(false);
+      if (onActionSuccess) {
+        onActionSuccess(response.request);
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi từ chối đơn.";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmRequestChanges = async (comment) => {
+    setIsSubmitting(true);
+    try {
+      const response = await requestChanges(request._id, comment);
+      toast.success(response.message || "Đã gửi yêu cầu chỉnh sửa thành công!");
+      setIsRequestChangesModalOpen(false);
+      if (onActionSuccess) {
+        onActionSuccess(response.request);
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Có lỗi xảy ra khi gửi yêu cầu chỉnh sửa.";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDownloadFile = (fileUrl, fileName) => {
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = fileName;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="request-detail">
       <div className="detail-header">
@@ -132,7 +199,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess }) => {
             </div>
             <div className="sender-email">{request.submittedBy.email}</div>
           </div>
-          <div className="detail-date">{formatDate(request.createdAt)}</div>
+          <div className="detail-date">{formatDate(request.created_at)}</div>
         </div>
 
         {/* Body */}
@@ -196,12 +263,21 @@ const RequestDetail = ({ request, onClose, onActionSuccess }) => {
               <h4>File đính kèm:</h4>
               <div className="attachment-list">
                 {request.attachments.map((file, index) => (
-                  <div key={index} className="attachment-item">
+                  <div
+                    key={index}
+                    className="attachment-item attachment-item-clickable"
+                    onClick={() =>
+                      handleDownloadFile(file.fileUrl, file.fileName)
+                    }
+                    style={{ cursor: "pointer" }}
+                    title="Click để tải xuống"
+                  >
                     <Paperclip size={16} />
                     <span className="file-name">{file.fileName}</span>
                     <span className="file-size">
                       {formatFileSize(file.fileSize)}
                     </span>
+                    <Download size={16} className="download-icon" />
                   </div>
                 ))}
               </div>
@@ -213,24 +289,34 @@ const RequestDetail = ({ request, onClose, onActionSuccess }) => {
             <h4>Quy trình phê duyệt:</h4>
             <div className="approval-timeline">
               {request.approvalFlow.map((approver, index) => {
-                const Icon = StatusIcon[getStatusInfo(approver.status).icon];
+                const statusInfo = getStatusInfo(approver.status);
+                const Icon = StatusIcon[statusInfo.icon] || Clock;
                 return (
                   <div key={index} className="timeline-item">
                     <div className="timeline-marker">
-                      <Icon
-                        size={20}
-                        className={`text-${
-                          getStatusInfo(approver.status).color
-                        }`}
-                      />
+                      <Icon size={20} className={`text-${statusInfo.color}`} />
                     </div>
                     <div className="timeline-content">
-                      <div className="timeline-title">
-                        Cấp {approver.level}: {approver.approverName}
+                      <div className="timeline-header">
+                        <span className="timeline-title">
+                          Cấp {approver.level}: {approver.approverName}
+                        </span>
+                        {approver.actionAt && (
+                          <span className="timeline-action-time">
+                            {formatDateTime(approver.actionAt)}
+                          </span>
+                        )}
                       </div>
-                      <div className="timeline-status">
-                        {getStatusInfo(approver.status).label}
+                      <div
+                        className={`timeline-status status-text-${statusInfo.color}`}
+                      >
+                        {statusInfo.label}
                       </div>
+                      {approver.comment && (
+                        <div className="timeline-comment">
+                          <p>"{approver.comment}"</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -251,11 +337,19 @@ const RequestDetail = ({ request, onClose, onActionSuccess }) => {
                 <CheckCircle size={18} />
                 {isSubmitting ? "Đang xử lý..." : "Phê duyệt"}
               </button>
-              <button className="btn btn-danger">
+              <button
+                className="btn btn-danger"
+                onClick={() => setIsRejectModalOpen(true)}
+                disabled={isSubmitting}
+              >
                 <XCircle size={18} />
                 Từ chối
               </button>
-              <button className="btn btn-info">
+              <button
+                className="btn btn-info"
+                onClick={() => setIsRequestChangesModalOpen(true)}
+                disabled={isSubmitting}
+              >
                 <AlertCircle size={18} />
                 Yêu cầu chỉnh sửa
               </button>
@@ -272,10 +366,19 @@ const RequestDetail = ({ request, onClose, onActionSuccess }) => {
               {isSubmitting ? "Đang hủy..." : "Hủy đơn"}
             </button>
           )}
+
+          {canEdit && (
+            <button
+              className="btn btn-primary"
+              onClick={() => setIsEditModalOpen(true)}
+              disabled={isSubmitting}
+            >
+              <Edit3 size={18} />
+              Chỉnh sửa đơn
+            </button>
+          )}
         </div>
       </div>
-
-      {/* Cancel Request Modal */}
       <CancelRequestModal
         isOpen={isCancelModalOpen}
         onClose={() => setIsCancelModalOpen(false)}
@@ -288,6 +391,27 @@ const RequestDetail = ({ request, onClose, onActionSuccess }) => {
         onClose={() => setIsApproveModalOpen(false)}
         onConfirm={handleConfirmApprove}
         isSubmitting={isSubmitting}
+      />
+
+      <RejectRequestModal
+        isOpen={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
+        onConfirm={handleConfirmReject}
+        isSubmitting={isSubmitting}
+      />
+
+      <RequestChangesModal
+        isOpen={isRequestChangesModalOpen}
+        onClose={() => setIsRequestChangesModalOpen(false)}
+        onConfirm={handleConfirmRequestChanges}
+        isSubmitting={isSubmitting}
+      />
+
+      <EditRequestForm
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        requestToEdit={request}
+        onSuccess={onActionSuccess}
       />
     </div>
   );

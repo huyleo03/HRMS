@@ -1,0 +1,128 @@
+.reject-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.reject-modal-content {
+  background: #fff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: slideInUp 0.4s ease-out;
+}
+
+.reject-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.reject-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reject-modal-title h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.reject-icon {
+  color: #dc3545; /* Red for danger */
+}
+
+.reject-modal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #6c757d;
+}
+.reject-modal-close-btn:hover {
+  color: #000;
+}
+
+.reject-modal-body {
+  padding: 24px;
+}
+
+.reject-modal-description {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #495057;
+  font-size: 1rem;
+}
+
+.reject-modal-form-group {
+  margin-bottom: 16px;
+}
+
+.reject-modal-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #343a40;
+}
+
+.required-text {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.reject-modal-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 1rem;
+  resize: vertical;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.reject-modal-textarea:focus {
+  outline: none;
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+}
+
+.reject-modal-textarea.is-invalid {
+  border-color: #dc3545;
+}
+
+.reject-modal-error-text {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+.reject-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e9ecef;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
