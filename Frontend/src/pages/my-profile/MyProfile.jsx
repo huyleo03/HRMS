@@ -45,7 +45,8 @@ const MyProfile = () => {
           jobTitle: response.user.jobTitle || '',
           phone: response.user.phone || '',
           gender: response.user.gender || '',
-          address: response.user.address || ''
+          address: response.user.address || '',
+          dateOfBirth: response.user.dateOfBirth || ''
         });
       } catch (err) {
         setError('Không thể tải thông tin cá nhân');
@@ -75,7 +76,8 @@ const MyProfile = () => {
       jobTitle: employeeData.jobTitle || '',
       phone: employeeData.phone || '',
       gender: employeeData.gender || '',
-      address: employeeData.address || ''
+      address: employeeData.address || '',
+      dateOfBirth: employeeData.dateOfBirth || ''
     });
   };
 
@@ -185,7 +187,8 @@ const MyProfile = () => {
         phone: editFormData.phone || null,
         gender: editFormData.gender || null,
         address: editFormData.address || null,
-        avatar: editFormData.avatar || null
+        avatar: editFormData.avatar || null,
+        dateOfBirth: editFormData.dateOfBirth || null
       };
       
       const response = await updateOwnProfile(updateData);
@@ -253,7 +256,7 @@ const MyProfile = () => {
           <div className="profile-main">
             <div className="profile-avatar-container">
               <div className="profile-avatar">
-                {(previewUrl || employeeData.avatar) ? (
+                {(previewUrl || (employeeData.avatar && employeeData.avatar !== 'https://i.pravatar.cc/150')) ? (
                   <div 
                     className="avatar-image-container"
                     style={{
@@ -262,9 +265,14 @@ const MyProfile = () => {
                   />
                 ) : (
                   <div className="avatar-circle">
-                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 12.25C14.0393 12.25 15.9229 12.7209 17.3223 13.5205C18.7002 14.308 19.75 15.5103 19.75 17C19.75 18.4897 18.7002 19.692 17.3223 20.4795C15.9229 21.2791 14.0393 21.75 12 21.75C9.96067 21.75 8.0771 21.2791 6.67773 20.4795C5.29976 19.692 4.25 18.4897 4.25 17C4.25 15.5103 5.29976 14.308 6.67773 13.5205C8.0771 12.7209 9.96067 12.25 12 12.25ZM12 2.25C14.6234 2.25 16.75 4.37665 16.75 7C16.75 9.62335 14.6234 11.75 12 11.75C9.37665 11.75 7.25 9.62335 7.25 7C7.25 4.37665 9.37665 2.25 12 2.25Z" fill="white"/>
-                    </svg>
+                    <span style={{
+                      fontSize: '42px',
+                      fontWeight: '700',
+                      color: 'white',
+                      letterSpacing: '2px'
+                    }}>
+                      {employeeData.full_name ? employeeData.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                    </span>
                   </div>
                 )}
               </div>
@@ -409,6 +417,23 @@ const MyProfile = () => {
                   <div className="field-line"></div>
                 </div>
                 <div className="info-field">
+                  <label>Date of Birth</label>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      className="field-input"
+                      value={editFormData.dateOfBirth ? new Date(editFormData.dateOfBirth).toISOString().split('T')[0] : ''}
+                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                    />
+                  ) : (
+                    <div className="field-value">{formatDate(employeeData.dateOfBirth)}</div>
+                  )}
+                  <div className="field-line"></div>
+                </div>
+              </div>
+
+              <div className="info-row">
+                <div className="info-field">
                   <label>Job Title</label>
                   {isEditing ? (
                     <input
@@ -422,9 +447,6 @@ const MyProfile = () => {
                   )}
                   <div className="field-line"></div>
                 </div>
-              </div>
-
-              <div className="info-row">
                 <div className="info-field">
                   <label>Gender</label>
                   {isEditing ? (
@@ -440,11 +462,6 @@ const MyProfile = () => {
                   ) : (
                     <div className="field-value">{employeeData.gender || 'N/A'}</div>
                   )}
-                  <div className="field-line"></div>
-                </div>
-                <div className="info-field">
-                  <label>Role</label>
-                  <div className="field-value">{employeeData.role}</div>
                   <div className="field-line"></div>
                 </div>
               </div>
@@ -465,7 +482,15 @@ const MyProfile = () => {
                   )}
                   <div className="field-line"></div>
                 </div>
-                {employeeData.role !== 'Admin' && (
+                <div className="info-field">
+                  <label>Role</label>
+                  <div className="field-value">{employeeData.role}</div>
+                  <div className="field-line"></div>
+                </div>
+              </div>
+
+              {employeeData.role !== 'Admin' && (
+                <div className="info-row">
                   <div className="info-field">
                     <label>Department</label>
                     <div className="field-value">
@@ -473,20 +498,12 @@ const MyProfile = () => {
                     </div>
                     <div className="field-line"></div>
                   </div>
-                )}
-              </div>
-
-              {employeeData.role !== 'Admin' && (
-                <div className="info-row">
                   <div className="info-field">
                     <label>Salary</label>
                     <div className="field-value">
                       {employeeData.salary ? `$${employeeData.salary.toLocaleString()}` : 'N/A'}
                     </div>
                     <div className="field-line"></div>
-                  </div>
-                  <div className="info-field">
-                    {/* Empty field to maintain grid layout */}
                   </div>
                 </div>
               )}
