@@ -22,6 +22,11 @@ const ManagerSidebar = () => {
       label: "All Employees",
       icon: "👥",
     },
+    {
+      path: '/manager/requests',
+      label: 'Request',
+      icon: '🏖️'
+    }
   ];
 
   const handleNavigation = (path) => {

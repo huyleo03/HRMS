@@ -41,21 +41,11 @@ exports.createUserByAdmin = async (req, res) => {
     });
 
     const savedUser = await newUser.save();
-
-    // ===== SỬA LẠI LOGIC ĐỒNG BỘ MANAGER VÀO DEPARTMENT =====
     if (role === "Manager" && department && department.department_id) {
       try {
-        // ❌ KHÔNG DÙNG findByIdAndUpdate (không trigger hook)
-        // await Department.findByIdAndUpdate(
-        //   department.department_id,
-        //   { managerId: savedUser._id },
-        //   { new: true }
-        // );
 
-        // ✅ DÙNG find + save ĐỂ TRIGGER HOOK
         const dept = await Department.findById(department.department_id);
         if (!dept) {
-          // Rollback nếu không tìm thấy department
           await User.findByIdAndDelete(savedUser._id);
           return res.status(404).json({
             message: "Không tìm thấy phòng ban.",
@@ -63,14 +53,10 @@ exports.createUserByAdmin = async (req, res) => {
         }
 
         dept.managerId = savedUser._id;
-        await dept.save(); // ✅ Trigger hook post("save") → Cập nhật tất cả Employee
+        await dept.save(); 
 
-        console.log(
-          `✅ Đã cập nhật managerId cho phòng ban ${department.department_name}`
-        );
       } catch (deptError) {
         console.error("❌ Lỗi khi cập nhật managerId:", deptError);
-        // Rollback: xóa user vừa tạo nếu không cập nhật được department
         await User.findByIdAndDelete(savedUser._id);
         return res.status(500).json({
           message:
@@ -79,11 +65,8 @@ exports.createUserByAdmin = async (req, res) => {
         });
       }
     }
-    // ===== KẾT THÚC LOGIC ĐỒNG BỘ =====
-
     const userResponse = savedUser.toObject();
     delete userResponse.passwordHash;
-
     try {
       const loginUrl = `http://localhost:3000/login`;
       const html = `
@@ -99,7 +82,6 @@ exports.createUserByAdmin = async (req, res) => {
         <p>Trân trọng,</p>
         <p>Phòng Nhân sự</p>
       `;
-
       await sendEmail({
         email: savedUser.email,
         subject: "Thông tin tài khoản HRMS của bạn",
@@ -108,7 +90,6 @@ exports.createUserByAdmin = async (req, res) => {
     } catch (emailError) {
       console.error("Lỗi gửi email:", emailError);
     }
-
     res.status(201).json({
       message: "Tạo người dùng thành công.",
       user: userResponse,
@@ -116,7 +97,6 @@ exports.createUserByAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Lỗi server khi tạo người dùng:", error);
-
     if (error.name === "ValidationError") {
       return res.status(400).json({
         message: "Dữ liệu không hợp lệ.",
@@ -124,14 +104,12 @@ exports.createUserByAdmin = async (req, res) => {
         details: error.errors,
       });
     }
-
     if (error.code === 11000) {
       return res.status(400).json({
         message: "Email đã tồn tại trong hệ thống.",
         error: error.message,
       });
     }
-
     res.status(500).json({
       message: "Lỗi server khi tạo người dùng.",
       error: error.message,
@@ -142,7 +120,6 @@ exports.createUserByAdmin = async (req, res) => {
 // List all users with pagination (for Admin)
 exports.getAllUsers = async (req, res) => {
   try {
-    // Lấy tất cả các tham số từ query
     const {
       page = 1,
       limit = 10,
@@ -153,17 +130,15 @@ exports.getAllUsers = async (req, res) => {
       status,
       department,
     } = req.query;
-
     let query = {};
     if (req.user.role === "Manager") {
-      query.role = "Employee"; 
+      query.role = "Employee";
       if (req.user.department && req.user.department.department_id) {
         query["department.department_id"] = req.user.department.department_id;
       }
     } else if (req.user.role === "Admin") {
-      query.role = { $in: ["Manager", "Employee"] }; 
+      query.role = { $in: ["Manager", "Employee"] };
     }
-
     if (name) query.full_name = { $regex: name.trim(), $options: "i" };
     if (role) query.role = role;
     if (status) query.status = status;
@@ -172,18 +147,14 @@ exports.getAllUsers = async (req, res) => {
         $regex: department.trim(),
         $options: "i",
       };
-
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
-
     const users = await User.find(query)
       .select("-passwordHash")
       .sort(sortOptions)
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
-
     const total = await User.countDocuments(query);
-
     res.status(200).json({
       users,
       total,
@@ -193,107 +164,6 @@ exports.getAllUsers = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Lỗi server khi lấy danh sách người dùng.",
-      error: error.message,
-    });
-  }
-};
-
-// Change user status (Active, Inactive, Suspended) by Admin
-exports.changeUserStatus = async (req, res) => {
-  const userId = req.params.id;
-  const { status } = req.body;
-  const validStatuses = ["Active", "Inactive", "Suspended"];
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({ message: "Trạng thái không hợp lệ." });
-  }
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng." });
-    }
-    user.status = status;
-    await user.save();
-    res.status(200).json({ message: "Cập nhật trạng thái thành công.", user });
-  } catch (error) {
-    res.status(500).json({
-      message: "Lỗi server khi cập nhật trạng thái người dùng.",
-      error: error.message,
-    });
-  }
-};
-
-// Change user role by Admin
-exports.changeUserRole = async (req, res) => {
-  const userId = req.params.id;
-  const { role } = req.body;
-  const validRoles = ["Manager", "Employee"];
-
-  if (!validRoles.includes(role)) {
-    return res.status(400).json({ message: "Vai trò không hợp lệ." });
-  }
-
-  try {
-    const userToUpdate = await User.findById(userId);
-    if (!userToUpdate) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng." });
-    }
-
-    const Department = require("../models/Department");
-
-    // Nếu đổi từ Manager sang Employee
-    if (userToUpdate.role === "Manager" && role === "Employee") {
-      if (userToUpdate.department && userToUpdate.department.department_id) {
-        // ✅ DÙNG find + save ĐỂ TRIGGER HOOK
-        const dept = await Department.findById(
-          userToUpdate.department.department_id
-        );
-        if (dept) {
-          dept.managerId = null;
-          await dept.save(); // ✅ Trigger hook → Set manager_id = null cho tất cả Employee
-        }
-      }
-    }
-
-    // Nếu đổi sang Manager
-    if (role === "Manager") {
-      if (!userToUpdate.department || !userToUpdate.department.department_id) {
-        return res.status(400).json({
-          message:
-            "Không thể gán vai trò Manager cho người dùng chưa thuộc phòng ban nào.",
-        });
-      }
-
-      const existingManager = await User.findOne({
-        "department.department_id": userToUpdate.department.department_id,
-        role: "Manager",
-        _id: { $ne: userId },
-      });
-
-      if (existingManager) {
-        return res.status(400).json({
-          message: `Phòng ban "${userToUpdate.department.department_name}" đã có Manager là "${existingManager.full_name}".`,
-        });
-      }
-
-      // ✅ DÙNG find + save ĐỂ TRIGGER HOOK
-      const dept = await Department.findById(
-        userToUpdate.department.department_id
-      );
-      if (dept) {
-        dept.managerId = userId;
-        await dept.save(); // ✅ Trigger hook → Cập nhật manager_id cho tất cả Employee
-      }
-    }
-
-    userToUpdate.role = role;
-    await userToUpdate.save();
-
-    res
-      .status(200)
-      .json({ message: "Cập nhật vai trò thành công.", user: userToUpdate });
-  } catch (error) {
-    res.status(500).json({
-      message: "Lỗi server khi cập nhật vai trò người dùng.",
       error: error.message,
     });
   }
@@ -472,28 +342,25 @@ exports.getOwnProfile = async (req, res) => {
 // Update own profile (for all roles)
 exports.updateOwnProfile = async (req, res) => {
   const userId = req.user._id;
-  const { full_name, jobTitle, phone, address, avatar, gender } = req.body;
+  const { full_name, jobTitle, phone, address, avatar, gender, dateOfBirth } = req.body;
 
   try {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng." });
     }
-
     if (full_name) user.full_name = full_name;
     if (jobTitle) user.jobTitle = jobTitle;
     if (phone) user.phone = phone;
     if (address) user.address = address;
     if (avatar) user.avatar = avatar;
     if (gender) user.gender = gender;
+    if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
 
     user.profileCompleted = true;
-
     const updatedUser = await user.save();
-
     const userResponse = updatedUser.toObject();
     delete userResponse.passwordHash;
-
     res
       .status(200)
       .json({ message: "Cập nhật hồ sơ thành công.", user: userResponse });
@@ -510,43 +377,45 @@ exports.updateOwnProfile = async (req, res) => {
   }
 };
 
-// Change own password (for all roles)
-exports.changeOwnPassword = async (req, res) => {
-  const userId = req.user._id;
-  const { currentPassword, newPassword } = req.body;
-
-  if (!currentPassword || !newPassword) {
-    return res
-      .status(400)
-      .json({ message: "Cần cung cấp mật khẩu hiện tại và mật khẩu mới." });
-  }
-  const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/;
-  if (!passwordRegex.test(newPassword)) {
-    return res.status(400).json({
-      message:
-        "Mật khẩu mới không đủ mạnh. Mật khẩu phải dài ít nhất 8 ký tự, chứa ít nhất một chữ hoa và một ký tự đặc biệt (!@#$%^&*).",
-    });
-  }
-
+// Get list of users in the same department for CC (for all roles)
+exports.getCcUserList = async (req, res) => {
   try {
-    const user = await User.findById(userId).select("+passwordHash");
-    if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng." });
+    const currentUser = await User.findById(req.user.id).select("department");
+    if (!currentUser || !currentUser.department?.department_id) {
+      return res.status(200).json([]);
     }
-
-    const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Mật khẩu hiện tại không đúng." });
-    }
-
-    user.passwordHash = newPassword;
-    await user.save();
-
-    res.status(200).json({ message: "Đổi mật khẩu thành công." });
+    const usersInDepartment = await User.find({
+      "department.department_id": currentUser.department.department_id,
+      _id: { $ne: req.user.id },
+    }).select("full_name email avatar");
+    res.status(200).json(usersInDepartment);
   } catch (error) {
-    res.status(500).json({
-      message: "Lỗi server khi đổi mật khẩu.",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Lỗi khi lấy danh sách người dùng" });
+  }
+};
+
+// Search users for cc
+exports.searchUsersForCc = async (req, res) => {
+  try {
+    const { q } = req.query;
+    const currentUserId = req.user.id;
+    if (!q || q.trim().length < 2) {
+      return res.status(200).json([]);
+    }
+    const searchTerm = q.trim();
+    const query = {
+      _id: { $ne: currentUserId },
+      $or: [
+        { full_name: { $regex: searchTerm, $options: "i" } },
+        { email: { $regex: searchTerm, $options: "i" } },
+      ],
+    };
+    const users = await User.find(query)
+      .select("_id full_name email avatar")
+      .limit(15); 
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm người dùng CC:", error);
+    res.status(500).json({ message: "Lỗi server khi tìm kiếm người dùng." });
   }
 };

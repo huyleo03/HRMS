@@ -112,22 +112,23 @@ const Header = () => {
           <div className="header-profile" onClick={toggleDropdown}>
             <div className="profile-container">
               <div className="profile-avatar">
-                {user.avatar ? (
+                {(user.avatar && user.avatar !== 'https://i.pravatar.cc/150') ? (
                   <img src={user.avatar} alt="User Avatar" />
                 ) : (
                   <div style={{
                     width: '40px',
                     height: '40px',
-                    borderRadius: '50%',
-                    background: '#7152F3',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #7152F3 0%, #9D7EF2 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontWeight: '600',
-                    fontSize: '16px'
+                    fontWeight: '700',
+                    fontSize: '16px',
+                    letterSpacing: '1px'
                   }}>
-                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                    {user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
                   </div>
                 )}
               </div>

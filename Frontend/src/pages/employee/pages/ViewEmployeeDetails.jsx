@@ -450,19 +450,14 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                       }}
                     />
                   ) : (
-                    <div className="avatar-placeholder" style={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#F3F4F6',
-                      color: '#9CA3AF',
-                      fontSize: '24px',
-                      fontWeight: '600'
+                    <span style={{
+                      fontSize: '42px',
+                      fontWeight: '700',
+                      color: 'white',
+                      letterSpacing: '2px'
                     }}>
-                      {employeeData.full_name ? employeeData.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'}
-                    </div>
+                      {employeeData.full_name ? employeeData.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                    </span>
                   )}
                 </div>
                 
@@ -591,6 +586,14 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                         <div className="field-line"></div>
                       </div>
                       <div className="info-field">
+                        <label>Date of Birth</label>
+                        <div className="field-value">{formatDate(employeeData.dateOfBirth)}</div>
+                        <div className="field-line"></div>
+                      </div>
+                    </div>
+
+                    <div className="info-row">
+                      <div className="info-field">
                         <label>Job Title</label>
                         {isEditing ? (
                           <input
@@ -604,14 +607,14 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                         )}
                         <div className="field-line"></div>
                       </div>
-                    </div>
-
-                    <div className="info-row">
                       <div className="info-field">
                         <label>Gender</label>
                         <div className="field-value">{employeeData.gender || 'N/A'}</div>
                         <div className="field-line"></div>
                       </div>
+                    </div>
+
+                    <div className="info-row">
                       <div className="info-field">
                         <label>Role</label>
                         {isEditing ? (
@@ -628,14 +631,14 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                         )}
                         <div className="field-line"></div>
                       </div>
-                    </div>
-
-                    <div className="info-row">
                       <div className="info-field">
                         <label>Address</label>
                         <div className="field-value">{employeeData.address || 'N/A'}</div>
                         <div className="field-line"></div>
                       </div>
+                    </div>
+
+                    <div className="info-row">
                       <div className="info-field">
                         <label>Department</label>
                         {isEditing ? (
@@ -682,9 +685,6 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                         )}
                         <div className="field-line"></div>
                       </div>
-                    </div>
-
-                    <div className="info-row">
                       <div className="info-field">
                         <label>Salary</label>
                         {isEditing ? (
@@ -701,9 +701,6 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                           </div>
                         )}
                         <div className="field-line"></div>
-                      </div>
-                      <div className="info-field">
-                        {/* Empty field to maintain grid layout */}
                       </div>
                     </div>
                   </div>

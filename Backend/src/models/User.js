@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["Male", "Female"],
     },
+    dateOfBirth: {
+      type: Date,
+      default: null,
+    },
     manager_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
