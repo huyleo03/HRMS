@@ -5,6 +5,8 @@ const authRoutes = require("./authRoutes");
 const healthRoutes = require("./healthRoutes");
 const requestRoutes = require("./requestRoutes");
 const workFlowRoutes = require("./workflowRoutes");
+const attendanceRoutes = require("./attendanceRoutes");
+
 const routes = (app) => {
   app.use("/api/departments", departmentRoutes);
   app.use("/api/users", userRoutes);
@@ -12,6 +14,7 @@ const routes = (app) => {
   app.use("/api", healthRoutes);
   app.use("/api/requests", requestRoutes);
   app.use("/api/workflows", workFlowRoutes);
+  app.use("/api/attendance", attendanceRoutes);
 };
 
 module.exports = routes;
