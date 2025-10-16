@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { 
-  Shield, Search, Filter, Calendar, User, Eye
-} from "lucide-react";
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import { Shield, Search, Filter, Calendar, User, Eye } from "lucide-react";
 import { getAdminRequests } from "../../../service/RequestService";
 import "../css/AdminRequestList.css";
 
-const AdminRequestList = ({ onSelectRequest }) => {
+const AdminRequestList = forwardRef(({ onSelectRequest }, ref) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -15,7 +13,6 @@ const AdminRequestList = ({ onSelectRequest }) => {
     limit: 20,
   });
 
-  // Filters
   const [filters, setFilters] = useState({
     search: "",
     status: "all",
@@ -37,19 +34,23 @@ const AdminRequestList = ({ onSelectRequest }) => {
         limit: pagination.limit,
         ...filters,
       };
-
-      // Remove empty filters
+      
       Object.keys(params).forEach((key) => {
         if (!params[key] || params[key] === "all") {
           delete params[key];
         }
       });
 
+      console.log("🔍 [AdminRequestList] Fetching with params:", params);
+
       const response = await getAdminRequests(params);
+      
+      console.log("✅ [AdminRequestList] Response:", response);
+      
       setRequests(response.requests);
       setPagination(response.pagination);
     } catch (error) {
-      console.error("Lỗi khi tải danh sách đơn:", error);
+      console.error("❌ [AdminRequestList] Lỗi:", error);
     } finally {
       setLoading(false);
     }
@@ -58,6 +59,14 @@ const AdminRequestList = ({ onSelectRequest }) => {
   useEffect(() => {
     fetchAdminRequests();
   }, [fetchAdminRequests]);
+
+  // ✅ EXPOSE refreshList qua ref
+  useImperativeHandle(ref, () => ({
+    refreshList: () => {
+      console.log("🔄 [AdminRequestList] Refreshing list...");
+      fetchAdminRequests();
+    },
+  }), [fetchAdminRequests]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -114,7 +123,7 @@ const AdminRequestList = ({ onSelectRequest }) => {
           <Shield className="icon" />
           <h2>Quản lý tất cả đơn</h2>
         </div>
-        <button 
+        <button
           className="filter-toggle-btn"
           onClick={() => setShowFilters(!showFilters)}
         >
@@ -221,14 +230,12 @@ const AdminRequestList = ({ onSelectRequest }) => {
         </div>
       )}
 
-      {/* Results Info */}
       <div className="results-info">
         <p>
           Hiển thị {requests.length} trong tổng số {pagination.total} đơn
         </p>
       </div>
 
-      {/* Table */}
       {loading ? (
         <div className="loading-container">
           <div className="spinner"></div>
@@ -259,7 +266,7 @@ const AdminRequestList = ({ onSelectRequest }) => {
                   <td>
                     <div className="request-subject">
                       <strong>{request.subject}</strong>
-                      <span className="request-type">{request.requestType}</span>
+                      <span className="request-type">{request.type}</span>
                     </div>
                   </td>
                   <td>
@@ -298,7 +305,6 @@ const AdminRequestList = ({ onSelectRequest }) => {
         </div>
       )}
 
-      {/* Pagination */}
       {pagination.pages > 1 && (
         <div className="pagination">
           <button
@@ -322,6 +328,8 @@ const AdminRequestList = ({ onSelectRequest }) => {
       )}
     </div>
   );
-};
+});
+
+AdminRequestList.displayName = "AdminRequestList";
 
 export default AdminRequestList;

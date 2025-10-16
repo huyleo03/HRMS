@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import RequestSidebar from "../components/RequestSidebar";
 import RequestToolbar from "../components/RequestToolbar";
 import RequestList from "../components/RequestList";
 import RequestDetail from "../components/RequestDetail";
 import CreateRequestModal from "../components/CreateRequestModal";
 import AdminRequestList from "../components/AdminRequestList";
+import AdminStats from "../components/AdminStats";
 import { getUserRequests } from "../../../service/RequestService";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -14,14 +15,16 @@ const REQUESTS_PER_PAGE = 20;
 
 const Request = () => {
   const { user } = useAuth();
-  
+
   // State Management
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const adminListRef = useRef(); // ✅ SỬA: Dùng useRef thay vì React.useRef()
   const [requests, setRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
   const [activeTab, setActiveTab] = useState("inbox");
+  const [prevActiveTab, setPrevActiveTab] = useState("inbox");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -30,11 +33,9 @@ const Request = () => {
     totalRequests: 0,
     limit: REQUESTS_PER_PAGE,
   });
-
-  // Check if user is admin
+  
   const isAdmin = user?.role === "Admin";
-
-  // ✅ Data Fetching với search và filter từ server
+  
   const fetchRequests = useCallback(
     async (box = "inbox", page = 1) => {
       setIsLoading(true);
@@ -67,18 +68,20 @@ const Request = () => {
     },
     [searchQuery, filterStatus, filterPriority]
   );
+  
   useEffect(() => {
-    if (activeTab.startsWith("admin-")) {
+    if (activeTab.startsWith("admin-") || prevActiveTab.startsWith("admin-")) {
+      setPrevActiveTab(activeTab);
       return;
     }
 
     const delayDebounceFn = setTimeout(() => {
       fetchRequests(activeTab, 1);
-      setSelectedRequest(null);
-    }, 500); 
+    }, 500);
 
+    setPrevActiveTab(activeTab);
     return () => clearTimeout(delayDebounceFn);
-  }, [activeTab, searchQuery, filterStatus, fetchRequests]);
+  }, [activeTab, searchQuery, filterStatus, fetchRequests, prevActiveTab]);
 
   const handleToggleStar = useCallback((requestId) => {
     setRequests((prev) =>
@@ -94,12 +97,11 @@ const Request = () => {
           : req
       )
     );
-    // TODO: Gọi API để cập nhật star status
   }, []);
 
   const handleSelectRequest = useCallback((request) => {
+    console.log("🔍 [Request] Selected request:", request._id);
     setSelectedRequest(request);
-    // TODO: Nếu có API đánh dấu đã đọc, gọi ở đây
   }, []);
 
   const handleCloseDetail = useCallback(() => {
@@ -117,16 +119,47 @@ const Request = () => {
   const handleCreateRequest = useCallback(() => {
     if (activeTab === "sent") {
       fetchRequests(activeTab, 1);
+    } else if (activeTab === "admin-all") {
+      toast.success("Đơn đã được tạo! Refresh trang để xem.");
     }
     handleCloseModal();
   }, [activeTab, fetchRequests, handleCloseModal]);
 
-  const handleActionSuccess = useCallback((updatedRequest) => {
-    setSelectedRequest(updatedRequest);
-    setRequests((prev) =>
-      prev.map((req) => (req._id === updatedRequest._id ? updatedRequest : req))
-    );
-  }, []);
+  const handleActionSuccess = useCallback(
+    (updatedRequest, shouldCloseDetail = false) => {
+      console.log("✅ [Request] Action success:", updatedRequest._id, "shouldClose:", shouldCloseDetail);
+      
+      setSelectedRequest(updatedRequest);
+
+      setRequests((prevRequests) =>
+        prevRequests.map((req) =>
+          req._id === updatedRequest._id ? updatedRequest : req
+        )
+      );
+
+      if (shouldCloseDetail) {
+        setTimeout(() => {
+          setSelectedRequest(null);
+          
+          // ✅ THÊM: Refresh AdminRequestList nếu ở admin view
+          if (activeTab === "admin-all") {
+            console.log("🔄 [Request] Refreshing AdminRequestList...");
+            if (adminListRef.current?.refreshList) {
+              adminListRef.current.refreshList();
+            } else {
+              console.warn("⚠️ [Request] adminListRef.current is null");
+            }
+          }
+          
+          // ✅ Refresh standard view
+          if (activeTab === "inbox") {
+            fetchRequests(activeTab, 1);
+          }
+        }, 1000);
+      }
+    },
+    [activeTab, fetchRequests]
+  );
 
   const handlePageChange = useCallback(
     (newPage) => {
@@ -139,7 +172,6 @@ const Request = () => {
     setActiveTab(tabId);
   }, []);
 
-  // Derived State
   const unreadCount = activeTab === "inbox" ? pagination.totalRequests : 0;
 
   return (
@@ -166,12 +198,12 @@ const Request = () => {
 
         {/* Admin View */}
         {activeTab === "admin-all" ? (
-          <AdminRequestList onSelectRequest={handleSelectRequest} />
+          <AdminRequestList 
+            ref={adminListRef}  
+            onSelectRequest={handleSelectRequest} 
+          />
         ) : activeTab === "admin-stats" ? (
-          <div className="admin-stats-placeholder">
-            <h3>Thống kê (Đang phát triển)</h3>
-            <p>Chức năng thống kê sẽ được triển khai sau</p>
-          </div>
+          <AdminStats />
         ) : (
           /* Standard View */
           <div
@@ -180,7 +212,7 @@ const Request = () => {
             }`}
           >
             <RequestList
-              requests={requests} 
+              requests={requests}
               selectedRequest={selectedRequest}
               onSelectRequest={handleSelectRequest}
               onToggleStar={handleToggleStar}
@@ -203,6 +235,24 @@ const Request = () => {
           </div>
         )}
       </div>
+
+      {/* ✅ RequestDetail Modal for Admin View */}
+      {activeTab.startsWith("admin-") && selectedRequest && (
+        <div className="request-detail-overlay" onClick={handleCloseDetail}>
+          <div
+            className="request-detail-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <RequestDetail
+              key={`${selectedRequest._id}-${selectedRequest.status}-${selectedRequest.updated_at}`}
+              request={selectedRequest}
+              onClose={handleCloseDetail}
+              onActionSuccess={handleActionSuccess}
+              isAdmin={isAdmin}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Create Request Modal */}
       {isModalOpen && (

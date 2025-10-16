@@ -141,7 +141,6 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  user-select: none;
   position: relative;
   color: #666;
 }
@@ -1273,4 +1272,87 @@
 .admin-stats-placeholder p {
   color: #6b7280;
   font-size: 16px;
+}
+
+/* ===== REQUEST DETAIL MODAL OVERLAY FOR ADMIN ===== */
+.request-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.request-detail-modal {
+  background: white;
+  border-radius: 20px;
+  max-width: 1200px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Make detail content scrollable inside modal */
+.request-detail-overlay .request-detail {
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 20px;
+}
+
+/* Enhanced close button for modal */
+.request-detail-overlay .detail-actions-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-right: 20px;
+}
+
+/* Responsive modal */
+@media (max-width: 768px) {
+  .request-detail-overlay {
+    padding: 0;
+  }
+
+  .request-detail-modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .request-detail-overlay .request-detail {
+    max-height: 100vh;
+    border-radius: 0;
+  }
 }

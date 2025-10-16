@@ -39,6 +39,7 @@ import AdminActions from "./AdminActions";
 
 const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
   const { user } = useAuth();
+  const [currentRequest, setCurrentRequest] = useState(request);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
@@ -46,10 +47,15 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
   const [isRequestChangesModalOpen, setIsRequestChangesModalOpen] =
     useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  useEffect(() => {}, [request?.status]);
 
-  if (!request) return null;
-  const pendingStep = request.approvalFlow.find(
+  useEffect(() => {
+    if (request) {
+      setCurrentRequest(request);
+    }
+  }, [request]);
+
+  if (!currentRequest) return null;
+  const pendingStep = currentRequest.approvalFlow.find(
     (step) => step.status === "Pending"
   );
   const isCurrentUserApprover =
@@ -57,11 +63,11 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
     (typeof pendingStep.approverId === "object"
       ? pendingStep.approverId._id === user.id
       : pendingStep.approverId === user.id);
-  const isCurrentUserSubmitter = request.submittedBy._id === user.id;
+  const isCurrentUserSubmitter = currentRequest.submittedBy._id === user.id;
   const canCancel =
     isCurrentUserSubmitter &&
-    ["Pending", "Manager_Approved"].includes(request.status);
-  const canEdit = isCurrentUserSubmitter && request.status === "NeedsReview";
+    ["Pending", "Manager_Approved"].includes(currentRequest.status);
+  const canEdit = isCurrentUserSubmitter && currentRequest.status === "NeedsReview";
 
   const StatusIcon = {
     CheckCircle,
@@ -77,7 +83,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
   const handleConfirmCancel = async (cancelReason) => {
     setIsSubmitting(true);
     try {
-      const response = await cancelRequest(request._id, cancelReason);
+      const response = await cancelRequest(currentRequest._id, cancelReason);
       toast.success(response.message || "Đã hủy đơn thành công!");
       setIsCancelModalOpen(false);
       if (onActionSuccess) {
@@ -97,13 +103,13 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
   const handleConfirmApprove = async (comment) => {
     setIsSubmitting(true);
     try {
-      const response = await approveRequest(request._id, comment);
+      const response = await approveRequest(currentRequest._id, comment);
       toast.success(response.message || "Phê duyệt đơn thành công!");
 
       if (onActionSuccess) {
         onActionSuccess(response.request);
       }
-      setIsApproveModalOpen(false); // Đóng modal sau khi thành công
+      setIsApproveModalOpen(false); 
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -118,7 +124,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
   const handleConfirmReject = async (reason) => {
     setIsSubmitting(true);
     try {
-      const response = await rejectRequest(request._id, reason);
+      const response = await rejectRequest(currentRequest._id, reason);
       toast.success(response.message || "Đã từ chối đơn thành công!");
       setIsRejectModalOpen(false);
       if (onActionSuccess) {
@@ -138,7 +144,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
   const handleConfirmRequestChanges = async (comment) => {
     setIsSubmitting(true);
     try {
-      const response = await requestChanges(request._id, comment);
+      const response = await requestChanges(currentRequest._id, comment);
       toast.success(response.message || "Đã gửi yêu cầu chỉnh sửa thành công!");
       setIsRequestChangesModalOpen(false);
       if (onActionSuccess) {
@@ -170,17 +176,14 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
     <div className="request-detail">
       <div className="detail-header">
         <div className="detail-title">
-          <h2>{request.subject}</h2>
+          <h2>{currentRequest.subject}</h2>
           <span
-            className={`badge-priority ${getPriorityColor(request.priority)}`}
+            className={`badge-priority ${getPriorityColor(currentRequest.priority)}`}
           >
-            {request.priority}
+            {currentRequest.priority}
           </span>
         </div>
         <div className="detail-actions-header">
-          <button className="btn-icon" title="Thêm tùy chọn">
-            <MoreVertical size={20} />
-          </button>
           <button className="btn-icon" onClick={onClose} title="Đóng">
             <X size={20} />
           </button>
@@ -190,17 +193,17 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
       <div className="detail-content">
         <div className="detail-sender">
           <img
-            src={request.submittedBy.avatar}
-            alt={request.submittedBy.full_name || request.submittedBy.name}
+            src={currentRequest.submittedBy.avatar}
+            alt={currentRequest.submittedBy.full_name || currentRequest.submittedBy.name}
             className="sender-avatar"
           />
           <div className="sender-info">
             <div className="sender-name">
-              {request.submittedBy.full_name || request.submittedBy.name}
+              {currentRequest.submittedBy.full_name || currentRequest.submittedBy.name}
             </div>
-            <div className="sender-email">{request.submittedBy.email}</div>
+            <div className="sender-email">{currentRequest.submittedBy.email}</div>
           </div>
-          <div className="detail-date">{formatDate(request.created_at)}</div>
+          <div className="detail-date">{formatDate(currentRequest.created_at)}</div>
         </div>
 
         {/* Body */}
@@ -208,8 +211,8 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
           <div className="info-grid">
             <div className="info-item">
               <label>Loại đơn:</label>
-              <span className={`badge-type type-${request.type.toLowerCase()}`}>
-                {request.type}
+              <span className={`badge-type type-${currentRequest.type.toLowerCase()}`}>
+                {currentRequest.type}
               </span>
             </div>
 
@@ -217,37 +220,37 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
               <label>Trạng thái:</label>
               <span
                 className={`status-badge status-${
-                  getStatusInfo(request.status).color
+                  getStatusInfo(currentRequest.status).color
                 }`}
               >
                 {React.createElement(
-                  StatusIcon[getStatusInfo(request.status).icon],
+                  StatusIcon[getStatusInfo(currentRequest.status).icon],
                   { size: 14 }
                 )}
-                {getStatusInfo(request.status).label}
+                {getStatusInfo(currentRequest.status).label}
               </span>
             </div>
 
             <div className="info-item">
               <label>Ngày bắt đầu:</label>
               <span>
-                {new Date(request.startDate).toLocaleDateString("vi-VN")}
+                {new Date(currentRequest.startDate).toLocaleDateString("vi-VN")}
               </span>
             </div>
 
-            {request.endDate && (
+            {currentRequest.endDate && (
               <div className="info-item">
                 <label>Ngày kết thúc:</label>
                 <span>
-                  {new Date(request.endDate).toLocaleDateString("vi-VN")}
+                  {new Date(currentRequest.endDate).toLocaleDateString("vi-VN")}
                 </span>
               </div>
             )}
 
-            {request.hour && (
+            {currentRequest.hour && (
               <div className="info-item">
                 <label>Số giờ:</label>
-                <span>{request.hour} giờ</span>
+                <span>{currentRequest.hour} giờ</span>
               </div>
             )}
           </div>
@@ -255,15 +258,15 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
           {/* Reason */}
           <div className="reason-section">
             <h4>Lý do:</h4>
-            <p>{request.reason}</p>
+            <p>{currentRequest.reason}</p>
           </div>
 
           {/* Attachments */}
-          {request.attachments.length > 0 && (
+          {currentRequest.attachments.length > 0 && (
             <div className="attachments-section">
               <h4>File đính kèm:</h4>
               <div className="attachment-list">
-                {request.attachments.map((file, index) => (
+                {currentRequest.attachments.map((file, index) => (
                   <div
                     key={index}
                     className="attachment-item attachment-item-clickable"
@@ -289,7 +292,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
           <div className="approval-flow-section">
             <h4>Quy trình phê duyệt:</h4>
             <div className="approval-timeline">
-              {request.approvalFlow.map((approver, index) => {
+              {currentRequest.approvalFlow.map((approver, index) => {
                 const statusInfo = getStatusInfo(approver.status);
                 const Icon = StatusIcon[statusInfo.icon] || Clock;
                 return (
@@ -328,7 +331,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
 
         {/* Admin Actions */}
         {isAdmin && (
-          <AdminActions request={request} onActionSuccess={onActionSuccess} />
+          <AdminActions request={currentRequest} onActionSuccess={onActionSuccess} />
         )}
 
         {/* Actions */}
@@ -416,7 +419,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
       <EditRequestForm
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        requestToEdit={request}
+        requestToEdit={currentRequest}
         onSuccess={onActionSuccess}
       />
     </div>
