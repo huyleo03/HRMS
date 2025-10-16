@@ -1,16 +1,20 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import RequestSidebar from "../components/RequestSidebar";
 import RequestToolbar from "../components/RequestToolbar";
 import RequestList from "../components/RequestList";
 import RequestDetail from "../components/RequestDetail";
 import CreateRequestModal from "../components/CreateRequestModal";
+import AdminRequestList from "../components/AdminRequestList";
 import { getUserRequests } from "../../../service/RequestService";
 import { toast } from "react-toastify";
+import { useAuth } from "../../../contexts/AuthContext";
 import "../css/Request.css";
 
 const REQUESTS_PER_PAGE = 20;
 
 const Request = () => {
+  const { user } = useAuth();
+  
   // State Management
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [requests, setRequests] = useState([]);
@@ -27,55 +31,51 @@ const Request = () => {
     limit: REQUESTS_PER_PAGE,
   });
 
-  // Data Fetching
-  const fetchRequests = useCallback(async (box = "inbox", page = 1) => {
-    setIsLoading(true);
-    try {
-      const response = await getUserRequests({
-        box,
-        page,
-        limit: REQUESTS_PER_PAGE,
-        sortBy: "created_at",
-        sortOrder: "desc",
-      });
+  // Check if user is admin
+  const isAdmin = user?.role === "Admin";
 
-      setRequests(response.data.requests);
-      setPagination(response.data.pagination);
-    } catch (error) {
-      console.error("❌ Lỗi khi tải danh sách đơn:", error);
-      toast.error("Không thể tải danh sách đơn. Vui lòng thử lại.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Effects
+  // ✅ Data Fetching với search và filter từ server
+  const fetchRequests = useCallback(
+    async (box = "inbox", page = 1) => {
+      setIsLoading(true);
+      try {
+        const params = {
+          box,
+          page,
+          limit: REQUESTS_PER_PAGE,
+          sortBy: "sentAt",
+          sortOrder: "desc",
+        };
+        if (searchQuery.trim() !== "") {
+          params.search = searchQuery.trim();
+        }
+        if (filterStatus !== "all") {
+          params.status = filterStatus;
+        }
+        if (filterPriority !== "all") {
+          params.priority = filterPriority;
+        }
+        const response = await getUserRequests(params);
+        setRequests(response.data.requests);
+        setPagination(response.data.pagination);
+      } catch (error) {
+        console.error("❌ Lỗi khi tải danh sách đơn:", error);
+        toast.error("Không thể tải danh sách đơn. Vui lòng thử lại.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [searchQuery, filterStatus, filterPriority]
+  );
   useEffect(() => {
-    fetchRequests(activeTab, 1);
-    setSelectedRequest(null);
-  }, [activeTab, fetchRequests]);
+    const delayDebounceFn = setTimeout(() => {
+      fetchRequests(activeTab, 1);
+      setSelectedRequest(null);
+    }, 500); 
 
-  // Memoized Filtering Logic (Client-side)
-  const filteredRequests = useMemo(() => {
-    return requests.filter((request) => {
-      const lowerCaseQuery = searchQuery.toLowerCase();
+    return () => clearTimeout(delayDebounceFn);
+  }, [activeTab, searchQuery, filterStatus, fetchRequests]);
 
-      const matchesSearch =
-        !searchQuery ||
-        request.title?.toLowerCase().includes(lowerCaseQuery) ||
-        request.sender?.fullName?.toLowerCase().includes(lowerCaseQuery);
-
-      const matchesStatus =
-        filterStatus === "all" || request.status === filterStatus;
-
-      const matchesPriority =
-        filterPriority === "all" || request.priority === filterPriority;
-
-      return matchesSearch && matchesStatus && matchesPriority;
-    });
-  }, [requests, searchQuery, filterStatus, filterPriority]);
-
-  // Memoized Handlers
   const handleToggleStar = useCallback((requestId) => {
     setRequests((prev) =>
       prev.map((req) =>
@@ -91,7 +91,6 @@ const Request = () => {
       )
     );
     // TODO: Gọi API để cập nhật star status
-    // toggleStarRequest(requestId);
   }, []);
 
   const handleSelectRequest = useCallback((request) => {
@@ -146,44 +145,60 @@ const Request = () => {
         setActiveTab={handleTabChange}
         unreadCount={unreadCount}
         onComposeClick={handleOpenModal}
+        userRole={user?.role}
       />
 
       <div className="request-main">
-        <RequestToolbar
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          filterPriority={filterPriority}
-          setFilterPriority={setFilterPriority}
-        />
-
-        <div
-          className={`request-content ${
-            selectedRequest ? "split-view" : "full-view"
-          }`}
-        >
-          <RequestList
-            requests={filteredRequests}
-            selectedRequest={selectedRequest}
-            onSelectRequest={handleSelectRequest}
-            onToggleStar={handleToggleStar}
-            hasSelectedRequest={!!selectedRequest}
-            isLoading={isLoading}
-            activeTab={activeTab}
-            pagination={pagination}
-            onPageChange={handlePageChange}
+        {/* Hide toolbar for admin tabs */}
+        {!activeTab.startsWith("admin-") && (
+          <RequestToolbar
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            filterPriority={filterPriority}
+            setFilterPriority={setFilterPriority}
           />
+        )}
 
-          {selectedRequest && (
-            <RequestDetail
-              key={`${selectedRequest._id}-${selectedRequest.status}-${selectedRequest.updated_at}`}
-              request={selectedRequest}
-              onClose={handleCloseDetail}
-              onActionSuccess={handleActionSuccess}
+        {/* Admin View */}
+        {activeTab === "admin-all" ? (
+          <AdminRequestList onSelectRequest={handleSelectRequest} />
+        ) : activeTab === "admin-stats" ? (
+          <div className="admin-stats-placeholder">
+            <h3>Thống kê (Đang phát triển)</h3>
+            <p>Chức năng thống kê sẽ được triển khai sau</p>
+          </div>
+        ) : (
+          /* Standard View */
+          <div
+            className={`request-content ${
+              selectedRequest ? "split-view" : "full-view"
+            }`}
+          >
+            <RequestList
+              requests={requests} 
+              selectedRequest={selectedRequest}
+              onSelectRequest={handleSelectRequest}
+              onToggleStar={handleToggleStar}
+              hasSelectedRequest={!!selectedRequest}
+              isLoading={isLoading}
+              activeTab={activeTab}
+              pagination={pagination}
+              onPageChange={handlePageChange}
             />
-          )}
-        </div>
+
+            {selectedRequest && (
+              <RequestDetail
+                key={`${selectedRequest._id}-${selectedRequest.status}-${selectedRequest.updated_at}`}
+                request={selectedRequest}
+                onClose={handleCloseDetail}
+                onActionSuccess={handleActionSuccess}
+                isAdmin={isAdmin}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Create Request Modal */}

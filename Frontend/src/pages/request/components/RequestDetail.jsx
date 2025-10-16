@@ -35,8 +35,9 @@ import ApproveRequestModal from "./ApproveRequestModal";
 import RejectRequestModal from "./RejectRequestModal";
 import RequestChangesModal from "./RequestChangesModal";
 import EditRequestForm from "./EditRequestForm";
+import AdminActions from "./AdminActions";
 
-const RequestDetail = ({ request, onClose, onActionSuccess }) => {
+const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -324,6 +325,11 @@ const RequestDetail = ({ request, onClose, onActionSuccess }) => {
             </div>
           </div>
         </div>
+
+        {/* Admin Actions */}
+        {isAdmin && (
+          <AdminActions request={request} onActionSuccess={onActionSuccess} />
+        )}
 
         {/* Actions */}
         <div className="detail-actions">

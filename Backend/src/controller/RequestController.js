@@ -136,6 +136,9 @@ exports.getUserRequests = async (req, res) => {
       limit = 20,
       sortBy = "sentAt",
       sortOrder = "desc",
+      status,
+      search,
+      priority,
     } = req.query;
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
@@ -182,7 +185,42 @@ exports.getUserRequests = async (req, res) => {
       default:
         return res.status(400).json({ message: "Hộp thư không hợp lệ." });
     }
+    if (status) {
+      if (baseQuery.status && baseQuery.status.$in) {
+        baseQuery.status = status;
+      } else {
+        baseQuery.status = status;
+      }
+    }
+    if (priority) {
+      baseQuery.priority = priority;
+    }
+    if (search && search.trim() !== "") {
+      const searchRegex = new RegExp(search.trim(), "i");
+      if (baseQuery.$or) {
+        const originalOr = baseQuery.$or;
+        delete baseQuery.$or;
+        baseQuery.$and = [
+          { $or: originalOr }, 
+          { 
+            $or: [ 
+              { reason: { $regex: searchRegex } },
+              { subject: { $regex: searchRegex } },
+              { submittedByName: { $regex: searchRegex } },
+            ]
+          }
+        ];
+      } else {
+        baseQuery.$or = [
+          { reason: { $regex: searchRegex } },
+          { subject: { $regex: searchRegex } },
+          { submittedByName: { $regex: searchRegex } },
+        ];
+      }
+    }
+
     const sortOptions = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+    
     const [requests, totalRequests] = await Promise.all([
       Request.find(baseQuery)
         .sort(sortOptions)
@@ -194,6 +232,7 @@ exports.getUserRequests = async (req, res) => {
         .lean(),
       Request.countDocuments(baseQuery),
     ]);
+
     res.status(200).json({
       message: `Lấy danh sách đơn trong hộp thư '${box}' thành công`,
       data: {
@@ -548,6 +587,368 @@ exports.cancelRequest = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ [Cancel Request] Lỗi khi hủy đơn:", error);
+    res.status(500).json({
+      message: error.message || "Lỗi server",
+    });
+  }
+};
+
+// ============ ADMIN FUNCTIONS ============
+
+// GET ALL REQUESTS (Admin only)
+exports.getAllRequestsAdmin = async (req, res) => {
+  try {
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ message: "Chỉ Admin mới có quyền truy cập" });
+    }
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      status,
+      priority,
+      department,
+      submitterId,
+      approverId,
+      startDate,
+      endDate,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+    const query = {};
+    if (status !== 'Draft') {
+      query.status = { $ne: 'Draft' };
+    }
+    // Search in subject/reason
+    if (search) {
+      query.$or = [
+        { subject: { $regex: search, $options: "i" } },
+        { reason: { $regex: search, $options: "i" } },
+      ];
+    }
+    // Filter by status
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+    // Filter by priority
+    if (priority && priority !== 'all') {
+      query.priority = priority;
+    }
+    // Filter by submitter
+    if (submitterId) {
+      query.submittedBy = submitterId;
+    }
+    // Filter by date range
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate);
+      }
+    }
+    // Filter by department
+    if (department) {
+      query.department = department;
+    }
+    // Filter by approver (check if user is in approvalFlow)
+    if (approverId) {
+      query['approvalFlow.approver'] = approverId;
+    }
+    // Pagination
+    const skip = (page - 1) * limit;
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    // Execute query
+    const [requests, total] = await Promise.all([
+      Request.find(query)
+        .populate("submittedBy", "full_name email avatar")
+        .populate("approvalFlow.approverId", "full_name email avatar role")
+        .populate("department.department_id", "department_name")
+        .populate("cc", "full_name email avatar")
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      Request.countDocuments(query),
+    ]);
+    res.status(200).json({
+      requests,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit),
+        limit: parseInt(limit),
+      },
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách đơn (Admin):", error);
+    res.status(500).json({
+      message: error.message || "Lỗi server",
+    });
+  }
+};
+
+// FORCE APPROVE REQUEST (Admin only - bypass approval flow)
+exports.forceApproveRequest = async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ message: "Chỉ Admin mới có quyền truy cập" });
+    }
+
+    const { requestId } = req.params;
+    const { comment } = req.body;
+
+    const request = await Request.findById(requestId);
+    if (!request) {
+      return res.status(404).json({ message: "Không tìm thấy đơn" });
+    }
+
+    // Check if request can be approved
+    if (!['Pending', 'Manager_Approved', 'NeedsReview'].includes(request.status)) {
+      return res.status(400).json({
+        message: `Không thể duyệt đơn ở trạng thái ${request.status}`,
+      });
+    }
+
+    // Force approve - mark all pending steps as approved
+    request.approvalFlow = request.approvalFlow.map(step => ({
+      ...step,
+      status: step.status === 'Pending' ? 'Approved' : step.status,
+      approvedAt: step.status === 'Pending' ? new Date() : step.approvedAt,
+      comment: step.status === 'Pending' && comment ? `[Admin Force Approve] ${comment}` : step.comment
+    }));
+
+    // Set overall status to Approved
+    request.status = 'Approved';
+
+    await request.save();
+
+    // Populate for response
+    await request.populate([
+      { path: "submittedBy", select: "full_name email avatar" },
+      { path: "approvalFlow.approverId", select: "full_name email avatar role" },
+      { path: "department.department_id", select: "department_name" },
+      { path: "cc", select: "full_name email avatar" }
+    ]);
+
+    // Send notification to submitter
+    await NotificationService.createNotification(
+      request.submittedBy._id,
+      "REQUEST_APPROVED",
+      `Đơn "${request.subject}" đã được Admin phê duyệt`,
+      `/request/${request._id}`,
+      req.user.id
+    );
+
+    res.status(200).json({
+      message: "Đã phê duyệt đơn thành công",
+      request,
+    });
+  } catch (error) {
+    console.error("Lỗi khi phê duyệt đơn (Admin):", error);
+    res.status(500).json({
+      message: error.message || "Lỗi server",
+    });
+  }
+};
+
+// FORCE REJECT REQUEST (Admin only)
+exports.forceRejectRequest = async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ message: "Chỉ Admin mới có quyền truy cập" });
+    }
+
+    const { requestId } = req.params;
+    const { comment } = req.body;
+
+    if (!comment) {
+      return res.status(400).json({ message: "Vui lòng nhập lý do từ chối" });
+    }
+
+    const request = await Request.findById(requestId);
+    if (!request) {
+      return res.status(404).json({ message: "Không tìm thấy đơn" });
+    }
+
+    // Check if request can be rejected
+    if (!['Pending', 'Manager_Approved', 'NeedsReview'].includes(request.status)) {
+      return res.status(400).json({
+        message: `Không thể từ chối đơn ở trạng thái ${request.status}`,
+      });
+    }
+
+    // Set status to Rejected and add admin comment
+    request.status = 'Rejected';
+    request.adminComment = `[Admin Force Reject] ${comment}`;
+
+    await request.save();
+
+    // Populate for response
+    await request.populate([
+      { path: "submittedBy", select: "full_name email avatar" },
+      { path: "approvalFlow.approverId", select: "full_name email avatar role" },
+      { path: "department.department_id", select: "department_name" },
+      { path: "cc", select: "full_name email avatar" }
+    ]);
+
+    // Send notification to submitter
+    await NotificationService.createNotification(
+      request.submittedBy._id,
+      "REQUEST_REJECTED",
+      `Đơn "${request.subject}" đã bị Admin từ chối: ${comment}`,
+      `/request/${request._id}`,
+      req.user.id
+    );
+
+    res.status(200).json({
+      message: "Đã từ chối đơn thành công",
+      request,
+    });
+  } catch (error) {
+    console.error("Lỗi khi từ chối đơn (Admin):", error);
+    res.status(500).json({
+      message: error.message || "Lỗi server",
+    });
+  }
+};
+
+// GET ADMIN STATISTICS
+exports.getAdminStats = async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ message: "Chỉ Admin mới có quyền truy cập" });
+    }
+
+    const { startDate, endDate, department } = req.query;
+
+    // Build query for date range
+    const dateQuery = {};
+    if (startDate || endDate) {
+      dateQuery.createdAt = {};
+      if (startDate) {
+        dateQuery.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        dateQuery.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // Add department filter if provided
+    if (department) {
+      dateQuery.department = department;
+    }
+
+    // Get statistics
+    const [
+      totalRequests,
+      statusStats,
+      priorityStats,
+      typeStats,
+      departmentStats,
+      avgApprovalTime,
+      recentRequests
+    ] = await Promise.all([
+      // Total requests (exclude drafts)
+      Request.countDocuments({ ...dateQuery, status: { $ne: 'Draft' } }),
+
+      // By status
+      Request.aggregate([
+        { $match: { ...dateQuery, status: { $ne: 'Draft' } } },
+        { $group: { _id: "$status", count: { $sum: 1 } } }
+      ]),
+
+      // By priority
+      Request.aggregate([
+        { $match: { ...dateQuery, status: { $ne: 'Draft' } } },
+        { $group: { _id: "$priority", count: { $sum: 1 } } }
+      ]),
+
+      // By type
+      Request.aggregate([
+        { $match: { ...dateQuery, status: { $ne: 'Draft' } } },
+        { $group: { _id: "$requestType", count: { $sum: 1 } } }
+      ]),
+
+      // By department
+      Request.aggregate([
+        { $match: { ...dateQuery, status: { $ne: 'Draft' } } },
+        { $group: { _id: "$department", count: { $sum: 1 } } },
+        { $lookup: { from: "departments", localField: "_id", foreignField: "_id", as: "dept" } },
+        { $unwind: "$dept" },
+        { $project: { _id: 1, count: 1, name: "$dept.name" } }
+      ]),
+
+      // Average approval time (for approved requests)
+      Request.aggregate([
+        { 
+          $match: { 
+            ...dateQuery, 
+            status: 'Approved',
+            'approvalFlow.approvedAt': { $exists: true }
+          } 
+        },
+        {
+          $project: {
+            approvalTime: {
+              $subtract: [
+                { $max: "$approvalFlow.approvedAt" },
+                "$createdAt"
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            avgTime: { $avg: "$approvalTime" }
+          }
+        }
+      ]),
+
+      // Recent requests
+      Request.find({ ...dateQuery, status: { $ne: 'Draft' } })
+        .populate("submittedBy", "full_name email avatar")
+        .populate("department.department_id", "department_name")
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean()
+    ]);
+
+    // Format statistics
+    const stats = {
+      total: totalRequests,
+      byStatus: statusStats.reduce((acc, curr) => {
+        acc[curr._id] = curr.count;
+        return acc;
+      }, {}),
+      byPriority: priorityStats.reduce((acc, curr) => {
+        acc[curr._id] = curr.count;
+        return acc;
+      }, {}),
+      byType: typeStats.reduce((acc, curr) => {
+        acc[curr._id] = curr.count;
+        return acc;
+      }, {}),
+      byDepartment: departmentStats.map(d => ({
+        id: d._id,
+        name: d.name,
+        count: d.count
+      })),
+      avgApprovalTimeHours: avgApprovalTime[0]?.avgTime 
+        ? (avgApprovalTime[0].avgTime / (1000 * 60 * 60)).toFixed(2)
+        : 0,
+      recentRequests
+    };
+
+    res.status(200).json({ stats });
+  } catch (error) {
+    console.error("Lỗi khi lấy thống kê (Admin):", error);
     res.status(500).json({
       message: error.message || "Lỗi server",
     });

@@ -102,6 +102,59 @@ export const resubmitRequest = async (requestId, payload) => {
   }
 };
 
+// ============ ADMIN SERVICES ============
+
+// Lấy tất cả requests (Admin only)
+export const getAdminRequests = async (params) => {
+  try {
+    return await apiCall(`${API_CONFIG.ENDPOINTS.GET_REQUESTS}/admin/all`, {
+      method: "GET",
+      params,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách đơn (Admin):", error);
+    throw error;
+  }
+};
+
+// Force approve request (Admin only)
+export const forceApproveRequest = async (requestId, comment = "") => {
+  try {
+    return await apiCall(`${API_CONFIG.ENDPOINTS.GET_REQUESTS}/admin/${requestId}/force-approve`, {
+      method: "PUT",
+      body: JSON.stringify({ comment }),
+    });
+  } catch (error) {
+    console.error("Lỗi khi phê duyệt đơn (Admin):", error);
+    throw error;
+  }
+};
+
+// Force reject request (Admin only)
+export const forceRejectRequest = async (requestId, comment) => {
+  try {
+    return await apiCall(`${API_CONFIG.ENDPOINTS.GET_REQUESTS}/admin/${requestId}/force-reject`, {
+      method: "PUT",
+      body: JSON.stringify({ comment }),
+    });
+  } catch (error) {
+    console.error("Lỗi khi từ chối đơn (Admin):", error);
+    throw error;
+  }
+};
+
+// Get admin statistics
+export const getAdminStats = async (params) => {
+  try {
+    return await apiCall(`${API_CONFIG.ENDPOINTS.GET_REQUESTS}/admin/stats`, {
+      method: "GET",
+      params,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy thống kê (Admin):", error);
+    throw error;
+  }
+};
 
 
 

@@ -32,6 +32,9 @@ export const API_CONFIG = {
     REQUEST_CHANGE: (id) => `/api/requests/${id}/change-request`,
     RESUBMIT_REQUEST: (id) => `/api/requests/${id}/resubmit`,
     GET_REQUEST_BY_ID: (id) => `/api/requests/${id}`,
+    FORCE_APPROVE_REQUEST: (id) => `/api/requests/admin/${id}/force-approve`,
+    FORCE_REJECT_REQUEST: (id) => `/api/requests/admin/${id}/force-reject`,
+    GET_ADMIN_STATS: "/api/requests/admin/stats",
 
     // WORKFLOWS
     GET_WORKFLOWS: "/api/workflows",

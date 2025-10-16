@@ -7,6 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  Shield,
+  BarChart3,
 } from "lucide-react";
 
 const RequestSidebar = ({
@@ -14,8 +16,10 @@ const RequestSidebar = ({
   setActiveTab,
   counts = {},
   onComposeClick,
+  userRole, 
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+
 
   const sidebarItems = [
     {
@@ -41,7 +45,23 @@ const RequestSidebar = ({
       label: "Đã đánh dấu",
       icon: <Star size={20} />,
       count: counts.starred || 0,
-    }
+    },
+  ];
+
+  // ✅ THÊM MENU ITEMS CHO ADMIN
+  const adminItems = [
+    {
+      id: "admin-all",
+      label: "Tất cả đơn",
+      icon: <Shield size={20} />,
+      count: counts.adminAll || 0,
+    },
+    {
+      id: "admin-stats",
+      label: "Thống kê",
+      icon: <BarChart3 size={20} />,
+      count: null,
+    },
   ];
 
   const toggleSidebar = () => {
@@ -89,7 +109,7 @@ const RequestSidebar = ({
         </div>
       )}
 
-      {/* Navigation Items */}
+      {/* Navigation Items - User Menu */}
       <div className="sidebar-items">
         {sidebarItems.map((item) => (
           <div
@@ -110,6 +130,44 @@ const RequestSidebar = ({
             )}
           </div>
         ))}
+
+        {/* ✅ ADMIN SECTION */}
+        {userRole === "Admin" && (
+          <>
+            {/* Divider */}
+            {!isCollapsed && (
+              <div className="sidebar-divider">
+                <span className="divider-text">Quản trị viên</span>
+              </div>
+            )}
+            {isCollapsed && <div className="sidebar-divider-line"></div>}
+
+            {/* Admin Menu Items */}
+            {adminItems.map((item) => (
+              <div
+                key={item.id}
+                className={`sidebar-item admin-item ${
+                  activeTab === item.id ? "active" : ""
+                }`}
+                onClick={() => setActiveTab(item.id)}
+                title={isCollapsed ? item.label : ""}
+              >
+                <div className="item-content">
+                  <span className="item-icon">{item.icon}</span>
+                  {!isCollapsed && (
+                    <span className="item-label">{item.label}</span>
+                  )}
+                </div>
+                {!isCollapsed && item.count !== null && item.count > 0 && (
+                  <span className="item-count">{item.count}</span>
+                )}
+                {isCollapsed && item.count !== null && item.count > 0 && (
+                  <span className="item-count-dot"></span>
+                )}
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
