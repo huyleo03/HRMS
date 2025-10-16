@@ -123,7 +123,6 @@ const AdminRequestList = ({ onSelectRequest }) => {
         </button>
       </div>
 
-      {/* Filter Section */}
       {showFilters && (
         <div className="admin-filters">
           <div className="filter-row">

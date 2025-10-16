@@ -99,7 +99,6 @@ const requestSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
-        "Draft", // Nháp
         "Pending", // Chờ duyệt
         "NeedsReview", // Cần chỉnh sửa
         "Manager_Approved", // Manager đã duyệt

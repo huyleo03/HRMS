@@ -85,7 +85,7 @@ const AdminActions = ({ request, onActionSuccess }) => {
       {/* Approve Modal */}
       {showApproveModal && (
         <div className="modal-overlay" onClick={() => setShowApproveModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-contentt" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Xác nhận phê duyệt (Admin)</h3>
               <button
@@ -128,7 +128,7 @@ const AdminActions = ({ request, onActionSuccess }) => {
       {/* Reject Modal */}
       {showRejectModal && (
         <div className="modal-overlay" onClick={() => setShowRejectModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-contentt" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Xác nhận từ chối (Admin)</h3>
               <button

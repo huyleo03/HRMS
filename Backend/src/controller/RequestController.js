@@ -20,15 +20,20 @@ exports.createRequest = async (req, res) => {
       priority,
       cc,
     } = req.body;
-
-    // Lấy thông tin người gửi và populate các trường cần thiết để resolve workflow
     const submitter = await User.findById(req.user.id).populate(
       "department.department_id manager_id"
     );
     if (!submitter) {
       return res.status(404).json({ message: "Người gửi không tồn tại" });
     }
+    if (submitter.role === "Admin") {
+      return res.status(403).json({
+        message: "Admin không được phép tạo đơn. Admin chỉ có quyền duyệt đơn của người khác.",
+      });
+    }
 
+    const ccUserIds = (cc || []).map((c) => c.userId);
+    
     // Bước 2: Tìm Workflow Template phù hợp dựa trên 'type' của đơn
     const workflow = await Workflow.getActiveWorkflow(
       type,
@@ -45,7 +50,7 @@ exports.createRequest = async (req, res) => {
         message: `Quy trình phê duyệt cho loại đơn "${type}" không hợp lệ hoặc không tìm thấy người duyệt.`,
       });
     }
-    const ccUserIds = (cc || []).map((c) => c.userId);
+
     const newRequest = new Request({
       submittedBy: submitter._id,
       submittedByName: submitter.full_name,

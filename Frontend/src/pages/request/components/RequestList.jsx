@@ -18,7 +18,6 @@ const RequestList = ({
       inbox: "Hộp thư đến",
       sent: "Đã gửi",
       cc: "Đơn CC",
-      starred: "Đã đánh dấu",
       all: "Tất cả",
     };
     return titles[activeTab] || "Danh sách đơn";
@@ -29,7 +28,6 @@ const RequestList = ({
       inbox: "Không có đơn cần duyệt",
       sent: "Chưa gửi đơn nào",
       cc: "Không có đơn CC",
-      starred: "Chưa có đơn đánh dấu",
     };
     return messages[activeTab] || "Không có đơn nào";
   };

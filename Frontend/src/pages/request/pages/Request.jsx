@@ -68,6 +68,10 @@ const Request = () => {
     [searchQuery, filterStatus, filterPriority]
   );
   useEffect(() => {
+    if (activeTab.startsWith("admin-")) {
+      return;
+    }
+
     const delayDebounceFn = setTimeout(() => {
       fetchRequests(activeTab, 1);
       setSelectedRequest(null);
@@ -149,7 +153,6 @@ const Request = () => {
       />
 
       <div className="request-main">
-        {/* Hide toolbar for admin tabs */}
         {!activeTab.startsWith("admin-") && (
           <RequestToolbar
             searchQuery={searchQuery}

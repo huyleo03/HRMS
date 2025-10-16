@@ -20,7 +20,7 @@ const RequestSidebar = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-
+  // ✅ MENU CHO MANAGER VÀ EMPLOYEE
   const sidebarItems = [
     {
       id: "inbox",
@@ -39,16 +39,20 @@ const RequestSidebar = ({
       label: "Đơn CC",
       icon: <Users size={20} />,
       count: counts.cc || 0,
-    },
+    }
+  ];
+
+  // ✅ MENU RIÊNG CHO ADMIN (chỉ inbox)
+  const adminSidebarItems = [
     {
-      id: "starred",
-      label: "Đã đánh dấu",
-      icon: <Star size={20} />,
-      count: counts.starred || 0,
+      id: "inbox",
+      label: "Hộp thư đến",
+      icon: <Inbox size={20} />,
+      count: counts.inbox || 0,
     },
   ];
 
-  // ✅ THÊM MENU ITEMS CHO ADMIN
+  // ✅ MENU ADMIN SECTION
   const adminItems = [
     {
       id: "admin-all",
@@ -87,31 +91,36 @@ const RequestSidebar = ({
         </button>
       </div>
 
-      {/* Compose Button */}
-      {!isCollapsed && (
-        <div className="compose-button-wrapper">
-          <button className="compose-button" onClick={handleComposeClick}>
-            <Edit className="compose-icon" size={18} />
-            <span className="compose-text">Tạo đơn mới</span>
-          </button>
-        </div>
-      )}
+      {/* ✅ Compose Button - ẨN KHI ADMIN */}
+      {userRole !== "Admin" && (
+        <>
+          {!isCollapsed && (
+            <div className="compose-button-wrapper">
+              <button className="compose-button" onClick={handleComposeClick}>
+                <Edit className="compose-icon" size={18} />
+                <span className="compose-text">Tạo đơn mới</span>
+              </button>
+            </div>
+          )}
 
-      {isCollapsed && (
-        <div className="compose-button-wrapper">
-          <button
-            className="compose-button-icon"
-            onClick={handleComposeClick}
-            title="Tạo đơn mới"
-          >
-            <Edit size={20} />
-          </button>
-        </div>
+          {isCollapsed && (
+            <div className="compose-button-wrapper">
+              <button
+                className="compose-button-icon"
+                onClick={handleComposeClick}
+                title="Tạo đơn mới"
+              >
+                <Edit size={20} />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Navigation Items - User Menu */}
       <div className="sidebar-items">
-        {sidebarItems.map((item) => (
+        {/* ✅ ADMIN CHỈ THẤY "HỘP THƯ ĐẾN" */}
+        {(userRole === "Admin" ? adminSidebarItems : sidebarItems).map((item) => (
           <div
             key={item.id}
             className={`sidebar-item ${activeTab === item.id ? "active" : ""}`}
