@@ -100,9 +100,8 @@ exports.authenticateReset = async (req, res, next) => {
       });
     }
 
-  
-    req.user = decoded; 
-    req.currentUser = currentUser; 
+    req.user = decoded;
+    req.currentUser = currentUser;
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
@@ -124,9 +123,22 @@ exports.authenticateReset = async (req, res, next) => {
   }
 };
 
-
 exports.authorize = (...roles) => {
   return (req, res, next) => {
+    // Kiểm tra user có tồn tại không
+    if (!req.user) {
+      console.log("❌ No user in request");
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+    // Kiểm tra user có role không
+    if (!req.user.role) {
+      return res.status(403).json({
+        message: "Người dùng không có vai trò.",
+      });
+    }
+    // Kiểm tra role có khớp không
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         message: "Bạn không có quyền truy cập tính năng này.",
@@ -135,9 +147,3 @@ exports.authorize = (...roles) => {
     next();
   };
 };
-
-
-
-
-
-

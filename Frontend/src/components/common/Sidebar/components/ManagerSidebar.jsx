@@ -1,15 +1,10 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../../../contexts/AuthContext";
 import "../css/Sidebar.css";
 
 const ManagerSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isManager } = useAuth();
-
-  if (!isManager) return null;
-
 
   const menuItems = [
     {
@@ -23,7 +18,7 @@ const ManagerSidebar = () => {
       icon: "👥",
     },
     {
-      path: '/manager/requests',
+      path: '/manager/request',
       label: 'Request',
       icon: '🏖️'
     }

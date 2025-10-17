@@ -25,11 +25,6 @@ export const getStatusInfo = (status) => {
       color: "secondary",
       icon: "Ban",
     },
-    Draft: {
-      label: "Bản nháp",
-      color: "secondary",
-      icon: "FileText",
-    },
     Manager_Approved: {
       label: "Quản lý đã duyệt",
       color: "info",
