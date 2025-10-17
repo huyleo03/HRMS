@@ -1,6 +1,7 @@
 // API Configuration
+// Tự động sử dụng biến môi trường hoặc fallback về localhost
 export const API_CONFIG = {
-  BASE_URL: "http://localhost:9999",
+  BASE_URL: process.env.REACT_APP_API_BASE_URL || "http://localhost:9999",
   ENDPOINTS: {
     // Auth
     LOGIN: "/api/auth/login",
