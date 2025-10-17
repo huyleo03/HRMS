@@ -19,6 +19,11 @@ const EmployeeSidebar = () => {
       icon: '📊'
     },
     {
+      path: '/employee/attendance',
+      label: 'Chấm công',
+      icon: '⏰'
+    },
+    {
       path: '/employee/requests',
       label: 'Request',
       icon: '🏖️'
@@ -31,7 +36,8 @@ const EmployeeSidebar = () => {
 
   const isActiveRoute = (path) => {
     return location.pathname === path || 
-           (path === '/employee/requests' && location.pathname.startsWith('/employee/requests'));
+           (path === '/employee/requests' && location.pathname.startsWith('/employee/requests')) ||
+           (path === '/employee/attendance' && location.pathname.startsWith('/employee/attendance'));
   };
 
   return (
