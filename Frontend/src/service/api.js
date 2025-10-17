@@ -1,7 +1,15 @@
 // API Configuration
-// Tự động sử dụng biến môi trường hoặc fallback về localhost
+const getBaseURL = () => {
+  // Production: Kiểm tra domain của frontend
+  if (window.location.hostname.includes('onrender.com')) {
+    return 'https://hrms-1-2h7w.onrender.com';
+  }
+  // Development: Sử dụng env variable hoặc localhost
+  return process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999';
+};
+
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || "http://localhost:9999",
+  BASE_URL: getBaseURL(),
   ENDPOINTS: {
     // Auth
     LOGIN: "/api/auth/login",
