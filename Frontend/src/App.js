@@ -22,6 +22,7 @@ import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ChangePass from "./pages/authentication/ChangePass.jsx";
 import Request from "./pages/request/pages/Request.jsx";
 import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.jsx";
+import EmployeeAttendance from "./pages/attendance/EmployeeAttendance.jsx";
 
 function App() {
   return (
@@ -77,7 +78,8 @@ function App() {
           {/* --- Employee Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Employee"]} />}>
             <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
-            <Route path="/employee/request" element={<Request />} />
+            <Route path="/employee/requests" element={<Request />} />
+            <Route path="/employee/attendance" element={<EmployeeAttendance />} />
           </Route>
 
           {/* --- Shared Routes (All roles can access) --- */}
