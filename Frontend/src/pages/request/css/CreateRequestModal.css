@@ -61,6 +61,70 @@
   color: #374151;
 }
 
+/* ===== ADMIN AUTO-APPROVE BANNER ===== */
+.admin-auto-approve-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border-bottom: 1px solid #667eea30;
+  border-top: 1px solid #667eea30;
+  animation: slideDown 0.3s ease;
+}
+
+.admin-auto-approve-banner .banner-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.admin-auto-approve-banner .banner-content {
+  flex: 1;
+}
+
+.admin-auto-approve-banner .banner-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.admin-auto-approve-banner .banner-title svg {
+  color: #10b981;
+}
+
+.admin-auto-approve-banner .banner-text {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-auto-approve-banner .banner-text strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ===== MODAL CONTENT ===== */
 .modal-content {
   flex: 1;

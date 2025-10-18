@@ -141,7 +141,6 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  user-select: none;
   position: relative;
   color: #666;
 }
@@ -1143,6 +1142,64 @@
   border-color: #007bff;
   opacity: 0.65;
 }
+
+/* ...existing code... */
+
+/* ===== SIDEBAR DIVIDER ===== */
+.sidebar-divider {
+  margin: 16px 12px 8px;
+  padding: 8px 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.divider-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-divider-line {
+  margin: 12px 16px;
+  height: 1px;
+  background-color: #e5e7eb;
+}
+
+/* ===== ADMIN MENU ITEMS ===== */
+.sidebar-item.admin-item {
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-left: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.sidebar-item.admin-item:hover {
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+  border-left-color: #3b82f6;
+}
+
+.sidebar-item.admin-item.active {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-left-color: #2563eb;
+}
+
+.sidebar-item.admin-item .item-icon {
+  color: #3b82f6;
+}
+
+.sidebar-item.admin-item.active .item-icon {
+  color: #1d4ed8;
+}
+
+.sidebar-item.admin-item .item-label {
+  color: #1e40af;
+  font-weight: 500;
+}
+
+/* Collapsed state */
+.request-sidebar.collapsed .sidebar-divider-line {
+  margin: 12px 8px;
+}
 /* ===== ANIMATIONS ===== */
 @keyframes slideInRight {
   from {
@@ -1192,6 +1249,110 @@
     right: 0;
     bottom: 0;
     z-index: 999;
+    border-radius: 0;
+  }
+}
+
+/* Admin Stats Placeholder */
+.admin-stats-placeholder {
+  padding: 60px 20px;
+  text-align: center;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+}
+
+.admin-stats-placeholder h3 {
+  color: #7c3aed;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.admin-stats-placeholder p {
+  color: #6b7280;
+  font-size: 16px;
+}
+
+/* ===== REQUEST DETAIL MODAL OVERLAY FOR ADMIN ===== */
+.request-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.request-detail-modal {
+  background: white;
+  border-radius: 20px;
+  max-width: 1200px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Make detail content scrollable inside modal */
+.request-detail-overlay .request-detail {
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 20px;
+}
+
+/* Enhanced close button for modal */
+.request-detail-overlay .detail-actions-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-right: 20px;
+}
+
+/* Responsive modal */
+@media (max-width: 768px) {
+  .request-detail-overlay {
+    padding: 0;
+  }
+
+  .request-detail-modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .request-detail-overlay .request-detail {
+    max-height: 100vh;
     border-radius: 0;
   }
 }

@@ -1,6 +1,15 @@
 // API Configuration
+const getBaseURL = () => {
+  // Production: Kiểm tra domain của frontend
+  if (window.location.hostname.includes('onrender.com')) {
+    return 'https://hrms-1-2h7w.onrender.com';
+  }
+  // Development: Sử dụng env variable hoặc localhost
+  return process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999';
+};
+
 export const API_CONFIG = {
-  BASE_URL: "http://localhost:9999",
+  BASE_URL: getBaseURL(),
   ENDPOINTS: {
     // Auth
     LOGIN: "/api/auth/login",
@@ -32,6 +41,9 @@ export const API_CONFIG = {
     REQUEST_CHANGE: (id) => `/api/requests/${id}/change-request`,
     RESUBMIT_REQUEST: (id) => `/api/requests/${id}/resubmit`,
     GET_REQUEST_BY_ID: (id) => `/api/requests/${id}`,
+    FORCE_APPROVE_REQUEST: (id) => `/api/requests/admin/${id}/force-approve`,
+    FORCE_REJECT_REQUEST: (id) => `/api/requests/admin/${id}/force-reject`,
+    GET_ADMIN_STATS: "/api/requests/admin/stats",
 
     // WORKFLOWS
     GET_WORKFLOWS: "/api/workflows",

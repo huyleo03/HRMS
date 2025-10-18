@@ -64,6 +64,7 @@ function App() {
               path="/view-department/:id"
               element={<DepartmentMembers />}
             />
+            <Route path="/request" element={<Request />} />
           </Route>
 
           {/* --- Manager Routes --- */}
@@ -71,7 +72,7 @@ function App() {
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/employees" element={<ManagerEmployees />} />
             <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />}/>
-            <Route path="/manager/requests" element={<Request />} />
+            <Route path="/manager/request" element={<Request />} />
           </Route>
 
           {/* --- Employee Routes --- */}

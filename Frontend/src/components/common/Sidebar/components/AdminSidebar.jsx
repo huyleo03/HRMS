@@ -1,16 +1,10 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../css/Sidebar.css";
-import { useAuth } from "../../../../contexts/AuthContext";
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
-
-  if (!isAdmin) {
-    return null;
-  }
 
   const menuItems = [
     {
