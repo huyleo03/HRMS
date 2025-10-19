@@ -22,6 +22,7 @@ import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ChangePass from "./pages/authentication/ChangePass.jsx";
 import Request from "./pages/request/pages/Request.jsx";
 import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.jsx";
+import EmployeeAttendance from "./pages/attendance/EmployeeAttendance.jsx";
 import ManagerAttendancePage from "./pages/attendance/ManagerAttendancePage.jsx";
 import AdminAttendancePage from "./pages/attendance/AdminAttendancePage.jsx";
 
@@ -65,6 +66,7 @@ function App() {
               path="/view-department/:id"
               element={<DepartmentMembers />}
             />
+            <Route path="/request" element={<Request />} />
             <Route path="/attendance" element={<AdminAttendancePage />} />
           </Route>
 
@@ -73,14 +75,15 @@ function App() {
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/employees" element={<ManagerEmployees />} />
             <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />}/>
+            <Route path="/manager/request" element={<Request />} />
             <Route path="/manager/attendance" element={<ManagerAttendancePage />} />
-            <Route path="/manager/requests" element={<Request />} />
           </Route>
 
           {/* --- Employee Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Employee"]} />}>
             <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
             <Route path="/employee/requests" element={<Request />} />
+            <Route path="/employee/attendance" element={<EmployeeAttendance />} />
           </Route>
 
           {/* --- Shared Routes (All roles can access) --- */}

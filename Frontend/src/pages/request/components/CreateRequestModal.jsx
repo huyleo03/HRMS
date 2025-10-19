@@ -13,6 +13,8 @@ import {
   Trash2,
   Loader,
   Search,
+  Shield,
+  CheckCircle,
 } from "lucide-react";
 import "../css/CreateRequestModal.css";
 import { getWorkflowTemplate } from "../../../service/WorkflowService";
@@ -25,8 +27,11 @@ import {
   searchUsersForCc,
 } from "../../../service/UserService";
 import { uploadFileToCloudinary } from "../../../service/CloudinaryService";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const CreateRequestModal = ({ onClose, onSubmit }) => {
+  const { user } = useAuth(); // ✅ Get current user
+  const isAdmin = user?.role === "Admin"; // ✅ Check if admin
   const [formData, setFormData] = useState({
     type: "Leave",
     subject: "",
@@ -63,6 +68,13 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     const fetchWorkflow = async () => {
       if (!formData.type) return;
 
+      // ✅ ADMIN KHÔNG CẦN FETCH WORKFLOW (tự động duyệt)
+      if (isAdmin) {
+        setWorkflow({ isLoading: false, error: null, name: "Tự động phê duyệt (Admin)" });
+        setFormData((prev) => ({ ...prev, approvers: [] }));
+        return;
+      }
+
       setWorkflow({ isLoading: true, error: null, name: "" });
       setFormData((prev) => ({ ...prev, approvers: [] }));
 
@@ -98,7 +110,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     };
 
     fetchWorkflow();
-  }, [formData.type]);
+  }, [formData.type, isAdmin]);
 
   useEffect(() => {
     const fetchInitialSuggestions = async () => {
@@ -210,7 +222,8 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
       newErrors.startDate = "Vui lòng chọn ngày bắt đầu";
     }
 
-    if (formData.approvers.length === 0) {
+    // ✅ ADMIN KHÔNG CẦN APPROVERS (tự động duyệt)
+    if (!isAdmin && formData.approvers.length === 0) {
       newErrors.approvers = "Vui lòng chọn ít nhất một người phê duyệt";
     }
 
@@ -255,7 +268,21 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
       };
 
       const response = await createRequest(requestData);
-      toast.success(response.message || "Gửi đơn thành công!");
+      
+      // ✅ Thông báo đặc biệt cho Admin (auto-approved)
+      if (response.message?.includes("tự động phê duyệt")) {
+        toast.success("✅ " + response.message, {
+          autoClose: 5000,
+          style: {
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "white",
+            fontWeight: "bold",
+          },
+        });
+      } else {
+        toast.success(response.message || "Gửi đơn thành công!");
+      }
+      
       if (onSubmit) {
         onSubmit(response.request);
       }
@@ -306,6 +333,24 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
             <X size={24} />
           </button>
         </div>
+
+        {/* ✅ ADMIN INFO BANNER */}
+        {isAdmin && (
+          <div className="admin-auto-approve-banner">
+            <div className="banner-icon">
+              <Shield size={20} />
+            </div>
+            <div className="banner-content">
+              <div className="banner-title">
+                <CheckCircle size={16} />
+                <strong>Phê duyệt tự động</strong>
+              </div>
+              <div className="banner-text">
+                Với quyền Admin, đơn của bạn sẽ được <strong>tự động phê duyệt</strong> ngay sau khi gửi.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="modal-content">
@@ -495,61 +540,63 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
             )}
           </div>
 
-          {/* Approvers */}
-          <div className="form-group">
-            <label className="form-label">
-              <User size={16} />
-              Quy trình phê duyệt <span className="required">*</span>
-            </label>
+          {/* Approvers - ẨN KHI ADMIN */}
+          {!isAdmin && (
+            <div className="form-group">
+              <label className="form-label">
+                <User size={16} />
+                Quy trình phê duyệt <span className="required">*</span>
+              </label>
 
-            {/* Trạng thái Loading */}
-            {workflow.isLoading && (
-              <div className="workflow-status">
-                <Loader size={16} className="animate-spin" />
-                <span>Đang tải quy trình...</span>
-              </div>
-            )}
-
-            {workflow.error && !workflow.isLoading && (
-              <div className="workflow-status error">
-                <span>{workflow.error}</span>
-              </div>
-            )}
-
-            {!workflow.isLoading &&
-              !workflow.error &&
-              formData.approvers.length > 0 && (
-                <>
-                  <div className="workflow-name">
-                    Áp dụng quy trình: <strong>{workflow.name}</strong>
-                  </div>
-                  <div className="user-list read-only">
-                    {formData.approvers.map((approver, index) => (
-                      <div key={index} className="user-item">
-                        <div className="user-avatar">
-                          {approver.approverName
-                            ? approver.approverName.charAt(0).toUpperCase()
-                            : "?"}
-                        </div>
-                        <div className="user-info">
-                          <span className="user-name">
-                            {approver.approverName || "Không xác định"}
-                          </span>
-                          <span className="user-email">
-                            {approver.approverEmail}
-                          </span>
-                        </div>
-                        <span className="user-level">Cấp {approver.level}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
+              {/* Trạng thái Loading */}
+              {workflow.isLoading && (
+                <div className="workflow-status">
+                  <Loader size={16} className="animate-spin" />
+                  <span>Đang tải quy trình...</span>
+                </div>
               )}
 
-            {errors.approvers && (
-              <span className="error-text">{errors.approvers}</span>
-            )}
-          </div>
+              {workflow.error && !workflow.isLoading && (
+                <div className="workflow-status error">
+                  <span>{workflow.error}</span>
+                </div>
+              )}
+
+              {!workflow.isLoading &&
+                !workflow.error &&
+                formData.approvers.length > 0 && (
+                  <>
+                    <div className="workflow-name">
+                      Áp dụng quy trình: <strong>{workflow.name}</strong>
+                    </div>
+                    <div className="user-list read-only">
+                      {formData.approvers.map((approver, index) => (
+                        <div key={index} className="user-item">
+                          <div className="user-avatar">
+                            {approver.approverName
+                              ? approver.approverName.charAt(0).toUpperCase()
+                              : "?"}
+                          </div>
+                          <div className="user-info">
+                            <span className="user-name">
+                              {approver.approverName || "Không xác định"}
+                            </span>
+                            <span className="user-email">
+                              {approver.approverEmail}
+                            </span>
+                          </div>
+                          <span className="user-level">Cấp {approver.level}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+              {errors.approvers && (
+                <span className="error-text">{errors.approvers}</span>
+              )}
+            </div>
+          )}
 
           {/* CC */}
           <div className="form-group">

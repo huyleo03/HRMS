@@ -61,8 +61,12 @@ export default function ResetPasswordPage() {
         return;
       }
 
+      const apiBaseUrl = window.location.hostname.includes('onrender.com')
+        ? 'https://hrms-1-2h7w.onrender.com'
+        : (process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999');
+      
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL_BACKEND}/auth/reset-password`,
+        `${apiBaseUrl}/api/auth/reset-password`,
         {
           email,
           otp,
