@@ -6,7 +6,7 @@ import {
   markAbsent,
   exportAttendanceData 
 } from "../../service/AttendanceService";
-import { getAllDepartments } from "../../service/DepartmentService";
+import { getDepartmentOptions } from "../../service/DepartmentService";
 import AttendanceDetailModal from "./components/AttendanceDetailModal";
 import AttendanceAdjustModal from "./components/AttendanceAdjustModal";
 import "./css/AdminAttendance.css";
@@ -48,7 +48,7 @@ const AdminAttendancePage = () => {
   // Fetch departments
   const fetchDepartments = async () => {
     try {
-      const response = await getAllDepartments();
+      const response = await getDepartmentOptions();
       setDepartments(response.data || []);
     } catch (error) {
       console.error("Error fetching departments:", error);
