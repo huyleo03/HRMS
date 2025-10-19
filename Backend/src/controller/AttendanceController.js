@@ -512,6 +512,8 @@ exports.markAbsent = async (req, res) => {
 // 11. Xuất dữ liệu Excel
 exports.exportData = async (req, res) => {
   try {
+    const userId = req.user._id;
+    const userRole = req.user.role;
     const { startDate, endDate, departmentId, format = "excel" } = req.query;
     const query = {};
     
@@ -520,8 +522,25 @@ exports.exportData = async (req, res) => {
       if (startDate) query.date.$gte = normalizeDate(new Date(startDate));
       if (endDate) query.date.$lte = normalizeDate(new Date(endDate));
     }
-    if (departmentId) {
-      // Find all users in department
+    
+    // Nếu là Manager, chỉ export phòng ban của mình
+    if (userRole === "Manager") {
+      const manager = await User.findById(userId);
+      if (!manager?.department?.department_id) {
+        return res.status(400).json({
+          success: false,
+          message: "Bạn không thuộc phòng ban nào.",
+        });
+      }
+      
+      // Lấy tất cả users trong phòng ban
+      const departmentUsers = await User.find({
+        "department.department_id": manager.department.department_id,
+        status: "Active",
+      }).select("_id");
+      query.userId = { $in: departmentUsers.map(u => u._id) };
+    } else if (departmentId) {
+      // Admin có thể filter theo departmentId
       const departmentUsers = await User.find({
         "department.department_id": departmentId,
         status: "Active",

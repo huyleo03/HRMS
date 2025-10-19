@@ -63,7 +63,7 @@ router.post(
 router.get(
   "/export",
   authenticate,
-  authorize("Admin"),
+  authorize("Manager", "Admin"),
   attendanceController.exportData
 );
 
