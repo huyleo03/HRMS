@@ -22,6 +22,8 @@ import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ChangePass from "./pages/authentication/ChangePass.jsx";
 import Request from "./pages/request/pages/Request.jsx";
 import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.jsx";
+import ManagerAttendancePage from "./pages/attendance/ManagerAttendancePage.jsx";
+import AdminAttendancePage from "./pages/attendance/AdminAttendancePage.jsx";
 
 function App() {
   return (
@@ -63,6 +65,7 @@ function App() {
               path="/view-department/:id"
               element={<DepartmentMembers />}
             />
+            <Route path="/attendance" element={<AdminAttendancePage />} />
           </Route>
 
           {/* --- Manager Routes --- */}
@@ -70,6 +73,7 @@ function App() {
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/employees" element={<ManagerEmployees />} />
             <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />}/>
+            <Route path="/manager/attendance" element={<ManagerAttendancePage />} />
             <Route path="/manager/requests" element={<Request />} />
           </Route>
 

@@ -39,6 +39,20 @@ export const API_CONFIG = {
     CREATE_WORKFLOW: "/api/workflows",
     UPDATE_WORKFLOW: (id) => `/api/workflows/${id}`,
     DELETE_WORKFLOW: (id) => `/api/workflows/${id}`,
+
+    // ATTENDANCE
+    PING_INTRANET: "/api/attendance/ping",
+    CLOCK_IN: "/api/attendance/clock-in",
+    CLOCK_OUT: "/api/attendance/clock-out",
+    GET_TODAY_STATUS: "/api/attendance/today",
+    GET_MY_HISTORY: "/api/attendance/my-history",
+    GET_DEPARTMENT_ATTENDANCE: "/api/attendance/department",
+    GET_DEPARTMENT_REPORT: "/api/attendance/department/report",
+    GET_ALL_ATTENDANCE: "/api/attendance/all",
+    GET_COMPANY_REPORT: "/api/attendance/company/report",
+    MANUAL_ADJUST: (id) => `/api/attendance/${id}/adjust`,
+    MARK_ABSENT: "/api/attendance/mark-absent",
+    EXPORT_ATTENDANCE: "/api/attendance/export",
   },
 };
 

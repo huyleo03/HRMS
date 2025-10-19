@@ -23,6 +23,11 @@ const ManagerSidebar = () => {
       icon: "👥",
     },
     {
+      path: "/manager/attendance",
+      label: "Attendance",
+      icon: "📋",
+    },
+    {
       path: '/manager/requests',
       label: 'Request',
       icon: '🏖️'
@@ -37,7 +42,9 @@ const ManagerSidebar = () => {
     return (
       location.pathname === path ||
       (path === "/manager/employees" &&
-        location.pathname.startsWith("/manager/employees"))
+        location.pathname.startsWith("/manager/employees")) ||
+      (path === "/manager/attendance" &&
+        location.pathname.startsWith("/manager/attendance"))
     );
   };
 

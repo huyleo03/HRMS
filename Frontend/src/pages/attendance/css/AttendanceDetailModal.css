@@ -1,0 +1,497 @@
+/* AttendanceDetailModal.css */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Header */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 30px;
+  border-bottom: 1px solid rgba(162, 161, 168, 0.2);
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+  border-radius: 16px 16px 0 0;
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #16151C;
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.modal-close-btn:hover svg path {
+  stroke: #EF4444;
+}
+
+/* Body */
+.modal-body {
+  padding: 30px;
+}
+
+.detail-section {
+  margin-bottom: 30px;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #16151C;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title::before {
+  content: "";
+  width: 4px;
+  height: 16px;
+  background: #7152F3;
+  border-radius: 2px;
+}
+
+/* Employee Detail */
+.employee-detail {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  background: #F8F9FA;
+  border-radius: 12px;
+}
+
+.employee-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.employee-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-fallback-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7152F3 0%, #9D7EF2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 2px;
+}
+
+.employee-detail-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.detail-label {
+  font-size: 14px;
+  color: #A2A1A8;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #16151C;
+  font-weight: 500;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* Clock In/Out */
+.clock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.clock-card {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: #F8F9FA;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.clock-card:hover {
+  background: rgba(113, 82, 243, 0.05);
+  transform: translateY(-2px);
+}
+
+.clock-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.clock-in-icon {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.clock-out-icon {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.clock-info {
+  flex: 1;
+}
+
+.clock-label {
+  font-size: 12px;
+  color: #A2A1A8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.clock-time {
+  font-size: 20px;
+  font-weight: 600;
+  color: #16151C;
+  margin-bottom: 4px;
+}
+
+.clock-ip {
+  font-size: 12px;
+  color: #A2A1A8;
+}
+
+/* Work Hours */
+.work-hours-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.work-hour-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #F8F9FA;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.work-hour-card:hover {
+  background: rgba(113, 82, 243, 0.05);
+  transform: translateY(-2px);
+}
+
+.work-hour-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(113, 82, 243, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.work-hour-icon.warning {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.work-hour-info {
+  flex: 1;
+}
+
+.work-hour-label {
+  font-size: 12px;
+  color: #A2A1A8;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.work-hour-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #16151C;
+}
+
+.work-hour-value.warning-text {
+  color: #F59E0B;
+}
+
+/* Photos */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.photo-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(162, 161, 168, 0.2);
+}
+
+.photo-label {
+  padding: 12px;
+  background: #F8F9FA;
+  font-size: 14px;
+  font-weight: 500;
+  color: #16151C;
+  border-bottom: 1px solid rgba(162, 161, 168, 0.2);
+}
+
+.attendance-photo {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Status Badge */
+.status-badge {
+  padding: 6px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.status-present {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+}
+
+.status-late {
+  background: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+}
+
+.status-absent {
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+
+.status-leave {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+}
+
+/* Adjustment Info */
+.adjustment-info {
+  padding: 20px;
+  background: rgba(245, 158, 11, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid #F59E0B;
+}
+
+.adjustment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.adjustment-reason {
+  font-size: 14px;
+  color: #16151C;
+  margin-bottom: 8px;
+}
+
+.adjustment-time {
+  font-size: 12px;
+  color: #A2A1A8;
+}
+
+/* Remarks */
+.remarks-box {
+  padding: 16px;
+  background: #F8F9FA;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #16151C;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Footer */
+.modal-footer {
+  padding: 20px 30px;
+  border-top: 1px solid rgba(162, 161, 168, 0.2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  border-radius: 0 0 16px 16px;
+}
+
+.modal-btn-close {
+  padding: 10px 24px;
+  background: #7152F3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Lexend', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-btn-close:hover {
+  background: #5a3dd1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(113, 82, 243, 0.3);
+}
+
+.modal-btn-close:active {
+  transform: translateY(0);
+}
+
+/* Scrollbar */
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: #F8F9FA;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(113, 82, 243, 0.3);
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 82, 243, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-content {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 20px;
+  }
+
+  .employee-detail {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .detail-label {
+    min-width: 100px;
+  }
+
+  .clock-grid,
+  .work-hours-grid,
+  .photos-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

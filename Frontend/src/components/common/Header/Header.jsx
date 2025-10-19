@@ -37,7 +37,12 @@ const Header = () => {
       case "/departments":
         return { title: "All Departments", description: "Department Information" };
       case "/attendance":
-        return { title: "Attendance", description: "Employee Attendance Management" };
+        return { title: "Chấm công", description: "Quản lý chấm công toàn công ty" };
+      case "/manager/attendance":
+        return { 
+          title: "Chấm công phòng ban", 
+          description: `Quản lý chấm công - ${user?.department?.department_name || "Phòng ban"}` 
+        };
       case "/payroll":
         return { title: "Payroll", description: "Salary and Payment Management" };
       case "/leaves":

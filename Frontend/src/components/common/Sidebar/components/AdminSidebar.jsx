@@ -62,7 +62,8 @@ const Sidebar = () => {
   const isActiveRoute = (path) => {
     return (
       location.pathname === path ||
-      (path === "/employees" && location.pathname.startsWith("/employees"))
+      (path === "/employees" && location.pathname.startsWith("/employees")) ||
+      (path === "/departments" && location.pathname.startsWith("/view-department"))
     );
   };
 
