@@ -4,7 +4,7 @@ const userRoutes = require("./userRoutes");
 const authRoutes = require("./authRoutes");
 const healthRoutes = require("./healthRoutes");
 const requestRoutes = require("./requestRoutes");
-const workFlowRoutes = require("./workflowRoutes");
+const workFlowRoutes = require("./workFlowRoutes");
 const attendanceRoutes = require("./attendanceRoutes");
 const notificationRoutes = require("./notificationRoutes");
 
