@@ -398,13 +398,13 @@
   margin-bottom: 20px;
 }
 
-.filter-group {
+.filter-group-employee {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.filter-group label {
+.filter-group-employee label {
   font-size: 12px;
   font-weight: 600;
   color: #64748b;
@@ -412,8 +412,8 @@
   letter-spacing: 0.5px;
 }
 
-.filter-group input,
-.filter-group select {
+.filter-group-employee input,
+.filter-group-employee select {
   padding: 10px 14px;
   border: 2px solid #e5e7eb;
   border-radius: 8px;
@@ -423,8 +423,8 @@
   transition: all 0.2s ease;
 }
 
-.filter-group input:focus,
-.filter-group select:focus {
+.filter-group-employee input:focus,
+.filter-group-employee select:focus {
   outline: none;
   border-color: #7152f3;
   box-shadow: 0 0 0 3px rgba(113, 82, 243, 0.1);

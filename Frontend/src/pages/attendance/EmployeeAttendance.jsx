@@ -362,7 +362,7 @@ const EmployeeAttendance = () => {
     <div className="attendance-history">
       {/* Filters */}
       <div className="history-filters">
-        <div className="filter-group">
+        <div className="filter-group-employee">
           <label>Từ ngày</label>
           <input
             type="date"
@@ -370,7 +370,7 @@ const EmployeeAttendance = () => {
             onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
           />
         </div>
-        <div className="filter-group">
+        <div className="filter-group-employee">
           <label>Đến ngày</label>
           <input
             type="date"
@@ -378,7 +378,7 @@ const EmployeeAttendance = () => {
             onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
           />
         </div>
-        <div className="filter-group">
+        <div className="filter-group-employee">
           <label>Trạng thái</label>
           <select
             value={filters.status}
