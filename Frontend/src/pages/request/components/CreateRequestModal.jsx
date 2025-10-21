@@ -64,6 +64,14 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     { value: "Urgent", label: "Khẩn cấp", color: "#ef4444" },
   ];
 
+  // ✅ Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
   useEffect(() => {
     const fetchWorkflow = async () => {
       if (!formData.type) return;
