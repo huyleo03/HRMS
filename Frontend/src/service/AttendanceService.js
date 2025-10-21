@@ -172,11 +172,14 @@ export const exportAttendanceData = async (params = {}) => {
 // Ping intranet
 export const pingIntranet = async () => {
   try {
-    return await apiCall(API_CONFIG.ENDPOINTS.PING_INTRANET, {
+    const response = await apiCall(API_CONFIG.ENDPOINTS.PING_INTRANET, {
       method: "GET",
     });
+    // Status 204 = success (no content)
+    return { success: true };
   } catch (error) {
     console.error("pingIntranet service error:", error);
-    throw error;
+    // Nếu lỗi 403 hoặc bất kỳ lỗi nào = không trong mạng
+    return { success: false, error: error.message };
   }
 };
