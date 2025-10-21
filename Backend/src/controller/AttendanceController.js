@@ -66,12 +66,13 @@ exports.clockIn = async (req, res) => {
     const { photo } = req.body;
     const clientIP = req.ip || req.connection.remoteAddress;
     
-    // Kiểm tra IP (intranet)
-    const isIntranet = CONFIG.allowedIPs.some(ip => clientIP.includes(ip));
+    // Kiểm tra IP (intranet) - so sánh chính xác
+    const isIntranet = CONFIG.allowedIPs.some(ip => ip === clientIP);
     if (!isIntranet) {
       return res.status(403).json({
         success: false,
         message: "Bạn không ở trong mạng nội bộ công ty. Vui lòng kết nối mạng văn phòng.",
+        debug: { clientIP, allowedIPs: CONFIG.allowedIPs }, // Thêm debug info
       });
     }
     
@@ -655,7 +656,7 @@ exports.exportData = async (req, res) => {
 // ============ PING ENDPOINT (Intranet Check) ============
 exports.pingIntranet = (req, res) => {
   const clientIP = req.ip || req.connection.remoteAddress;
-  const isAllowed = CONFIG.allowedIPs.some(ip => clientIP.includes(ip));
+  const isAllowed = CONFIG.allowedIPs.some(ip => ip === clientIP);
   
   if (isAllowed) {
     return res.status(204).send(); // No content - success
@@ -663,6 +664,7 @@ exports.pingIntranet = (req, res) => {
     return res.status(403).json({
       success: false,
       message: "Access denied. Not in office network.",
+      debug: { clientIP, allowedIPs: CONFIG.allowedIPs }, // Thêm debug info
     });
   }
 };
