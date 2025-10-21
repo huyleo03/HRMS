@@ -7,6 +7,9 @@ const { authenticate, authorize } = require("../middlewares/authMiddleware");
 // Ping để kiểm tra intranet (không cần auth)
 router.get("/ping", attendanceController.pingIntranet);
 
+// Debug: Check IP của bạn (không cần auth)
+router.get("/check-ip", attendanceController.checkMyIP);
+
 // ============ EMPLOYEE ROUTES ============
 // Tất cả nhân viên đã đăng nhập
 router.post("/clock-in", authenticate, attendanceController.clockIn);

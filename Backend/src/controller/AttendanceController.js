@@ -14,8 +14,6 @@ const CONFIG = {
     "::1",
     "127.0.0.1",
     "::ffff:127.0.0.1",
-    
-    // IP công cộng của máy bạn (lấy từ ipify.org)
     "42.118.89.199",
     
     // IPv6 của bạn (nếu cần)
@@ -712,6 +710,28 @@ exports.pingIntranet = (req, res) => {
       },
     });
   }
+};
+
+// ============ DEBUG: CHECK MY IP ============
+exports.checkMyIP = (req, res) => {
+  const clientIP = getClientIP(req);
+  const isAllowed = CONFIG.allowedIPs.some(ip => ip === clientIP);
+  
+  return res.status(200).json({
+    success: true,
+    message: "Thông tin IP của bạn",
+    yourIP: clientIP,
+    isAllowed: isAllowed,
+    allowedIPs: CONFIG.allowedIPs,
+    allHeaders: {
+      'x-forwarded-for': req.headers['x-forwarded-for'],
+      'x-real-ip': req.headers['x-real-ip'],
+      'cf-connecting-ip': req.headers['cf-connecting-ip'],
+      'req.ip': req.ip,
+      'remoteAddress': req.connection?.remoteAddress,
+      'socketAddress': req.socket?.remoteAddress
+    }
+  });
 };
 
 module.exports = exports;
