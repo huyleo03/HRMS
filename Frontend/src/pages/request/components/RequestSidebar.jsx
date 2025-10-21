@@ -46,7 +46,7 @@ const RequestSidebar = ({
     },
     {
       id: "my-approved",
-      label: "Đơn đã duyệt",
+      label: "Đơn đã được duyệt",
       icon: <CheckCircle size={20} />,
       count: counts.myApproved || 0,
     },
