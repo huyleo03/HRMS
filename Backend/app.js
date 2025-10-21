@@ -29,15 +29,23 @@ const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map(url => url.trim())
   : ['http://localhost:3000'];
 
+// Log để debug
+console.log('🌐 Allowed Origins:', allowedOrigins);
+console.log('🔑 Environment:', process.env.NODE_ENV);
+
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('📥 Request from origin:', origin);
+    
     // Cho phép requests không có origin (mobile apps, postman, curl)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+      console.log('✅ CORS allowed for:', origin);
       callback(null, true);
     } else {
       console.log(`❌ CORS blocked origin: ${origin}`);
+      console.log(`   Allowed origins:`, allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
