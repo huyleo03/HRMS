@@ -179,13 +179,12 @@ const EmployeeAttendance = () => {
     setIsProcessing(true);
 
     try {
-      const data = { photo: capturedPhoto };
       let response;
 
       if (actionType === "in") {
-        response = await clockIn(data);
+        response = await clockIn(capturedPhoto);
       } else {
-        response = await clockOut(data);
+        response = await clockOut(capturedPhoto);
       }
 
       if (response.success) {
