@@ -1,6 +1,15 @@
 // API Configuration
+const getBaseURL = () => {
+  // Production: Kiểm tra domain của frontend
+  if (window.location.hostname.includes('onrender.com')) {
+    return 'https://hrms-1-2h7w.onrender.com';
+  }
+  // Development: Sử dụng env variable hoặc localhost
+  return process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999';
+};
+
 export const API_CONFIG = {
-  BASE_URL: "http://localhost:9999",
+  BASE_URL: getBaseURL(),
   ENDPOINTS: {
     // Auth
     LOGIN: "/api/auth/login",
@@ -50,6 +59,20 @@ export const API_CONFIG = {
     MARK_ALL_AS_READ: "/api/notifications/read-all",
     DELETE_NOTIFICATION: (id) => `/api/notifications/${id}`,
     DELETE_ALL_READ: "/api/notifications/read",
+
+    // ATTENDANCE
+    PING_INTRANET: "/api/attendance/ping",
+    CLOCK_IN: "/api/attendance/clock-in",
+    CLOCK_OUT: "/api/attendance/clock-out",
+    TODAY_STATUS: "/api/attendance/today",
+    MY_HISTORY: "/api/attendance/my-history",
+    DEPARTMENT_ATTENDANCE: "/api/attendance/department",
+    DEPARTMENT_REPORT: "/api/attendance/department/report",
+    ALL_ATTENDANCE: "/api/attendance/all",
+    COMPANY_REPORT: "/api/attendance/company/report",
+    MANUAL_ADJUST: (id) => `/api/attendance/${id}/adjust`,
+    MARK_ABSENT: "/api/attendance/mark-absent",
+    EXPORT_ATTENDANCE: "/api/attendance/export",
   },
 };
 

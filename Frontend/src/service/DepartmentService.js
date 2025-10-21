@@ -1,6 +1,14 @@
 // src/service/DepartmentService.js
 import axios from "axios";
-const API = process.env.REACT_APP_API_URL_BACKEND;
+
+const getApiBaseUrl = () => {
+  if (window.location.hostname.includes('onrender.com')) {
+    return 'https://hrms-1-2h7w.onrender.com/api';
+  }
+  return (process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999') + '/api';
+};
+
+const API = getApiBaseUrl();
 
 export const getDepartments = async ({ page = 1, limit = 6, q = "", sortBy = "created_at", sortOrder = "asc" } = {}, token) => {
   const res = await axios.get(`${API}/departments`, {

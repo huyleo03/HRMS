@@ -36,8 +36,12 @@ export default function OtpPage() {
     if (countdown > 0) return;
 
     try {
+      const apiBaseUrl = window.location.hostname.includes('onrender.com')
+        ? 'https://hrms-1-2h7w.onrender.com'
+        : (process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999');
+      
       await axios.post(
-        `${process.env.REACT_APP_API_URL_BACKEND}/auth/forgot-password`,
+        `${apiBaseUrl}/api/auth/forgot-password`,
         { email }
       );
       toast.success("Một mã OTP mới đã được gửi đến email của bạn.");
@@ -60,9 +64,13 @@ export default function OtpPage() {
 
     try {
       setIsSubmitting(true);
+      const apiBaseUrl = window.location.hostname.includes('onrender.com')
+        ? 'https://hrms-1-2h7w.onrender.com'
+        : (process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999');
+      
       // Gọi API verify-otp của backend
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL_BACKEND}/auth/verify-otp`,
+        `${apiBaseUrl}/api/auth/verify-otp`,
         {
           email: email,
           otp: code,

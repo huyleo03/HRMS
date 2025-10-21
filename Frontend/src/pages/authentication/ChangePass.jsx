@@ -36,8 +36,12 @@ export default function ChangePasswordPage() {
         return;
       }
 
+      const apiBaseUrl = window.location.hostname.includes('onrender.com')
+        ? 'https://hrms-1-2h7w.onrender.com'
+        : (process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999');
+      
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL_BACKEND}/auth/change-password`,
+        `${apiBaseUrl}/api/auth/change-password`,
         { oldPassword, newPassword, confirmPassword },
         {
           headers: { Authorization: `Bearer ${token}` },
