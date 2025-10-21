@@ -337,7 +337,7 @@ exports.getDepartmentReport = async (req, res) => {
 // 7. Xem toàn công ty
 exports.getAllAttendance = async (req, res) => {
   try {
-    const { page = 1, limit = 50, startDate, endDate, status, departmentId, employeeId } = req.query;
+    const { page = 1, limit = 50, startDate, endDate, status, departmentId, search } = req.query;
     const query = {};
     
     if (startDate || endDate) {
@@ -346,18 +346,46 @@ exports.getAllAttendance = async (req, res) => {
       if (endDate) query.date.$lte = normalizeDate(new Date(endDate));
     }
     if (status) query.status = status;
-    if (employeeId) {
-      // Find user by employeeId
-      const user = await User.findOne({ employeeId });
-      if (user) query.userId = user._id;
+    
+    // Search by employee name or employeeId
+    if (search) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      const users = await User.find({
+        $or: [
+          { full_name: searchRegex },
+          { employeeId: searchRegex }
+        ],
+        status: "Active",
+      }).select("_id");
+      
+      if (users.length > 0) {
+        query.userId = { $in: users.map(u => u._id) };
+      } else {
+        // Không tìm thấy user nào, trả về mảng rỗng
+        return res.status(200).json({
+          success: true,
+          data: [],
+          pagination: { total: 0, page: 1, pages: 0 },
+        });
+      }
     }
+    
     if (departmentId) {
       // Find all users in department
       const departmentUsers = await User.find({
         "department.department_id": departmentId,
         status: "Active",
       }).select("_id");
-      query.userId = { $in: departmentUsers.map(u => u._id) };
+      
+      // Nếu đã có search, kết hợp cả 2 điều kiện
+      if (query.userId) {
+        const searchUserIds = query.userId.$in.map(id => id.toString());
+        const deptUserIds = departmentUsers.map(u => u._id.toString());
+        const combinedIds = searchUserIds.filter(id => deptUserIds.includes(id));
+        query.userId = { $in: combinedIds };
+      } else {
+        query.userId = { $in: departmentUsers.map(u => u._id) };
+      }
     }
     
     const p = Math.max(1, parseInt(page));

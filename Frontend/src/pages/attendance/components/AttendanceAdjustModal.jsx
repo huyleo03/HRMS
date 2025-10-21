@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import { manualAdjust } from "../../service/AttendanceService";
+import { manualAdjust } from "../../../service/AttendanceService";
 import "../css/AttendanceAdjustModal.css";
 
 const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
@@ -175,17 +175,6 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
               </div>
             </div>
 
-            {/* Warning */}
-            <div className="adjust-warning">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M12 9V14M12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12C21 16.97 16.97 21 12 21Z" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M11.995 17H12.004" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <div className="adjust-warning-text">
-                <strong>Lưu ý:</strong> Hệ thống sẽ tự động tính lại giờ làm việc và làm thêm giờ dựa trên thời gian mới. 
-                Hành động này sẽ được ghi nhận trong lịch sử điều chỉnh.
-              </div>
-            </div>
           </div>
 
           {/* Footer */}

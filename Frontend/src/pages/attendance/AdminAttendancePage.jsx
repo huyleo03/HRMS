@@ -68,7 +68,7 @@ const AdminAttendancePage = () => {
       if (endDate) params.endDate = endDate;
       if (statusFilter) params.status = statusFilter;
       if (departmentFilter) params.departmentId = departmentFilter;
-      if (employeeSearch) params.employeeId = employeeSearch;
+      if (employeeSearch) params.search = employeeSearch; // Search by name or ID
 
       // Fetch attendance records
       const attendanceResponse = await getAllAttendance(params);
@@ -120,7 +120,7 @@ const AdminAttendancePage = () => {
       if (endDate) params.endDate = endDate;
       if (statusFilter) params.status = statusFilter;
       if (departmentFilter) params.departmentId = departmentFilter;
-      if (employeeSearch) params.employeeId = employeeSearch;
+      if (employeeSearch) params.search = employeeSearch;
 
       await exportAttendanceData(params);
       toast.success("Xuất dữ liệu thành công!");
@@ -209,7 +209,7 @@ const AdminAttendancePage = () => {
       {/* Filters */}
       <div className="filters-section">
         <div className="filter-row">
-          <div className="filter-group">
+          <div className="filter-group filter-group-date">
             <label className="filter-label">Khoảng ngày</label>
             <div className="date-range-picker">
               <input
@@ -253,7 +253,7 @@ const AdminAttendancePage = () => {
               className="filter-input"
               value={employeeSearch}
               onChange={(e) => setEmployeeSearch(e.target.value)}
-              placeholder="Tìm kiếm mã nhân viên..."
+              placeholder="Tìm theo tên hoặc mã NV..."
             />
           </div>
 
@@ -271,15 +271,15 @@ const AdminAttendancePage = () => {
               <option value="On Leave">Nghỉ phép</option>
             </select>
           </div>
-        </div>
 
-        <div className="filter-actions">
-          <button className="apply-btn" onClick={handleApplyFilters}>
-            Áp dụng
-          </button>
-          <button className="reset-btn" onClick={handleResetFilters}>
-            Đặt lại
-          </button>
+          <div className="filter-actions">
+            <button className="apply-btn" onClick={handleApplyFilters}>
+              Áp dụng
+            </button>
+            <button className="reset-btn" onClick={handleResetFilters}>
+              Đặt lại
+            </button>
+          </div>
         </div>
       </div>
 
@@ -489,11 +489,11 @@ const AdminAttendancePage = () => {
                       <button 
                         className="action-btn action-btn-info" 
                         onClick={() => handleViewDetails(record)}
-                        title="Xem chi tiết"
+                        title="Chi tiết"
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                          <path d="M12 9V14M12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12C21 16.97 16.97 21 12 21Z" stroke="#7152F3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M11.995 17H12.004" stroke="#7152F3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                          <path d="M15.58 12C15.58 13.98 13.98 15.58 12 15.58C10.02 15.58 8.42004 13.98 8.42004 12C8.42004 10.02 10.02 8.42004 12 8.42004C13.98 8.42004 15.58 10.02 15.58 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M12 20.27C15.53 20.27 18.82 18.19 21.11 14.59C22.01 13.18 22.01 10.81 21.11 9.39997C18.82 5.79997 15.53 3.71997 12 3.71997C8.46997 3.71997 5.17997 5.79997 2.88997 9.39997C1.98997 10.81 1.98997 13.18 2.88997 14.59C5.17997 18.19 8.46997 20.27 12 20.27Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
                       <button 
@@ -501,10 +501,10 @@ const AdminAttendancePage = () => {
                         onClick={() => handleAdjust(record)}
                         title="Điều chỉnh"
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                          <path d="M11 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22H15C20 22 22 20 22 15V13" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M16.04 3.02001L8.16 10.9C7.86 11.2 7.56 11.79 7.5 12.22L7.07 15.23C6.91 16.32 7.68 17.08 8.77 16.93L11.78 16.5C12.2 16.44 12.79 16.14 13.1 15.84L20.98 7.96001C22.34 6.60001 22.98 5.02001 20.98 3.02001C18.98 1.02001 17.4 1.66001 16.04 3.02001Z" stroke="#F59E0B" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M14.91 4.1499C15.58 6.5399 17.45 8.4099 19.85 9.0899" stroke="#F59E0B" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                          <path d="M11 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22H15C20 22 22 20 22 15V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M16.04 3.02001L8.16 10.9C7.86 11.2 7.56 11.79 7.5 12.22L7.07 15.23C6.91 16.32 7.68 17.08 8.77 16.93L11.78 16.5C12.2 16.44 12.79 16.14 13.1 15.84L20.98 7.96001C22.34 6.60001 22.98 5.02001 20.98 3.02001C18.98 1.02001 17.4 1.66001 16.04 3.02001Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M14.91 4.1499C15.58 6.5399 17.45 8.4099 19.85 9.0899" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
                     </div>
