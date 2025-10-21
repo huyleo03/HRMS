@@ -21,9 +21,11 @@
   max-width: 800px;
   width: 100%;
   max-height: 90vh;
-  display: flex;
-  flex-direction: column;
+  height: 90vh; /* Set explicit height for better scrolling */
+  display: flex !important;
+  flex-direction: column !important;
   animation: slideUp 0.3s ease;
+  overflow: hidden !important; /* Prevent container from scrolling */
 }
 
 /* ===== MODAL HEADER ===== */
@@ -127,9 +129,12 @@
 
 /* ===== MODAL CONTENT ===== */
 .modal-content {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   padding: 32px;
+  min-height: 0 !important; /* Important for flexbox scrolling */
+  max-height: 100% !important;
 }
 
 .modal-content::-webkit-scrollbar {
@@ -143,6 +148,10 @@
 .modal-content::-webkit-scrollbar-thumb {
   background: #d1d5db;
   border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 /* ===== FORM SECTIONS ===== */
@@ -524,6 +533,7 @@
   gap: 12px;
   padding: 20px 32px;
   border-top: 1px solid #e5e7eb;
+  flex-shrink: 0 !important; /* Prevent footer from shrinking */
 }
 
 .btn {
