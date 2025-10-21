@@ -4,18 +4,23 @@ const XLSX = require("xlsx");
 
 // Cấu hình chấm công (hardcoded, có thể chuyển sang DB sau)
 const CONFIG = {
-  workStartTime: "08:00", // Giờ vào chuẩn
-  workEndTime: "17:00",   // Giờ ra chuẩn
-  standardWorkHours: 8,   // Số giờ làm chuẩn
-  gracePeriodMinutes: 15, // Cho phép muộn 15 phút
-  otMinimumMinutes: 30,   // Tối thiểu 30 phút mới tính OT
-  allowedIPs: [           // IP công ty (có thể thêm nhiều văn phòng)
-    "::1",                // Localhost IPv6 (test)
-    "127.0.0.1",          // Localhost IPv4 (test)
-    "::ffff:127.0.0.1",   // IPv6-mapped IPv4 localhost
-    "42.118.89.199",      // IP công cộng của bạn (từ ipify.org)
+  workStartTime: "08:00",
+  workEndTime: "17:00",
+  standardWorkHours: 8,
+  gracePeriodMinutes: 15,
+  otMinimumMinutes: 30,
+  allowedIPs: [
+    "::1",
+    "127.0.0.1",
+    "::ffff:127.0.0.1",
+    "2402:800:6106:4fc0::2",
+    "2402:800:6106:4fc0:3de3:19da:bce2:5d05",
+    "2402:800:6106:4fc0:60af:572d:4a92:f018",
+    "fe80::8d0f:377d:d750:ab7c", // bỏ %8 vì trình duyệt sẽ không gửi %8
+    "192.168.1.113",
   ],
 };
+
 
 // ============ HELPERS ============
 
