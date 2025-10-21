@@ -24,6 +24,27 @@ const CONFIG = {
 
 // ============ HELPERS ============
 
+// Hàm lấy IP thật của client (xử lý proxy, load balancer)
+function getClientIP(req) {
+  // Thử lấy từ các headers khác nhau (do proxy/load balancer set)
+  const forwarded = req.headers['x-forwarded-for'];
+  const realIP = req.headers['x-real-ip'];
+  const cfConnectingIP = req.headers['cf-connecting-ip']; // Cloudflare
+  
+  // X-Forwarded-For có thể chứa nhiều IP: "client, proxy1, proxy2"
+  // Lấy IP đầu tiên (IP của client thật)
+  if (forwarded) {
+    const ips = forwarded.split(',').map(ip => ip.trim());
+    return ips[0];
+  }
+  
+  if (realIP) return realIP;
+  if (cfConnectingIP) return cfConnectingIP;
+  
+  // Fallback về req.ip hoặc remoteAddress
+  return req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+}
+
 function normalizeDate(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -69,7 +90,7 @@ exports.clockIn = async (req, res) => {
   try {
     const userId = req.user._id;
     const { photo } = req.body;
-    const clientIP = req.ip || req.connection.remoteAddress;
+    const clientIP = getClientIP(req);
     
     // Kiểm tra IP (intranet) - so sánh chính xác
     const isIntranet = CONFIG.allowedIPs.some(ip => ip === clientIP);
@@ -77,7 +98,15 @@ exports.clockIn = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Bạn không ở trong mạng nội bộ công ty. Vui lòng kết nối mạng văn phòng.",
-        debug: { clientIP, allowedIPs: CONFIG.allowedIPs }, // Thêm debug info
+        debug: { 
+          clientIP, 
+          allowedIPs: CONFIG.allowedIPs,
+          headers: {
+            'x-forwarded-for': req.headers['x-forwarded-for'],
+            'x-real-ip': req.headers['x-real-ip'],
+            'req.ip': req.ip
+          }
+        },
       });
     }
     
@@ -132,7 +161,7 @@ exports.clockOut = async (req, res) => {
   try {
     const userId = req.user._id;
     const { photo } = req.body;
-    const clientIP = req.ip || req.connection.remoteAddress;
+    const clientIP = getClientIP(req);
     
     const today = normalizeDate(new Date());
     const attendance = await Attendance.findOne({ userId, date: today });
@@ -660,7 +689,7 @@ exports.exportData = async (req, res) => {
 
 // ============ PING ENDPOINT (Intranet Check) ============
 exports.pingIntranet = (req, res) => {
-  const clientIP = req.ip || req.connection.remoteAddress;
+  const clientIP = getClientIP(req);
   const isAllowed = CONFIG.allowedIPs.some(ip => ip === clientIP);
   
   if (isAllowed) {
@@ -669,7 +698,15 @@ exports.pingIntranet = (req, res) => {
     return res.status(403).json({
       success: false,
       message: "Access denied. Not in office network.",
-      debug: { clientIP, allowedIPs: CONFIG.allowedIPs }, // Thêm debug info
+      debug: { 
+        clientIP, 
+        allowedIPs: CONFIG.allowedIPs,
+        headers: {
+          'x-forwarded-for': req.headers['x-forwarded-for'],
+          'x-real-ip': req.headers['x-real-ip'],
+          'req.ip': req.ip
+        }
+      },
     });
   }
 };

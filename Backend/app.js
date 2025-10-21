@@ -13,6 +13,10 @@ const routes = require('./src/routes');
 
 const app = express();
 
+// ⭐ Trust proxy - QUAN TRỌNG cho việc lấy IP thật từ proxy/load balancer
+// Render, Heroku, AWS đều dùng reverse proxy
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(helmet());
 
