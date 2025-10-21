@@ -4,18 +4,38 @@ const authController = require("../controller/AuthController");
 const authenticate = require("../middlewares/authMiddleware").authenticate;
 const authenticateReset =
   require("../middlewares/authMiddleware").authenticateReset;
+
+// ✅ IMPORT RATE LIMITING MIDDLEWARE
+const {
+  authLimiter,
+  strictLimiter,
+} = require("../middlewares/rateLimitMiddleware");
+
+// ✅ IMPORT AUDIT LOGGING MIDDLEWARE
+const { logLogin } = require("../middlewares/auditMiddleware");
+
 // Forgot password (gửi OTP)
-router.post("/forgot-password", authController.forgotPassword);
+router.post("/forgot-password", authLimiter, authController.forgotPassword);
 
 // Verify OTP (chỉ cần resetToken + otp)
-router.post("/verify-otp", authController.verifyOtp);
+router.post("/verify-otp", authLimiter, authController.verifyOtp);
 
 // Reset password (cần resetToken trong headers)
-router.post("/reset-password", authenticateReset, authController.resetPassword);
+router.post(
+  "/reset-password",
+  authLimiter,
+  authenticateReset,
+  authController.resetPassword
+);
 
 // Login
-router.post("/login", authController.login);
+router.post("/login", authLimiter, logLogin, authController.login);
 
-router.post("/change-password", authenticate, authController.changePassword);
+router.post(
+  "/change-password",
+  strictLimiter,
+  authenticate,
+  authController.changePassword
+);
 
 module.exports = router;

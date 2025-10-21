@@ -1,6 +1,19 @@
 import React from "react";
 import RequestItem from "./RequestItem";
-import { Loader, Inbox } from "lucide-react";
+import { Inbox } from "lucide-react";
+
+// ✅ Skeleton Loader Component
+const SkeletonRequestItem = () => (
+  <div className="skeleton-request-item">
+    <div className="skeleton-avatar"></div>
+    <div className="skeleton-content">
+      <div className="skeleton-title"></div>
+      <div className="skeleton-subtitle"></div>
+      <div className="skeleton-text"></div>
+    </div>
+    <div className="skeleton-badge"></div>
+  </div>
+);
 
 const RequestList = ({
   requests,
@@ -42,9 +55,10 @@ const RequestList = ({
       </div>
 
       {isLoading ? (
-        <div className="loading-state">
-          <Loader size={32} className="animate-spin" />
-          <p>Đang tải...</p>
+        <div className="loading-state-skeleton">
+          {[1, 2, 3, 4, 5].map((index) => (
+            <SkeletonRequestItem key={index} />
+          ))}
         </div>
       ) : requests.length === 0 ? (
         <div className="empty-state">

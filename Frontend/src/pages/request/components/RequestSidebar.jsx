@@ -2,13 +2,17 @@ import React, { useState } from "react";
 import {
   Inbox,
   Send,
-  Star,
   Edit,
   ChevronLeft,
   ChevronRight,
   Users,
   Shield,
   BarChart3,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 
 const RequestSidebar = ({
@@ -20,7 +24,7 @@ const RequestSidebar = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // ✅ MENU CHO MANAGER VÀ EMPLOYEE
+  // ✅ MENU CHO MANAGER VÀ EMPLOYEE - HỘP THƯ
   const sidebarItems = [
     {
       id: "inbox",
@@ -39,7 +43,58 @@ const RequestSidebar = ({
       label: "Đơn CC",
       icon: <Users size={20} />,
       count: counts.cc || 0,
-    }
+    },
+    {
+      id: "my-approved",
+      label: "Đơn đã duyệt",
+      icon: <CheckCircle size={20} />,
+      count: counts.myApproved || 0,
+    },
+    {
+      id: "my-rejected",
+      label: "Đơn bị từ chối",
+      icon: <XCircle size={20} />,
+      count: counts.myRejected || 0,
+    },
+    {
+      id: "my-pending",
+      label: "Đơn đang chờ",
+      icon: <Clock size={20} />,
+      count: counts.myPending || 0,
+    },
+    {
+      id: "my-needs-review",
+      label: "Cần bổ sung",
+      icon: <AlertCircle size={20} />,
+      count: counts.myNeedsReview || 0,
+    },
+  ];
+
+  // ✅ ĐƠN TÔI XỬ LÝ (Manager only)
+  const myActionsItems = [
+    {
+      id: "approved-by-me",
+      label: "Tôi đã duyệt",
+      icon: <CheckCircle size={20} />,
+      count: counts.approvedByMe || 0,
+    },
+    {
+      id: "rejected-by-me",
+      label: "Tôi đã từ chối",
+      icon: <XCircle size={20} />,
+      count: counts.rejectedByMe || 0,
+    },
+  ];
+
+  // ✅ ESSENTIAL BOX - PRIORITY
+  const priorityItems = [
+    {
+      id: "overdue",
+      label: "Quá hạn",
+      icon: <AlertTriangle size={20} />,
+      count: counts.overdue || 0,
+      priority: true, // đánh dấu là priority box
+    },
   ];
 
   // ✅ MENU RIÊNG CHO ADMIN (chỉ inbox)
@@ -119,7 +174,7 @@ const RequestSidebar = ({
 
       {/* Navigation Items - User Menu */}
       <div className="sidebar-items">
-        {/* ✅ ADMIN CHỈ THẤY "HỘP THƯ ĐẾN" */}
+        {/* ✅ HỘP THƯ (bao gồm cả đơn của tôi) */}
         {(userRole === "Admin" ? adminSidebarItems : sidebarItems).map((item) => (
           <div
             key={item.id}
@@ -139,6 +194,76 @@ const RequestSidebar = ({
             )}
           </div>
         ))}
+
+        {/* ✅ PRIORITY BOX - QUẢN HẠN */}
+        {userRole !== "Admin" && (
+          <>
+            {!isCollapsed && (
+              <div className="sidebar-divider">
+                <span className="divider-text">Ưu tiên</span>
+              </div>
+            )}
+            {isCollapsed && <div className="sidebar-divider-line"></div>}
+
+            {priorityItems.map((item) => (
+              <div
+                key={item.id}
+                className={`sidebar-item priority-item ${
+                  activeTab === item.id ? "active" : ""
+                }`}
+                onClick={() => setActiveTab(item.id)}
+                title={isCollapsed ? item.label : ""}
+              >
+                <div className="item-content">
+                  <span className="item-icon priority-icon">{item.icon}</span>
+                  {!isCollapsed && (
+                    <span className="item-label">{item.label}</span>
+                  )}
+                </div>
+                {!isCollapsed && item.count > 0 && (
+                  <span className="item-count priority-count">{item.count}</span>
+                )}
+                {isCollapsed && item.count > 0 && (
+                  <span className="item-count-dot priority-dot"></span>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* ✅ ĐƠN TÔI XỬ LÝ (chỉ Manager) */}
+        {userRole !== "Employee" && userRole !== "Admin" && (
+          <>
+            {!isCollapsed && (
+              <div className="sidebar-divider">
+                <span className="divider-text">Đơn tôi xử lý</span>
+              </div>
+            )}
+            {isCollapsed && <div className="sidebar-divider-line"></div>}
+
+            {myActionsItems.map((item) => (
+              <div
+                key={item.id}
+                className={`sidebar-item ${activeTab === item.id ? "active" : ""}`}
+                onClick={() => setActiveTab(item.id)}
+                title={isCollapsed ? item.label : ""}
+              >
+                <div className="item-content">
+                  <span className="item-icon">{item.icon}</span>
+                  {!isCollapsed && (
+                    <span className="item-label">{item.label}</span>
+                  )}
+                </div>
+                {!isCollapsed && item.count > 0 && (
+                  <span className="item-count">{item.count}</span>
+                )}
+                {isCollapsed && item.count > 0 && (
+                  <span className="item-count-dot"></span>
+                )}
+              </div>
+            ))}
+          </>
+        )}
 
         {/* ✅ ADMIN SECTION */}
         {userRole === "Admin" && (

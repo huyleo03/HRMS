@@ -39,6 +39,8 @@ const Request = () => {
   const fetchRequests = useCallback(
     async (box = "inbox", page = 1) => {
       setIsLoading(true);
+      const startTime = Date.now(); // ⏱️ Bắt đầu đếm thời gian
+      
       try {
         const params = {
           box,
@@ -59,9 +61,25 @@ const Request = () => {
         const response = await getUserRequests(params);
         setRequests(response.data.requests);
         setPagination(response.data.pagination);
+        
+        // ⏱️ Đảm bảo loading hiển thị tối thiểu 1.5s
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, 1500 - elapsedTime);
+        
+        if (remainingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
       } catch (error) {
         console.error("❌ Lỗi khi tải danh sách đơn:", error);
         toast.error("Không thể tải danh sách đơn. Vui lòng thử lại.");
+        
+        // ⏱️ Ngay cả khi lỗi, vẫn giữ loading tối thiểu 1.5s
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, 1500 - elapsedTime);
+        
+        if (remainingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
       } finally {
         setIsLoading(false);
       }

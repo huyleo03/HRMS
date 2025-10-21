@@ -42,6 +42,14 @@ export const API_CONFIG = {
     CREATE_WORKFLOW: "/api/workflows",
     UPDATE_WORKFLOW: (id) => `/api/workflows/${id}`,
     DELETE_WORKFLOW: (id) => `/api/workflows/${id}`,
+
+    // NOTIFICATIONS
+    GET_NOTIFICATIONS: "/api/notifications",
+    GET_UNREAD_COUNT: "/api/notifications/unread-count",
+    MARK_AS_READ: (id) => `/api/notifications/${id}/read`,
+    MARK_ALL_AS_READ: "/api/notifications/read-all",
+    DELETE_NOTIFICATION: (id) => `/api/notifications/${id}`,
+    DELETE_ALL_READ: "/api/notifications/read",
   },
 };
 

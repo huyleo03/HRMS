@@ -223,6 +223,45 @@ const requestSchema = new mongoose.Schema(
       },
     },
 
+    // ===== SLA TRACKING =====
+    sla: {
+      deadline: {
+        type: Date, // SLA deadline (e.g., sentAt + 48 hours)
+      },
+      isOverdue: {
+        type: Boolean,
+        default: false,
+        index: true, // Index for finding overdue requests
+      },
+      overdueHours: {
+        type: Number,
+        default: 0,
+      },
+      remindersSent: {
+        type: [
+          {
+            sentAt: Date,
+            type: {
+              type: String,
+              enum: ["24h", "36h", "overdue"],
+            },
+            recipientIds: [mongoose.Schema.Types.ObjectId],
+          },
+        ],
+        default: [],
+      },
+      escalatedTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      escalatedAt: {
+        type: Date,
+      },
+      escalationReason: {
+        type: String,
+      },
+    },
+
     // ===== NGÀY GIỜ GỬI =====
     sentAt: {
       type: Date,
@@ -328,16 +367,29 @@ requestSchema.methods.resubmit = function (userId) {
     throw new Error("Chỉ có thể gửi lại đơn đang ở trạng thái 'Cần Chỉnh Sửa'");
   }
 
-  // Reset tất cả approver về Pending
+  // ✅ SMART RESUBMIT: Chỉ reset approver đã yêu cầu chỉnh sửa
+  // Giữ nguyên status của approvers đã Approved
+  let hasNeedsReview = false;
+  
   this.approvalFlow.forEach((approver) => {
     if (approver.role === "Approver") {
-      approver.status = "Pending";
-      approver.comment = "";
-      approver.approvedAt = null;
-      approver.isRead = false;
-      approver.readAt = null;
+      // Chỉ reset approver đã yêu cầu chỉnh sửa
+      if (approver.status === "NeedsReview") {
+        approver.status = "Pending";
+        approver.comment = ""; // Clear old comment
+        approver.approvedAt = null;
+        approver.isRead = false;
+        approver.readAt = null;
+        hasNeedsReview = true;
+      }
+      // ✅ GIỮ NGUYÊN approvers đã Approved - Không làm mất progress!
+      // Không reset approver.status === "Approved"
     }
   });
+
+  if (!hasNeedsReview) {
+    throw new Error("Không tìm thấy approver nào đã yêu cầu chỉnh sửa");
+  }
 
   this.status = "Pending";
   this.sentAt = new Date();
@@ -378,6 +430,14 @@ requestSchema.methods.approve = function (userId, comment = "") {
   }
 
   if (approver.status !== "Pending") {
+    // ✅ Cải thiện error message
+    if (approver.status === "Approved") {
+      throw new Error("Bạn đã phê duyệt đơn này rồi. Vui lòng refresh trang để cập nhật.");
+    } else if (approver.status === "Rejected") {
+      throw new Error("Bạn đã từ chối đơn này rồi. Không thể phê duyệt lại.");
+    } else if (approver.status === "Needs Review") {
+      throw new Error("Bạn đã yêu cầu chỉnh sửa đơn này. Vui lòng chờ người gửi cập nhật.");
+    }
     throw new Error("Đơn này đã được xử lý rồi");
   }
 
@@ -400,6 +460,14 @@ requestSchema.methods.reject = function (userId, comment = "") {
   }
 
   if (approver.status !== "Pending") {
+    // ✅ Cải thiện error message
+    if (approver.status === "Rejected") {
+      throw new Error("Bạn đã từ chối đơn này rồi. Vui lòng refresh trang để cập nhật.");
+    } else if (approver.status === "Approved") {
+      throw new Error("Bạn đã phê duyệt đơn này rồi. Không thể từ chối lại.");
+    } else if (approver.status === "Needs Review") {
+      throw new Error("Bạn đã yêu cầu chỉnh sửa đơn này. Vui lòng chờ người gửi cập nhật.");
+    }
     throw new Error("Đơn này đã được xử lý rồi");
   }
 
@@ -461,14 +529,72 @@ requestSchema.methods.toggleStar = function (userId) {
 };
 
 // ===== INDEXES =====
-requestSchema.index({ requestId: 1 });
+
+// ✅ BASIC INDEXES
+requestSchema.index({ requestId: 1 }, { unique: true });
 requestSchema.index({ submittedBy: 1 });
 requestSchema.index({ status: 1 });
-requestSchema.index({ "department.department_id": 1 }); // ✅ CẬP NHẬT
+requestSchema.index({ priority: 1 });
+requestSchema.index({ type: 1 });
+requestSchema.index({ "department.department_id": 1 });
 requestSchema.index({ "approvalFlow.approverId": 1 });
 requestSchema.index({ threadId: 1 });
 requestSchema.index({ sentAt: -1 });
-requestSchema.index({ type: 1 });
+
+// ✅ COMPOUND INDEXES (Optimize common queries)
+// Query: Get user's requests sorted by date
+requestSchema.index({ submittedBy: 1, sentAt: -1 });
+
+// Query: Filter by status + priority (Admin view)
+requestSchema.index({ status: 1, priority: 1, sentAt: -1 });
+
+// Query: Get pending requests for approver
+requestSchema.index({ 
+  "approvalFlow.approverId": 1, 
+  "approvalFlow.status": 1, 
+  sentAt: -1 
+});
+
+// Query: Department-based filtering
+requestSchema.index({ 
+  "department.department_id": 1, 
+  status: 1, 
+  sentAt: -1 
+});
+
+// Query: User's inbox (not deleted, sorted by date)
+requestSchema.index({ 
+  submittedBy: 1, 
+  "senderStatus.isDeleted": 1, 
+  sentAt: -1 
+});
+
+// ✅ TEXT INDEX (Full-text search on subject + reason)
+requestSchema.index({ 
+  subject: "text", 
+  reason: "text",
+  submittedByName: "text" 
+}, {
+  weights: {
+    subject: 10,        // Subject has highest priority in search
+    reason: 5,          // Reason medium priority
+    submittedByName: 3  // Name lowest priority
+  },
+  name: "request_text_search"
+});
+
+// ✅ SPARSE INDEX (Only index non-null values)
+requestSchema.index({ 
+  "senderStatus.deletedAt": 1 
+}, { 
+  sparse: true  // Only index deleted requests
+});
+
+requestSchema.index({ 
+  "senderStatus.cancelledAt": 1 
+}, { 
+  sparse: true  // Only index cancelled requests
+});
 
 const Request = mongoose.model("Request", requestSchema, "Request");
 
