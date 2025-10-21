@@ -82,6 +82,36 @@ exports.createWorkflow = async (req, res) => {
     };
 
     const workflow = new Workflow(workflowData);
+    
+    // ✅ VALIDATE WORKFLOW: Test với mock user để đảm bảo có thể resolve approvers
+    try {
+      // Tạo mock user để test workflow
+      const mockUser = await User.findOne({ role: { $ne: "Admin" } })
+        .populate("department.department_id manager_id");
+      
+      if (mockUser) {
+        const resolvedApprovers = await workflow.resolveApprovers(mockUser);
+        
+        if (!resolvedApprovers || resolvedApprovers.length === 0) {
+          return res.status(400).json({
+            message: "Workflow không hợp lệ: Không thể xác định được người duyệt. Vui lòng kiểm tra lại cấu hình approvalFlow.",
+            details: "Workflow phải có ít nhất một approver có thể được resolve."
+          });
+        }
+        
+        console.log(`✅ Workflow validation passed. Resolved ${resolvedApprovers.length} approver(s).`);
+      } else {
+        console.warn("⚠️  No non-admin user found for workflow validation. Skipping validation.");
+      }
+    } catch (validationError) {
+      console.error("❌ Workflow validation failed:", validationError);
+      return res.status(400).json({
+        message: "Workflow không hợp lệ",
+        error: validationError.message,
+        details: "Vui lòng kiểm tra lại cấu hình approvalFlow (approverType, approverId, departmentId)."
+      });
+    }
+
     await workflow.save();
 
     res.status(201).json({
@@ -109,16 +139,50 @@ exports.updateWorkflow = async (req, res) => {
       updatedBy: req.user.userId,
     };
 
-    const workflow = await Workflow.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!workflow) {
+    // ✅ Tìm workflow hiện tại
+    const existingWorkflow = await Workflow.findById(id);
+    if (!existingWorkflow) {
       return res.status(404).json({
         message: "Không tìm thấy workflow",
       });
     }
+
+    // ✅ Merge update data vào existing workflow để validate
+    Object.assign(existingWorkflow, updateData);
+
+    // ✅ VALIDATE WORKFLOW: Test với mock user
+    try {
+      const mockUser = await User.findOne({ role: { $ne: "Admin" } })
+        .populate("department.department_id manager_id");
+      
+      if (mockUser) {
+        const resolvedApprovers = await existingWorkflow.resolveApprovers(mockUser);
+        
+        if (!resolvedApprovers || resolvedApprovers.length === 0) {
+          return res.status(400).json({
+            message: "Workflow không hợp lệ: Không thể xác định được người duyệt sau khi cập nhật.",
+            details: "Workflow phải có ít nhất một approver có thể được resolve."
+          });
+        }
+        
+        console.log(`✅ Workflow update validation passed. Resolved ${resolvedApprovers.length} approver(s).`);
+      } else {
+        console.warn("⚠️  No non-admin user found for workflow validation. Skipping validation.");
+      }
+    } catch (validationError) {
+      console.error("❌ Workflow update validation failed:", validationError);
+      return res.status(400).json({
+        message: "Workflow không hợp lệ",
+        error: validationError.message,
+        details: "Vui lòng kiểm tra lại cấu hình approvalFlow."
+      });
+    }
+
+    // ✅ Lưu workflow đã validate
+    const workflow = await Workflow.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     res.status(200).json({
       message: "Cập nhật workflow thành công",

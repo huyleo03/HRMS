@@ -5,6 +5,7 @@ const {
   createNotificationForMultipleUsers,
 } = require("../helper/NotificationService");
 const Workflow = require("../models/Workflow");
+const archivingService = require("../services/archivingService");
 
 // ===== 1. TẠO VÀ GỬI ĐƠN =====
 exports.createRequest = async (req, res) => {
@@ -188,6 +189,72 @@ exports.getUserRequests = async (req, res) => {
           ],
         };
         break;
+
+      // === ESSENTIAL BOXES ===
+      
+      // Đơn tôi đã duyệt (Manager/Admin)
+      case "approved-by-me":
+        baseQuery = {
+          "approvalFlow.approverId": userId,
+          "approvalFlow.status": "Approved",
+        };
+        break;
+
+      // Đơn tôi đã từ chối (Manager/Admin)
+      case "rejected-by-me":
+        baseQuery = {
+          "approvalFlow.approverId": userId,
+          "approvalFlow.status": "Rejected",
+        };
+        break;
+
+      // Đơn của tôi đã được duyệt hoàn toàn
+      case "my-approved":
+        baseQuery = {
+          submittedBy: userId,
+          status: "Approved",
+          "senderStatus.isDraft": false,
+        };
+        break;
+
+      // Đơn của tôi bị từ chối
+      case "my-rejected":
+        baseQuery = {
+          submittedBy: userId,
+          status: "Rejected",
+          "senderStatus.isDraft": false,
+        };
+        break;
+
+      // Đơn của tôi đang chờ duyệt
+      case "my-pending":
+        baseQuery = {
+          submittedBy: userId,
+          status: { $in: ["Pending", "Manager_Approved"] },
+          "senderStatus.isDraft": false,
+        };
+        break;
+
+      // Đơn của tôi cần bổ sung thông tin
+      case "my-needs-review":
+        baseQuery = {
+          submittedBy: userId,
+          status: "NeedsReview",
+          "senderStatus.isDraft": false,
+        };
+        break;
+
+      // Đơn quá hạn SLA (cần xử lý gấp)
+      case "overdue":
+        const now = new Date();
+        baseQuery = {
+          "approvalFlow.approverId": userId,
+          "approvalFlow.status": "Pending",
+          status: { $in: ["Pending", "Manager_Approved"] },
+          "slaTracking.slaDeadline": { $lt: now },
+        };
+        break;
+
       default:
         return res.status(400).json({ message: "Hộp thư không hợp lệ." });
     }
@@ -265,56 +332,79 @@ exports.approveRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { comment } = req.body;
+    
     const request = await Request.findById(requestId);
     if (!request) {
       return res.status(404).json({ message: "Không tìm thấy đơn" });
     }
-    await request.approve(req.user.id, comment || "");
-    const approver = await User.findById(req.user.id);
-    if (request.cc && request.cc.length > 0) {
-      await createNotificationForMultipleUsers(request.cc, {
-        senderId: approver._id,
-        senderName: approver.full_name,
-        senderAvatar: approver.avatar,
-        type: "RequestUpdate",
-        message: `Đơn ${request.type} của ${request.submittedByName} đã được ${approver.full_name} phê duyệt.`,
-        relatedId: request._id,
-        metadata: {
-          requestType: request.type,
-          actionUrl: `/requests/${request._id}`,
-        },
-      });
-    }
-    const allApproved = request.approvalFlow.every(
-      (a) => a.role !== "Approver" || a.status === "Approved"
-    );
-    if (allApproved) {
-      await createNotificationForUser({
-        userId: request.submittedBy,
-        senderId: approver._id,
-        senderName: approver.full_name,
-        senderAvatar: approver.avatar,
-        type: "RequestApproved",
-        message: `${approver.full_name} đã phê duyệt đơn ${
-          request.type
-        } của bạn.${comment ? ` Nhận xét: ${comment}` : ""}`,
-        relatedId: request._id,
-        metadata: {
-          requestType: request.type,
-          requestSubject: request.subject,
-          actionUrl: `/requests/${request._id}`,
-          comment: comment || "",
-        },
-      });
-    }
 
-    res.status(200).json({
+    // ✅ Call approve - Mongoose automatically handles version conflicts
+    await request.approve(req.user.id, comment || "");
+
+      const approver = await User.findById(req.user.id);
+      if (request.cc && request.cc.length > 0) {
+        await createNotificationForMultipleUsers(request.cc, {
+          senderId: approver._id,
+          senderName: approver.full_name,
+          senderAvatar: approver.avatar,
+          type: "RequestUpdate",
+          message: `Đơn ${request.type} của ${request.submittedByName} đã được ${approver.full_name} phê duyệt.`,
+          relatedId: request._id,
+          metadata: {
+            requestType: request.type,
+            actionUrl: `/requests/${request._id}`,
+          },
+        });
+      }
+      const allApproved = request.approvalFlow.every(
+        (a) => a.role !== "Approver" || a.status === "Approved"
+      );
+      if (allApproved) {
+        await createNotificationForUser({
+          userId: request.submittedBy,
+          senderId: approver._id,
+          senderName: approver.full_name,
+          senderAvatar: approver.avatar,
+          type: "RequestApproved",
+          message: `${approver.full_name} đã phê duyệt đơn ${
+            request.type
+          } của bạn.${comment ? ` Nhận xét: ${comment}` : ""}`,
+          relatedId: request._id,
+          metadata: {
+            requestType: request.type,
+            requestSubject: request.subject,
+            actionUrl: `/requests/${request._id}`,
+            comment: comment || "",
+          },
+        });
+      }
+
+    return res.status(200).json({
       message: "Phê duyệt đơn thành công",
       request,
     });
   } catch (error) {
     console.error("Lỗi khi phê duyệt:", error);
-    res.status(500).json({
+    
+    // ✅ Better error handling với status code phù hợp
+    if (error.message.includes("đã phê duyệt") || 
+        error.message.includes("đã từ chối") ||
+        error.message.includes("đã yêu cầu chỉnh sửa") ||
+        error.message.includes("đã được xử lý")) {
+      return res.status(409).json({ // 409 Conflict
+        message: error.message,
+        code: "ALREADY_PROCESSED"
+      });
+    }
+    
+    if (error.message.includes("không có quyền")) {
+      return res.status(403).json({ // 403 Forbidden
+        message: error.message,
+        code: "PERMISSION_DENIED"
+      });
+    }
+    
+    return res.status(500).json({
       message: error.message || "Lỗi server",
     });
   }
@@ -331,35 +421,58 @@ exports.rejectRequest = async (req, res) => {
         message: "Vui lòng cung cấp lý do từ chối",
       });
     }
+    
     const request = await Request.findById(requestId);
     if (!request) {
       return res.status(404).json({ message: "Không tìm thấy đơn" });
     }
-    await request.reject(req.user.id, comment);
-    const approver = await User.findById(req.user.id);
-    await createNotificationForUser({
-      userId: request.submittedBy,
-      senderId: approver._id,
-      senderName: approver.full_name,
-      senderAvatar: approver.avatar,
-      type: "RequestRejected",
-      message: `${approver.full_name} đã từ chối đơn ${request.type} của bạn. Lý do: ${comment}`,
-      relatedId: request._id,
-      metadata: {
-        requestType: request.type,
-        requestSubject: request.subject,
-        actionUrl: `/requests/${request._id}`,
-        comment: comment,
-      },
-    });
 
-    res.status(200).json({
+    // ✅ Call reject - Mongoose automatically handles version conflicts
+    await request.reject(req.user.id, comment);
+
+      const approver = await User.findById(req.user.id);
+      await createNotificationForUser({
+        userId: request.submittedBy,
+        senderId: approver._id,
+        senderName: approver.full_name,
+        senderAvatar: approver.avatar,
+        type: "RequestRejected",
+        message: `${approver.full_name} đã từ chối đơn ${request.type} của bạn. Lý do: ${comment}`,
+        relatedId: request._id,
+        metadata: {
+          requestType: request.type,
+          requestSubject: request.subject,
+          actionUrl: `/requests/${request._id}`,
+          comment: comment,
+        },
+      });
+
+    return res.status(200).json({
       message: "Từ chối đơn thành công",
       request,
     });
   } catch (error) {
     console.error("Lỗi khi từ chối:", error);
-    res.status(500).json({
+    
+    // ✅ Better error handling với status code phù hợp
+    if (error.message.includes("đã phê duyệt") || 
+        error.message.includes("đã từ chối") ||
+        error.message.includes("đã yêu cầu chỉnh sửa") ||
+        error.message.includes("đã được xử lý")) {
+      return res.status(409).json({ // 409 Conflict
+        message: error.message,
+        code: "ALREADY_PROCESSED"
+      });
+    }
+    
+    if (error.message.includes("không có quyền")) {
+      return res.status(403).json({ // 403 Forbidden
+        message: error.message,
+        code: "PERMISSION_DENIED"
+      });
+    }
+    
+    return res.status(500).json({
       message: error.message || "Lỗi server",
     });
   }
@@ -1020,3 +1133,119 @@ exports.getAdminStats = async (req, res) => {
     });
   }
 };
+
+// ===== ARCHIVING ENDPOINTS =====
+
+/**
+ * Get archived requests (Admin only)
+ */
+exports.getArchivedRequests = async (req, res) => {
+  try {
+    const {
+      userId,
+      requestType,
+      status,
+      startDate,
+      endDate,
+      searchText,
+      limit = 50,
+      skip = 0,
+    } = req.query;
+
+    const filters = {
+      userId,
+      requestType,
+      status,
+      startDate,
+      endDate,
+      searchText,
+      limit: parseInt(limit),
+      skip: parseInt(skip),
+    };
+
+    const archivedRequests = await archivingService.getArchivedRequests(filters);
+
+    res.status(200).json({
+      success: true,
+      count: archivedRequests.length,
+      data: archivedRequests,
+    });
+  } catch (error) {
+    console.error("Error getting archived requests:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/**
+ * Restore archived request (Admin only)
+ */
+exports.restoreArchivedRequest = async (req, res) => {
+  try {
+    const { archivedRequestId } = req.params;
+    const restoredBy = req.user.id;
+
+    const restoredRequest = await archivingService.restoreFromArchive(
+      archivedRequestId,
+      restoredBy
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Request restored successfully",
+      data: restoredRequest,
+    });
+  } catch (error) {
+    console.error("Error restoring archived request:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/**
+ * Get archiving statistics (Admin only)
+ */
+exports.getArchivingStats = async (req, res) => {
+  try {
+    const stats = await archivingService.getArchivingStats();
+
+    res.status(200).json({
+      success: true,
+      data: stats,
+    });
+  } catch (error) {
+    console.error("Error getting archiving stats:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
+/**
+ * Manually trigger archiving (Admin only)
+ */
+exports.runArchiving = async (req, res) => {
+  try {
+    const { monthsOld = 6 } = req.body;
+
+    const result = await archivingService.archiveBatch(parseInt(monthsOld));
+
+    res.status(200).json({
+      success: true,
+      message: `Archiving completed. Archived: ${result.archived}, Failed: ${result.failed}`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error running archiving:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
+  }
+};
+
