@@ -10,14 +10,17 @@ const CONFIG = {
   gracePeriodMinutes: 15,
   otMinimumMinutes: 30,
   allowedIPs: [
+    // Localhost (để test trên máy local)
     "::1",
     "127.0.0.1",
     "::ffff:127.0.0.1",
+    
+    // IP công cộng của máy bạn (lấy từ ipify.org)
+    "42.118.89.199",
+    
+    // IPv6 của bạn (nếu cần)
     "2402:800:6106:4fc0::2",
     "2402:800:6106:4fc0:3de3:19da:bce2:5d05",
-    "2402:800:6106:4fc0:60af:572d:4a92:f018",
-    "fe80::8d0f:377d:d750:ab7c", // bỏ %8 vì trình duyệt sẽ không gửi %8
-    "192.168.1.113",
   ],
 };
 
