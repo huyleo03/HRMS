@@ -19,25 +19,25 @@
   border: 1px solid rgba(162, 161, 168, 0.2);
 }
 
-.filter-group {
+.filter-group-manager {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.filter-label {
+.filter-label-manager {
   font-size: 14px;
   font-weight: 500;
   color: #16151C;
 }
 
-.date-range-picker {
+.date-range-picker-manager {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.date-input {
+.date-input-manager {
   padding: 10px 14px;
   border: 1px solid rgba(162, 161, 168, 0.3);
   border-radius: 8px;
@@ -49,18 +49,18 @@
   min-width: 150px;
 }
 
-.date-input:focus {
+.date-input-manager:focus {
   outline: none;
   border-color: #7152F3;
   box-shadow: 0 0 0 3px rgba(113, 82, 243, 0.1);
 }
 
-.date-separator {
+.date-separator-manager {
   color: #A2A1A8;
   font-weight: 500;
 }
 
-.status-select {
+.status-select-manager {
   padding: 10px 14px;
   border: 1px solid rgba(162, 161, 168, 0.3);
   border-radius: 8px;
@@ -73,13 +73,13 @@
   min-width: 150px;
 }
 
-.status-select:focus {
+.status-select-manager:focus {
   outline: none;
   border-color: #7152F3;
   box-shadow: 0 0 0 3px rgba(113, 82, 243, 0.1);
 }
 
-.apply-btn {
+.apply-btn-manager {
   padding: 10px 24px;
   background: #7152F3;
   color: white;
@@ -92,25 +92,25 @@
   transition: all 0.2s ease;
 }
 
-.apply-btn:hover {
+.apply-btn-manager:hover {
   background: #5a3dd1;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(113, 82, 243, 0.3);
 }
 
-.apply-btn:active {
+.apply-btn-manager:active {
   transform: translateY(0);
 }
 
 /* Stats Grid */
-.stats-grid {
+.stats-grid-manager {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin-bottom: 24px;
 }
 
-.stat-card {
+.stat-card-manager {
   background: white;
   border-radius: 12px;
   padding: 20px;
@@ -121,12 +121,12 @@
   transition: all 0.2s ease;
 }
 
-.stat-card:hover {
+.stat-card-manager:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.stat-icon {
+.stat-icon-manager {
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -137,76 +137,76 @@
   flex-shrink: 0;
 }
 
-.stat-icon-success {
+.stat-icon-success-manager {
   background: rgba(16, 185, 129, 0.1);
 }
 
-.stat-icon-warning {
+.stat-icon-warning-manager {
   background: rgba(245, 158, 11, 0.1);
 }
 
-.stat-icon-danger {
+.stat-icon-danger-manager {
   background: rgba(239, 68, 68, 0.1);
 }
 
-.stat-icon-info {
+.stat-icon-info-manager {
   background: rgba(59, 130, 246, 0.1);
 }
 
-.stat-content {
+.stat-content-manager {
   flex: 1;
 }
 
-.stat-label {
+.stat-label-manager {
   font-size: 14px;
   color: #A2A1A8;
   margin-bottom: 4px;
 }
 
-.stat-value {
+.stat-value-manager {
   font-size: 28px;
   font-weight: 600;
   color: #16151C;
   margin-bottom: 4px;
 }
 
-.stat-value-success {
+.stat-value-success-manager {
   color: #10B981;
 }
 
-.stat-value-warning {
+.stat-value-warning-manager {
   color: #F59E0B;
 }
 
-.stat-value-danger {
+.stat-value-danger-manager {
   color: #EF4444;
 }
 
-.stat-value-info {
+.stat-value-info-manager {
   color: #3B82F6;
 }
 
-.stat-desc {
+.stat-desc-manager {
   font-size: 12px;
   color: #A2A1A8;
 }
 
 /* Table Header */
-.table-header {
+.table-header-manager {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
 
-.table-title {
+.table-title-manager {
   font-size: 20px;
   font-weight: 600;
   color: #16151C;
   margin: 0;
 }
 
-.export-btn {
+.export-btn-manager {
   padding: 10px 20px;
   background: #7152F3;
   color: white;
@@ -222,34 +222,34 @@
   transition: all 0.2s ease;
 }
 
-.export-btn:hover {
+.export-btn-manager:hover {
   background: #5a3dd1;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(113, 82, 243, 0.3);
 }
 
-.export-btn:active {
+.export-btn-manager:active {
   transform: translateY(0);
 }
 
 /* Table Container */
-.table-container {
+.table-container-manager {
   background: white;
   border-radius: 12px;
   border: 1px solid rgba(162, 161, 168, 0.2);
   overflow: hidden;
 }
 
-.attendance-table {
+.attendance-table-manager {
   width: 100%;
   border-collapse: collapse;
 }
 
-.attendance-table thead {
+.attendance-table-manager thead {
   background: #F8F9FA;
 }
 
-.attendance-table th {
+.attendance-table-manager th {
   padding: 16px;
   text-align: left;
   font-size: 12px;
@@ -260,29 +260,29 @@
   border-bottom: 1px solid rgba(162, 161, 168, 0.2);
 }
 
-.attendance-table td {
+.attendance-table-manager td {
   padding: 16px;
   border-bottom: 1px solid rgba(162, 161, 168, 0.1);
   font-size: 14px;
   color: #16151C;
 }
 
-.attendance-table tbody tr {
+.attendance-table-manager tbody tr {
   transition: background 0.2s ease;
 }
 
-.attendance-table tbody tr:hover {
+.attendance-table-manager tbody tr:hover {
   background: rgba(113, 82, 243, 0.02);
 }
 
 /* Employee Cell */
-.employee-cell {
+.employee-cell-manager {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.employee-avatar {
+.employee-avatar-manager {
   width: 40px;
   height: 40px;
   border-radius: 8px;
@@ -290,7 +290,7 @@
   flex-shrink: 0;
 }
 
-.employee-avatar-fallback {
+.employee-avatar-fallback-manager {
   width: 40px;
   height: 40px;
   border-radius: 8px;
@@ -304,23 +304,23 @@
   flex-shrink: 0;
 }
 
-.employee-info {
+.employee-info-manager {
   display: flex;
   flex-direction: column;
 }
 
-.employee-name {
+.employee-name-manager {
   font-weight: 500;
   color: #16151C;
 }
 
-.employee-id {
+.employee-id-manager {
   font-size: 12px;
   color: #A2A1A8;
 }
 
 /* Status Badges */
-.status-badge {
+.status-badge-manager {
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;
@@ -328,28 +328,28 @@
   display: inline-block;
 }
 
-.status-present {
+.status-present-manager {
   background: rgba(16, 185, 129, 0.1);
   color: #10B981;
 }
 
-.status-late {
+.status-late-manager {
   background: rgba(245, 158, 11, 0.1);
   color: #F59E0B;
 }
 
-.status-absent {
+.status-absent-manager {
   background: rgba(239, 68, 68, 0.1);
   color: #EF4444;
 }
 
-.status-leave {
+.status-leave-manager {
   background: rgba(59, 130, 246, 0.1);
   color: #3B82F6;
 }
 
 /* Action Button */
-.action-btn {
+.action-btn-manager {
   background: transparent;
   border: none;
   padding: 8px;
@@ -361,23 +361,23 @@
   transition: all 0.2s ease;
 }
 
-.action-btn:hover {
+.action-btn-manager:hover {
   background: rgba(113, 82, 243, 0.1);
   transform: scale(1.1);
 }
 
-.action-btn:active {
+.action-btn-manager:active {
   transform: scale(0.95);
 }
 
-.action-btn svg {
+.action-btn-manager svg {
   width: 20px;
   height: 20px;
 }
 
 /* Loading & Empty States */
-.loading-state,
-.empty-state {
+.loading-state-manager,
+.empty-state-manager {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -399,15 +399,15 @@
   to { transform: rotate(360deg); }
 }
 
-.loading-state p,
-.empty-state p {
+.loading-state-manager p,
+.empty-state-manager p {
   font-size: 14px;
   color: #A2A1A8;
   margin: 0;
 }
 
 /* Pagination */
-.pagination {
+.pagination-manager {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -488,11 +488,12 @@
     overflow-x: auto;
   }
 
-  .attendance-table {
+  .attendance-table-manager {
     min-width: 800px;
   }
 
-  .pagination {
+  .pagination-manager {
     flex-wrap: wrap;
   }
 }
+
