@@ -14,6 +14,11 @@ const CONFIG = {
     "::1",
     "127.0.0.1",
     "::ffff:127.0.0.1",
+    
+    // IP public của máy bạn (cập nhật: 22/10/2025)
+    "118.70.211.232",
+    
+    // IP cũ (backup)
     "42.118.89.199",
     
     // IPv6 của bạn (nếu cần)
