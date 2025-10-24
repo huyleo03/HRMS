@@ -1,0 +1,88 @@
+/**
+ * 🎯 Z-INDEX HIERARCHY SYSTEM
+ * 
+ * Quy tắc z-index cho toàn bộ ứng dụng để tránh xung đột stacking context
+ * 
+ * Layer 1: Base Elements (z-index: 0-99)
+ * - Regular content: 0
+ * - Sticky headers/footers: 10-20
+ * - Floating buttons: 30-50
+ * 
+ * Layer 2: Dropdowns & Popovers (z-index: 100-999)
+ * - Dropdown menus: 100
+ * - Tooltips: 200
+ * - Notification dropdown: 300
+ * - Date pickers: 400
+ * 
+ * Layer 3: Modals & Overlays (z-index: 1000-9999)
+ * - Standard modals: 1000
+ * - Nested modals (Approve/Reject/Cancel): 1050
+ * - Important modals (Delete confirmation): 2000
+ * - Attendance detail modal: 9999
+ * 
+ * Layer 4: Toast Notifications (z-index: 9999999)
+ * - Toast notifications: 9999999 (ALWAYS ON TOP)
+ * 
+ * ⚠️ LƯU Ý:
+ * - KHÔNG BAO GIỜ sử dụng z-index > 9999999
+ * - Toast phải LUÔN ở trên cùng
+ * - Modal lồng nhau: parent + 50
+ */
+
+:root {
+  /* Base Elements */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-floating: 50;
+  
+  /* Dropdowns & Popovers */
+  --z-dropdown: 100;
+  --z-tooltip: 200;
+  --z-notification-dropdown: 300;
+  --z-datepicker: 400;
+  
+  /* Modals & Overlays */
+  --z-modal-base: 1000;
+  --z-modal-nested: 1050;
+  --z-modal-important: 2000;
+  --z-modal-critical: 9999;
+  
+  /* Toast - ALWAYS ON TOP */
+  --z-toast: 9999999;
+}
+
+/* ===== APPLY TO TOAST CONTAINER ===== */
+.Toastify__toast-container {
+  z-index: var(--z-toast) !important;
+}
+
+/* ===== COMMON MODAL OVERLAYS ===== */
+.modal-overlay {
+  z-index: var(--z-modal-base);
+}
+
+.modal-overlay.nested {
+  z-index: var(--z-modal-nested);
+}
+
+.modal-overlay.important {
+  z-index: var(--z-modal-important);
+}
+
+.modal-overlay.critical {
+  z-index: var(--z-modal-critical);
+}
+
+/* ===== DROPDOWN MENUS ===== */
+.dropdown-menu {
+  z-index: var(--z-dropdown);
+}
+
+.notification-dropdown {
+  z-index: var(--z-notification-dropdown);
+}
+
+/* ===== TOOLTIPS ===== */
+.tooltip {
+  z-index: var(--z-tooltip);
+}

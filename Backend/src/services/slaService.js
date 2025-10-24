@@ -375,6 +375,9 @@ const checkAllRequestsSLA = async () => {
   }
 };
 
+// Store interval ID for cleanup
+let slaMonitoringInterval = null;
+
 /**
  * Start SLA monitoring background job
  */
@@ -387,9 +390,20 @@ const startSLAMonitoring = () => {
   // Then check periodically
   const intervalMs = SLA_CONFIG.CHECK_INTERVAL_MINUTES * 60 * 1000;
   
-  setInterval(() => {
+  slaMonitoringInterval = setInterval(() => {
     checkAllRequestsSLA();
   }, intervalMs);
+};
+
+/**
+ * Stop SLA monitoring background job
+ */
+const stopSLAMonitoring = () => {
+  if (slaMonitoringInterval) {
+    clearInterval(slaMonitoringInterval);
+    slaMonitoringInterval = null;
+    console.log('⏰ SLA monitoring stopped');
+  }
 };
 
 /**
@@ -439,5 +453,6 @@ module.exports = {
   escalateRequest,
   checkAllRequestsSLA,
   startSLAMonitoring,
+  stopSLAMonitoring,
   getSLAStats,
 };

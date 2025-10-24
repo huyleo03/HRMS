@@ -53,9 +53,13 @@ process.on('unhandledRejection', (err) => {
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM received. Shutting down gracefully...');
   
-  // Stop background services
-  slaService.stopSLAMonitoring();
-  archivingService.stopArchivingJob();
+  // Stop background services safely
+  try {
+    slaService.stopSLAMonitoring();
+    archivingService.stopArchivingJob();
+  } catch (error) {
+    console.error('Error stopping background services:', error.message);
+  }
   
   server.close(() => {
     console.log('Process terminated!');
@@ -66,9 +70,13 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   console.log('\n👋 SIGINT received. Shutting down gracefully...');
   
-  // Stop background services
-  slaService.stopSLAMonitoring();
-  archivingService.stopArchivingJob();
+  // Stop background services safely
+  try {
+    slaService.stopSLAMonitoring();
+    archivingService.stopArchivingJob();
+  } catch (error) {
+    console.error('Error stopping background services:', error.message);
+  }
   
   server.close(() => {
     console.log('Process terminated!');

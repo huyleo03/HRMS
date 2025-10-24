@@ -19,11 +19,11 @@ const RequestTypeGrid = ({ selectedValue, onSelect }) => {
       {requestTypes.map((type) => (
         <div
           key={type.value}
-          className={`type-card ${selectedValue === type.value ? "active" : ""}`}
+          className={`request-type-card ${selectedValue === type.value ? "active" : ""}`}
           onClick={() => onSelect(type.value)}
         >
-          <span className="type-icon">{type.icon}</span>
-          <span className="type-label">{type.label}</span>
+          <span className="request-type-icon">{type.icon}</span>
+          <span className="request-type-label">{type.label}</span>
         </div>
       ))}
     </div>

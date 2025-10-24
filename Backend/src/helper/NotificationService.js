@@ -28,6 +28,9 @@ const createNotificationForUser = async ({
       metadata,
       isRead: false,
     });
+    
+    console.log(`✅ Notification created for user ${userId}`);
+    
     return notification;
   } catch (error) {
     console.error("❌ Lỗi tạo thông báo:", error);
@@ -64,7 +67,11 @@ const createNotificationForMultipleUsers = async (
       isRead: false,
     }));
 
-    return await Notification.insertMany(notifications);
+    const createdNotifications = await Notification.insertMany(notifications);
+    
+    console.log(`✅ ${createdNotifications.length} notifications created`);
+    
+    return createdNotifications;
   } catch (error) {
     console.error("❌ Lỗi tạo thông báo cho nhiều users:", error);
     throw error;
@@ -86,7 +93,7 @@ const createNotificationForDepartment = async ({
   metadata = {},
 }) => {
   try {
-    return await Notification.create({
+    const notification = await Notification.create({
       targetAudience: "Department",
       departmentId,
       departmentName,
@@ -99,6 +106,10 @@ const createNotificationForDepartment = async ({
       metadata,
       readBy: [],
     });
+    
+    console.log(`✅ Department notification created for department ${departmentName}`);
+    
+    return notification;
   } catch (error) {
     console.error("❌ Lỗi tạo thông báo cho phòng ban:", error);
     throw error;
@@ -118,7 +129,7 @@ const createNotificationForAll = async ({
   metadata = {},
 }) => {
   try {
-    return await Notification.create({
+    const notification = await Notification.create({
       targetAudience: "All",
       senderId,
       senderName,
@@ -129,6 +140,10 @@ const createNotificationForAll = async ({
       metadata,
       readBy: [],
     });
+    
+    console.log('✅ Notification created for all users');
+    
+    return notification;
   } catch (error) {
     console.error("❌ Lỗi tạo thông báo cho tất cả:", error);
     throw error;

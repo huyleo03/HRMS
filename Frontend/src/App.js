@@ -41,6 +41,7 @@ function App() {
           draggable
           pauseOnHover
           theme="light"
+          style={{ zIndex: 9999999 }}
         />
         <Routes>
           {/* --- Public Routes --- */}

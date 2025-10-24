@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import Layout from "./Layout";
@@ -7,26 +7,27 @@ import { toast } from "react-toastify";
 
 
 const ProtectedRoute = ({ noSidebar = false, allowedRoles = [] }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const location = useLocation();
-
+  const [hasShownError, setHasShownError] = useState(false);
   useEffect(() => {
-    if (!isAuthenticated) {
-      toast.error("Bạn phải đăng nhập để truy cập trang này!");
+    if (!loading && allowedRoles.length > 0 && user && !allowedRoles.includes(user?.role) && !hasShownError) {
+      toast.error("Bạn không có quyền truy cập trang này!");
+      setHasShownError(true);
     }
-  }, [isAuthenticated]);
+  }, [user, allowedRoles, hasShownError, loading]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Đang tải...</div>;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-
-  // 🔸 Kiểm tra phân quyền nếu có
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    toast.error("Bạn không có quyền truy cập trang này!");
     return <Navigate to="/dashboard" replace />;
   }
 
-  // 🔸 Không dùng sidebar → chỉ header
   if (noSidebar) {
     return (
       <div className="flex flex-col min-h-screen">

@@ -190,7 +190,7 @@
   gap: 12px;
 }
 
-.type-card {
+.request-type-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -203,29 +203,29 @@
   background: white;
 }
 
-.type-card:hover {
+.request-type-card:hover {
   border-color: #7c3aed;
   background: #faf5ff;
   transform: translateY(-2px);
 }
 
-.type-card.active {
+.request-type-card.active {
   border-color: #7c3aed;
   background: #f3e8ff;
 }
 
-.type-icon {
+.request-type-icon {
   font-size: 24px;
 }
 
-.type-label {
+.request-type-label {
   font-size: 12px;
   font-weight: 500;
   color: #6b7280;
   text-align: center;
 }
 
-.type-card.active .type-label {
+.request-type-card.active .request-type-label {
   color: #7c3aed;
   font-weight: 600;
 }
@@ -652,15 +652,15 @@
     gap: 8px;
   }
 
-  .type-card {
+  .request-type-card {
     padding: 12px 8px;
   }
 
-  .type-icon {
+  .request-type-icon {
     font-size: 20px;
   }
 
-  .type-label {
+  .request-type-label {
     font-size: 11px;
   }
 

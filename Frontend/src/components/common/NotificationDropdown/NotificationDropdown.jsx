@@ -52,9 +52,6 @@ const NotificationDropdown = () => {
   // Initial fetch
   useEffect(() => {
     fetchUnreadCount();
-    // Refresh count every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   // Fetch when dropdown opens or filter changes
@@ -62,6 +59,7 @@ const NotificationDropdown = () => {
     if (isOpen) {
       fetchNotifications();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, filter]);
 
   // Close dropdown when clicking outside
