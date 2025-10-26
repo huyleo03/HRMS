@@ -394,21 +394,6 @@
   border-radius: 50%;
 }
 
-.item-checkbox input {
-  cursor: pointer;
-}
-
-.item-star {
-  cursor: pointer;
-  color: #d1d5da;
-  transition: color 0.2s;
-}
-
-.item-star:hover,
-.item-star.starred {
-  color: #ffd700;
-}
-
 .item-avatar img {
   width: 40px;
   height: 40px;

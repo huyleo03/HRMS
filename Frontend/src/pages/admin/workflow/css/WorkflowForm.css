@@ -1,0 +1,138 @@
+/* ============================================
+   Workflow Form Styles
+   ============================================ */
+
+.workflow-form {
+  padding: 24px;
+  background: #f0f2f5;
+  min-height: 100vh;
+}
+
+/* ============================================
+   Header Section
+   ============================================ */
+.workflow-form__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.workflow-form__header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: #262626;
+}
+
+/* ============================================
+   Form Content
+   ============================================ */
+.workflow-form__content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.workflow-form__card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.workflow-form__card .ant-card-head {
+  background: #fafafa;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.workflow-form__card .ant-card-body {
+  padding: 24px;
+}
+
+/* ============================================
+   Form Actions
+   ============================================ */
+.workflow-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  bottom: 24px;
+  z-index: 100;
+}
+
+/* ============================================
+   Loading Container
+   ============================================ */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+/* ============================================
+   Form Item Customizations
+   ============================================ */
+.workflow-form .ant-form-item-label > label {
+  font-weight: 500;
+  color: #262626;
+}
+
+.workflow-form .ant-input,
+.workflow-form .ant-select-selector,
+.workflow-form .ant-input-textarea {
+  border-radius: 6px;
+}
+
+/* ============================================
+   Divider
+   ============================================ */
+.workflow-form .ant-divider {
+  margin: 32px 0;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 768px) {
+  .workflow-form {
+    padding: 16px;
+  }
+
+  .workflow-form__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .workflow-form__header h1 {
+    font-size: 24px;
+  }
+
+  .workflow-form__card .ant-card-body {
+    padding: 16px;
+  }
+
+  .workflow-form__actions {
+    flex-direction: column;
+    position: static;
+  }
+
+  .workflow-form__actions button {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+.mr-2 {
+  margin-right: 8px;
+}
+
+.text-muted {
+  color: #8c8c8c;
+}

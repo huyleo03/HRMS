@@ -7,6 +7,7 @@ const {
   requestChanges,
   resubmitRequest,
   cancelRequest,
+  overrideRequest,
   getUserRequests,
   getAllRequestsAdmin,
   forceApproveRequest,
@@ -195,6 +196,17 @@ router.put(
   validateResubmitRequest, // ✅ Validate resubmit payload
   logRequestResubmit, // ✅ Audit log
   resubmitRequest
+);
+
+// ✅ GHI ĐÈ QUYẾT ĐỊNH (Admin only)
+router.put(
+  "/:requestId/override",
+  authenticate,
+  authorize("Admin"),  // Chỉ Admin
+  strictLimiter,
+  validateObjectId("requestId"),
+  validateComment,  // Validate comment (required)
+  overrideRequest
 );
 
 module.exports = router;

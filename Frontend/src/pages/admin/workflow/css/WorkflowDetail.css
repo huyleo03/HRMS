@@ -1,0 +1,86 @@
+/* ============================================
+   Workflow Detail Component Styles
+   ============================================ */
+
+.workflow-detail {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.workflow-detail .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.workflow-detail .ant-card-head {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+}
+
+.workflow-detail .ant-card-head-title {
+  color: white;
+  font-size: 18px;
+}
+
+/* Descriptions Table Styling */
+.workflow-detail .ant-descriptions-item-label {
+  font-weight: 600;
+  background: #fafafa;
+  color: #262626;
+}
+
+.workflow-detail .ant-descriptions-item-content {
+  background: white;
+  color: #262626;
+}
+
+/* Steps Styling - Fix strikethrough issue */
+.workflow-detail .ant-steps-item-title {
+  color: #262626 !important;
+  text-decoration: none !important;
+}
+
+.workflow-detail .ant-steps-item-description {
+  color: #595959 !important;
+  text-decoration: none !important;
+}
+
+.workflow-detail .ant-steps-item-description > div {
+  text-decoration: none !important;
+}
+
+/* Text Muted Override */
+.workflow-detail .text-muted {
+  color: #8c8c8c;
+  font-size: 13px;
+  text-decoration: none !important;
+}
+
+/* Tags Styling */
+.workflow-detail .ant-tag {
+  border-radius: 4px;
+  font-size: 13px;
+  padding: 2px 8px;
+}
+
+/* Loading State */
+.workflow-detail-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .workflow-detail {
+    padding: 16px;
+  }
+
+  .workflow-detail .ant-descriptions {
+    font-size: 13px;
+  }
+}

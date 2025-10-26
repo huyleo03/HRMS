@@ -1,0 +1,126 @@
+/* ============================================
+   Workflow Management Page Styles
+   ============================================ */
+
+.workflow-management {
+  padding: 24px;
+  background: #f0f2f5;
+  min-height: 100vh;
+}
+
+/* ============================================
+   Header Section
+   ============================================ */
+.workflow-management__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.workflow-management__header-info h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.workflow-management__header-info p {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  color: #8c8c8c;
+}
+
+/* ============================================
+   Workflow List
+   ============================================ */
+.workflow-list {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.workflow-list__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.workflow-list__info {
+  font-size: 14px;
+  color: #595959;
+}
+
+.workflow-list__info strong {
+  color: #1890ff;
+  font-weight: 600;
+}
+
+/* ============================================
+   Table Customizations
+   ============================================ */
+.workflow-list .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #262626;
+}
+
+.workflow-list .ant-table-tbody > tr:hover {
+  background: #f5f5f5;
+}
+
+.text-muted {
+  color: #8c8c8c;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 768px) {
+  .workflow-management {
+    padding: 16px;
+  }
+
+  .workflow-management__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .workflow-management__header-info h1 {
+    font-size: 24px;
+  }
+
+  .workflow-list {
+    padding: 16px;
+  }
+
+  .workflow-list__toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+.mr-2 {
+  margin-right: 8px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}

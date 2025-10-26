@@ -1,5 +1,5 @@
 import React from "react";
-import RequestItem from "./RequestItem";
+import RequestItem from "../../common/RequestItem/RequestItem";
 import { Inbox } from "lucide-react";
 
 // ✅ Skeleton Loader Component
@@ -19,7 +19,6 @@ const RequestList = ({
   requests,
   selectedRequest,
   onSelectRequest,
-  onToggleStar,
   hasSelectedRequest,
   isLoading,
   activeTab,
@@ -75,7 +74,6 @@ const RequestList = ({
                 request={request}
                 isSelected={selectedRequest?._id === request._id}
                 onSelect={onSelectRequest}
-                onToggleStar={onToggleStar}
               />
             ))}
           </div>

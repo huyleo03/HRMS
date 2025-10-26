@@ -52,12 +52,12 @@ router.post(
 );
 
 // Admin & Manager - Lấy options list (cho các form select)
-router.get(
-  "/options/list",
-  authenticate,
-  authorize("Admin", "Manager"),
-  departmentController.getDepartmentOptions
-);
+// router.get(
+//   "/options/list",
+//   authenticate,
+//   authorize("Admin", "Manager"),
+//   departmentController.getDepartmentOptions
+// );
 
 // Admin & Manager - Kiểm tra phòng ban đã có manager chưa
 router.get(

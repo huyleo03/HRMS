@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, CheckCircle } from "lucide-react";
-import "../css/ApproveRequestModal.css"; // Sẽ tạo file CSS này ở bước 2
+import "./ApproveRequestModal.css"; 
 
 const ApproveRequestModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
   const [comment, setComment] = useState("");
@@ -12,7 +12,7 @@ const ApproveRequestModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
   };
 
   const handleClose = () => {
-    setComment(""); // Reset form khi đóng
+    setComment(""); 
     onClose();
   };
 

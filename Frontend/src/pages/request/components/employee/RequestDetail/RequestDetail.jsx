@@ -21,21 +21,21 @@ import {
   formatDate,
   formatFileSize,
   formatDateTime,
-} from "../../../utils/requestHelpers";
-import { useAuth } from "../../../contexts/AuthContext";
+} from "../../../../../utils/requestHelpers";
+import { useAuth } from "../../../../../contexts/AuthContext";
 import {
   cancelRequest,
   approveRequest,
   rejectRequest,
   requestChanges,
-} from "../../../service/RequestService";
+} from "../../../../../service/RequestService";
 import { toast } from "react-toastify";
-import CancelRequestModal from "./CancelRequestModal";
-import ApproveRequestModal from "./ApproveRequestModal";
-import RejectRequestModal from "./RejectRequestModal";
-import RequestChangesModal from "./RequestChangesModal";
-import EditRequestForm from "./EditRequestForm";
-import AdminActions from "./AdminActions";
+import CancelRequestModal from "../../manager/CancelRequestModal/CancelRequestModal";
+import ApproveRequestModal from "../../manager/ApproveRequestModal/ApproveRequestModal";
+import RejectRequestModal from "../../manager/RejectRequestModal/RejectRequestModal";
+import RequestChangesModal from "../../manager/RequestChangesModal/RequestChangesModal";
+import EditRequestForm from "../EditRequestForm/EditRequestForm";
+import AdminActions from "../../admin/AdminActions/AdminActions";
 
 const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
   const { user } = useAuth();

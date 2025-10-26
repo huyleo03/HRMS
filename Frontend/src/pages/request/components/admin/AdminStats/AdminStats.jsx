@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import {
   TrendingUp,
   TrendingDown,
@@ -14,12 +15,15 @@ import {
   BarChart3,
   PieChart,
 } from "lucide-react";
-import { getAdminStats } from "../../../service/RequestService";
-import "../css/AdminStats.css";
-
+import { getAdminStats } from "../../../../../service/RequestService";
+import { getDepartmentOptions } from "../../../../../service/DepartmentService";
+import "./AdminStats.css";
+import { toast } from "react-toastify";
 const AdminStats = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [departments, setDepartments] = useState([]);
   const [filters, setFilters] = useState({
     startDate: "",
     endDate: "",
@@ -28,11 +32,33 @@ const AdminStats = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  useEffect(() => {
     fetchStats();
   }, [filters]);
 
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await getDepartmentOptions(token);
+      if (response.success) {
+        setDepartments(response.data || []);
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi tải danh sách phòng ban:", error);
+    }
+  };
+
   const fetchStats = async () => {
-    setLoading(true);
+    // Nếu đã có stats (không phải lần đầu), chỉ set isFiltering
+    if (stats) {
+      setIsFiltering(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
       const params = {};
       if (filters.startDate) params.startDate = filters.startDate;
@@ -45,6 +71,7 @@ const AdminStats = () => {
       console.error("❌ Lỗi khi tải thống kê:", error);
     } finally {
       setLoading(false);
+      setIsFiltering(false);
     }
   };
 
@@ -53,8 +80,131 @@ const AdminStats = () => {
   };
 
   const handleExport = () => {
-    // TODO: Implement export to Excel/PDF
-    console.log("📊 Exporting statistics...");
+    if (!stats) {
+      toast("Không có dữ liệu để xuất!");
+      return;
+    }
+
+    try {
+      // Tạo workbook mới
+      const wb = XLSX.utils.book_new();
+
+      // === SHEET 1: TỔNG QUAN ===
+      const summaryData = [
+        ["BÁO CÁO THỐNG KÊ YÊU CẦU - HRMS"],
+        [""],
+        ["Thời gian xuất:", new Date().toLocaleString("vi-VN")],
+        ["Bộ lọc:"],
+        [
+          "  - Từ ngày:",
+          filters.startDate || "Không có",
+        ],
+        [
+          "  - Đến ngày:",
+          filters.endDate || "Không có",
+        ],
+        [
+          "  - Phòng ban:",
+          filters.department
+            ? departments.find((d) => d._id === filters.department)
+                ?.department_name || "N/A"
+            : "Tất cả",
+        ],
+        [""],
+        ["TỔNG QUAN"],
+        ["Tổng số đơn:", stats.total],
+        ["Đã duyệt:", stats.byStatus?.Approved || 0],
+        ["Chờ duyệt:", stats.byStatus?.Pending || 0],
+        ["Từ chối:", stats.byStatus?.Rejected || 0],
+        ["Thời gian duyệt trung bình (giờ):", stats.avgApprovalTimeHours],
+      ];
+
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Tổng quan");
+
+      // === SHEET 2: THEO TRẠNG THÁI ===
+      const statusData = [
+        ["THỐNG KÊ THEO TRẠNG THÁI"],
+        [""],
+        ["Trạng thái", "Số lượng", "Tỷ lệ (%)"],
+      ];
+
+      Object.entries(stats.byStatus || {}).forEach(([status, count]) => {
+        const config = statusConfig[status];
+        const percentage = ((count / stats.total) * 100).toFixed(1);
+        statusData.push([config?.label || status, count, percentage]);
+      });
+
+      const wsStatus = XLSX.utils.aoa_to_sheet(statusData);
+      XLSX.utils.book_append_sheet(wb, wsStatus, "Theo trạng thái");
+
+      // === SHEET 3: THEO ĐỘ ƯU TIÊN ===
+      const priorityData = [
+        ["THỐNG KÊ THEO ĐỘ ƯU TIÊN"],
+        [""],
+        ["Độ ưu tiên", "Số lượng", "Tỷ lệ (%)"],
+      ];
+
+      Object.entries(stats.byPriority || {}).forEach(([priority, count]) => {
+        const config = priorityConfig[priority];
+        const percentage = ((count / stats.total) * 100).toFixed(1);
+        priorityData.push([config?.label || priority, count, percentage]);
+      });
+
+      const wsPriority = XLSX.utils.aoa_to_sheet(priorityData);
+      XLSX.utils.book_append_sheet(wb, wsPriority, "Theo độ ưu tiên");
+
+      // === SHEET 4: THEO LOẠI ĐƠN ===
+      const typeData = [
+        ["THỐNG KÊ THEO LOẠI ĐƠN"],
+        [""],
+        ["Loại đơn", "Số lượng"],
+      ];
+
+      Object.entries(stats.byType || {}).forEach(([type, count]) => {
+        typeData.push([type, count]);
+      });
+
+      const wsType = XLSX.utils.aoa_to_sheet(typeData);
+      XLSX.utils.book_append_sheet(wb, wsType, "Theo loại đơn");
+
+      // === SHEET 5: ĐƠN GẦN ĐÂY ===
+      const recentData = [
+        ["ĐƠN GẦN ĐÂY"],
+        [""],
+        ["Tiêu đề", "Loại", "Người gửi", "Phòng ban", "Trạng thái", "Ngày tạo"],
+      ];
+
+      stats.recentRequests?.forEach((request) => {
+        const config = statusConfig[request.status];
+        recentData.push([
+          request.subject,
+          request.type,
+          request.submittedBy?.full_name || "N/A",
+          request.department?.department_id?.department_name || "N/A",
+          config?.label || request.status,
+          new Date(request.created_at).toLocaleDateString("vi-VN"),
+        ]);
+      });
+
+      const wsRecent = XLSX.utils.aoa_to_sheet(recentData);
+      XLSX.utils.book_append_sheet(wb, wsRecent, "Đơn gần đây");
+
+      // Tạo tên file với timestamp
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/:/g, "-");
+      const fileName = `BaoCao_ThongKe_YeuCau_${timestamp}.xlsx`;
+
+      // Xuất file
+      XLSX.writeFile(wb, fileName);
+
+      console.log("✅ Đã xuất báo cáo Excel thành công!");
+    } catch (error) {
+      console.error("❌ Lỗi khi xuất Excel:", error);
+      alert("Có lỗi xảy ra khi xuất báo cáo. Vui lòng thử lại!");
+    }
   };
 
   if (loading) {
@@ -101,6 +251,16 @@ const AdminStats = () => {
 
   return (
     <div className="admin-stats">
+      {/* Loading Overlay khi đang filter */}
+      {isFiltering && (
+        <div className="filtering-overlay">
+          <div className="filtering-spinner">
+            <div className="spinner"></div>
+            <p>Đang tải dữ liệu...</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="stats-header">
         <div className="stats-title">
@@ -155,7 +315,11 @@ const AdminStats = () => {
                 onChange={(e) => handleFilterChange("department", e.target.value)}
               >
                 <option value="">Tất cả</option>
-                {/* TODO: Load departments from API */}
+                {departments.map((dept) => (
+                  <option key={dept._id} value={dept._id}>
+                    {dept.department_name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Star,
   Paperclip,
   Calendar,
   Users,
@@ -18,9 +17,9 @@ import {
   getStatusInfo,
   getPriorityColor,
   formatDate,
-} from "../../../utils/requestHelpers";
+} from "../../../../../utils/requestHelpers";
 
-const RequestItem = ({ request, isSelected, onSelect, onToggleStar }) => {
+const RequestItem = ({ request, isSelected, onSelect }) => {
   const statusInfo = getStatusInfo(request.status);
 
   const StatusIcon = {
@@ -41,20 +40,6 @@ const RequestItem = ({ request, isSelected, onSelect, onToggleStar }) => {
       }`}
       onClick={() => onSelect(request)}
     >
-      <div className="item-checkbox">
-        <input type="checkbox" onClick={(e) => e.stopPropagation()} />
-      </div>
-
-      <div
-        className={`item-star ${request.isStarred ? "starred" : ""}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleStar(request.id);
-        }}
-      >
-        <Star size={18} fill={request.isStarred ? "gold" : "none"} />
-      </div>
-
       <div className="item-avatar">
         <img src={request.submittedBy.avatar} alt={request.submittedBy.name} />
       </div>

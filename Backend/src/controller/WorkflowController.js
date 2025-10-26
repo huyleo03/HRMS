@@ -9,6 +9,7 @@ exports.getAllWorkflows = async (req, res) => {
   try {
     const workflows = await Workflow.find({ isActive: true })
       .populate("createdBy", "full_name email")
+      .populate("applicableDepartments", "department_name code")
       .sort({ requestType: 1 });
 
     res.status(200).json({

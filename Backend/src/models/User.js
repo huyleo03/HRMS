@@ -242,10 +242,6 @@ const userSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
-      totalDrafts: {
-        type: Number,
-        default: 0,
-      },
       storageUsed: {
         type: Number,
         default: 0,
@@ -372,7 +368,6 @@ userSchema.methods.isManagerOf = function (targetUserId) {
 userSchema.methods.updateMailStats = async function (stats) {
   if (stats.sentCount) this.mailStats.totalSent += stats.sentCount;
   if (stats.receivedCount) this.mailStats.totalReceived += stats.receivedCount;
-  if (stats.draftCount) this.mailStats.totalDrafts += stats.draftCount;
   if (stats.storageUsed) this.mailStats.storageUsed += stats.storageUsed;
 
   this.mailStats.lastActivityAt = new Date();

@@ -16,18 +16,18 @@ import {
   Shield,
   CheckCircle,
 } from "lucide-react";
-import "../css/CreateRequestModal.css";
-import { getWorkflowTemplate } from "../../../service/WorkflowService";
-import RequestTypeGrid from "./RequestTypeGrid";
+import "./CreateRequestModal.css";
+import { getWorkflowTemplate } from "../.././../../../service/WorkflowService";
+import RequestTypeGrid from "../RequestTypeGrid/RequestTypeGrid";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { createRequest } from "../../../service/RequestService";
+import { createRequest } from "../.././../../../service/RequestService";
 import {
   getCcSuggestions,
   searchUsersForCc,
-} from "../../../service/UserService";
-import { uploadFileToCloudinary } from "../../../service/CloudinaryService";
-import { useAuth } from "../../../contexts/AuthContext";
+} from "../.././../../../service/UserService";
+import { uploadFileToCloudinary } from "../.././../../../service/CloudinaryService";
+import { useAuth } from "../../../../../contexts/AuthContext";
 
 const CreateRequestModal = ({ onClose, onSubmit }) => {
   const { user } = useAuth(); // ✅ Get current user

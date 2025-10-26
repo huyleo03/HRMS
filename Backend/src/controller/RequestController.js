@@ -1,5 +1,6 @@
 const Request = require("../models/Request");
 const User = require("../models/User");
+const mongoose = require("mongoose");
 const {
   createNotificationForUser,
   createNotificationForMultipleUsers,
@@ -73,9 +74,6 @@ exports.createRequest = async (req, res) => {
       approvalFlow: resolvedApprovalFlow,
       cc: ccUserIds,
       status: "Pending",
-      senderStatus: {
-        isDraft: false,
-      },
     });
 
     await newRequest.save();
@@ -137,6 +135,13 @@ exports.createRequest = async (req, res) => {
 exports.getUserRequests = async (req, res) => {
   try {
     const userId = req.user.id;
+    
+    // ✅ Lấy thông tin user để kiểm tra role
+    const currentUser = await User.findById(userId).select('role');
+    if (!currentUser) {
+      return res.status(404).json({ message: "User không tồn tại" });
+    }
+    
     const {
       box = "inbox",
       page = 1,
@@ -153,41 +158,47 @@ exports.getUserRequests = async (req, res) => {
     let baseQuery = {};
     switch (box.toLowerCase()) {
       case "inbox":
-        baseQuery = {
-          "approvalFlow.approverId": userId,
-          "approvalFlow.status": "Pending",
-          status: { $in: ["Pending", "Manager_Approved"] },
-        };
+        // ✅ FIX: Chỉ hiển thị đơn đã đến lượt user hiện tại
+        if (currentUser.role === "Admin") {
+          // Admin chỉ nhận đơn status = "Manager_Approved" (đã qua Manager)
+          // HOẶC đơn gửi trực tiếp cho Admin (workflow 1 cấp)
+          baseQuery = {
+            "approvalFlow.approverId": userId,
+            "approvalFlow.status": "Pending",
+            status: "Manager_Approved"  // Chỉ lấy đơn đã qua Manager
+          };
+        } else {
+          // Manager/Employee: Lấy đơn Pending hoặc Manager_Approved
+          baseQuery = {
+            "approvalFlow.approverId": userId,
+            "approvalFlow.status": "Pending",
+            status: { $in: ["Pending", "Manager_Approved"] }
+          };
+        }
         break;
       case "sent":
         baseQuery = {
           submittedBy: userId,
-          "senderStatus.isDraft": false,
         };
         break;
       case "cc":
         baseQuery = { cc: userId };
         break;
-      case "starred":
-        baseQuery = {
-          submittedBy: userId,
-          "senderStatus.isStarred": true,
-        };
-        break;
-      case "drafts":
-        baseQuery = {
-          submittedBy: userId,
-          "senderStatus.isDraft": true,
-        };
-        break;
       case "all":
-        baseQuery = {
-          $or: [
-            { "approvalFlow.approverId": userId },
-            { submittedBy: userId },
-            { cc: userId },
-          ],
-        };
+        // ✅ FIX: Admin xem tất cả đơn, Employee/Manager chỉ xem đơn liên quan
+        if (currentUser.role === "Admin") {
+          // Admin xem tất cả (không filter)
+          baseQuery = {};
+        } else {
+          // Employee/Manager: Chỉ xem đơn liên quan
+          baseQuery = {
+            $or: [
+              { "approvalFlow.approverId": userId },
+              { submittedBy: userId },
+              { cc: userId },
+            ],
+          };
+        }
         break;
 
       // === ESSENTIAL BOXES ===
@@ -213,7 +224,6 @@ exports.getUserRequests = async (req, res) => {
         baseQuery = {
           submittedBy: userId,
           status: "Approved",
-          "senderStatus.isDraft": false,
         };
         break;
 
@@ -222,7 +232,6 @@ exports.getUserRequests = async (req, res) => {
         baseQuery = {
           submittedBy: userId,
           status: "Rejected",
-          "senderStatus.isDraft": false,
         };
         break;
 
@@ -231,7 +240,6 @@ exports.getUserRequests = async (req, res) => {
         baseQuery = {
           submittedBy: userId,
           status: { $in: ["Pending", "Manager_Approved"] },
-          "senderStatus.isDraft": false,
         };
         break;
 
@@ -240,7 +248,6 @@ exports.getUserRequests = async (req, res) => {
         baseQuery = {
           submittedBy: userId,
           status: "NeedsReview",
-          "senderStatus.isDraft": false,
         };
         break;
 
@@ -252,6 +259,21 @@ exports.getUserRequests = async (req, res) => {
           "approvalFlow.status": "Pending",
           status: { $in: ["Pending", "Manager_Approved"] },
           "slaTracking.slaDeadline": { $lt: now },
+        };
+        break;
+
+      // ✅ NEW: Đơn bị từ chối (Admin xem để có thể override)
+      case "rejected":
+        // Chỉ Admin/Manager mới có box này
+        if (!["Admin", "Manager"].includes(currentUser.role)) {
+          return res.status(403).json({
+            message: "Chỉ Admin/Manager mới có quyền xem box này"
+          });
+        }
+        
+        baseQuery = {
+          "approvalFlow.approverId": userId,  // Đơn có user trong approval flow
+          status: "Rejected"  // Đơn đã bị reject
         };
         break;
 
@@ -712,6 +734,112 @@ exports.cancelRequest = async (req, res) => {
   }
 };
 
+// ===== 7. OVERRIDE - GHI ĐÈ QUYẾT ĐỊNH (CHỈ ADMIN) =====
+exports.overrideRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { newStatus, comment } = req.body;
+
+    // 1. Kiểm tra quyền Admin
+    const admin = await User.findById(req.user.id);
+    if (!admin || admin.role !== "Admin") {
+      return res.status(403).json({
+        message: "Chỉ Admin mới có quyền ghi đè quyết định"
+      });
+    }
+
+    // 2. Validate input
+    if (!newStatus) {
+      return res.status(400).json({
+        message: "Vui lòng chọn trạng thái mới (Pending hoặc Approved)"
+      });
+    }
+
+    if (!comment || comment.trim() === "") {
+      return res.status(400).json({
+        message: "Vui lòng cung cấp lý do ghi đè quyết định"
+      });
+    }
+
+    // 3. Tìm đơn
+    const request = await Request.findById(requestId);
+    if (!request) {
+      return res.status(404).json({ message: "Không tìm thấy đơn" });
+    }
+
+    // 4. Gọi method override
+    await request.override(req.user.id, newStatus, comment);
+
+    // 5. Gửi notification cho người gửi đơn
+    await createNotificationForUser({
+      userId: request.submittedBy,
+      senderId: admin._id,
+      senderName: admin.full_name,
+      senderAvatar: admin.avatar,
+      type: "RequestOverride",
+      message: `Admin ${admin.full_name} đã ghi đè quyết định đơn ${request.type} của bạn. Trạng thái mới: ${newStatus}. Lý do: ${comment}`,
+      relatedId: request._id,
+      metadata: {
+        requestType: request.type,
+        requestSubject: request.subject,
+        newStatus: newStatus,
+        actionUrl: `/requests/${request._id}`,
+        comment: comment,
+      },
+    });
+
+    // 6. Gửi notification cho các approvers (nếu reset về Pending)
+    if (newStatus === "Pending") {
+      const approverIds = request.approvalFlow
+        .filter(a => a.role === "Approver")
+        .map(a => a.approverId);
+      
+      if (approverIds.length > 0) {
+        await createNotificationForMultipleUsers(approverIds, {
+          senderId: admin._id,
+          senderName: admin.full_name,
+          senderAvatar: admin.avatar,
+          type: "RequestOverride",
+          message: `Admin đã ghi đè và reset đơn ${request.type} về trạng thái Pending. Vui lòng xem xét lại.`,
+          relatedId: request._id,
+          metadata: {
+            requestType: request.type,
+            requestSubject: request.subject,
+            actionUrl: `/requests/${request._id}`,
+          },
+        });
+      }
+    }
+
+    // 7. Populate và trả về
+    await request.populate([
+      { path: "submittedBy", select: "full_name avatar email" },
+      { path: "approvalFlow.approverId", select: "full_name avatar" },
+      { path: "history.performedBy", select: "full_name avatar" },
+    ]);
+
+    res.status(200).json({
+      message: `Đã ghi đè quyết định thành công. Trạng thái mới: ${newStatus}`,
+      request,
+    });
+  } catch (error) {
+    console.error("❌ [Override Request] Lỗi:", error);
+    
+    if (error.message.includes("Chỉ Admin")) {
+      return res.status(403).json({ message: error.message });
+    }
+    
+    if (error.message.includes("không hợp lệ") || 
+        error.message.includes("Vui lòng")) {
+      return res.status(400).json({ message: error.message });
+    }
+    
+    res.status(500).json({
+      message: error.message || "Lỗi server",
+    });
+  }
+};
+
 // ============ ADMIN FUNCTIONS ============
 
 // GET ALL REQUESTS (Admin only)
@@ -1016,7 +1144,9 @@ exports.getAdminStats = async (req, res) => {
 
     // Add department filter if provided
     if (department) {
-      dateQuery.department = department;
+      dateQuery["department.department_id"] = new mongoose.Types.ObjectId(
+        department
+      );
     }
 
     // Get statistics
@@ -1029,31 +1159,31 @@ exports.getAdminStats = async (req, res) => {
       avgApprovalTime,
       recentRequests,
     ] = await Promise.all([
-      // Total requests (exclude drafts)
-      Request.countDocuments({ ...dateQuery, status: { $ne: "Draft" } }),
+      // Total requests
+      Request.countDocuments(dateQuery),
 
       // By status
       Request.aggregate([
-        { $match: { ...dateQuery, status: { $ne: "Draft" } } },
+        { $match: dateQuery },
         { $group: { _id: "$status", count: { $sum: 1 } } },
       ]),
 
       // By priority
       Request.aggregate([
-        { $match: { ...dateQuery, status: { $ne: "Draft" } } },
+        { $match: dateQuery },
         { $group: { _id: "$priority", count: { $sum: 1 } } },
       ]),
 
       // By type
       Request.aggregate([
-        { $match: { ...dateQuery, status: { $ne: "Draft" } } },
-        { $group: { _id: "$requestType", count: { $sum: 1 } } },
+        { $match: dateQuery },
+        { $group: { _id: "$type", count: { $sum: 1 } } },
       ]),
 
       // By department
       Request.aggregate([
-        { $match: { ...dateQuery, status: { $ne: "Draft" } } },
-        { $group: { _id: "$department", count: { $sum: 1 } } },
+        { $match: dateQuery },
+        { $group: { _id: "$department.department_id", count: { $sum: 1 } } },
         {
           $lookup: {
             from: "departments",
@@ -1063,7 +1193,7 @@ exports.getAdminStats = async (req, res) => {
           },
         },
         { $unwind: "$dept" },
-        { $project: { _id: 1, count: 1, name: "$dept.name" } },
+        { $project: { _id: 1, count: 1, name: "$dept.department_name" } },
       ]),
 
       // Average approval time (for approved requests)
@@ -1091,7 +1221,7 @@ exports.getAdminStats = async (req, res) => {
       ]),
 
       // Recent requests
-      Request.find({ ...dateQuery, status: { $ne: "Draft" } })
+      Request.find(dateQuery)
         .populate("submittedBy", "full_name email avatar")
         .populate("department.department_id", "department_name")
         .sort({ createdAt: -1 })

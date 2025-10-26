@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { X, Edit3, Save, Trash2, Paperclip, Upload, Loader } from "lucide-react";
-import { resubmitRequest } from "../../../service/RequestService";
-import { uploadFileToCloudinary } from "../../../service/CloudinaryService";
+import { resubmitRequest } from "../../../../../service/RequestService";
+import { uploadFileToCloudinary } from "../../../../../service/CloudinaryService";
 import { toast } from "react-toastify";
-import "../css/CreateRequestModal.css"; // ✅ Tái sử dụng CSS của CreateRequestModal
+import "../CreateRequestModal/CreateRequestModal.css"; 
 
 const EditRequestForm = ({ isOpen, onClose, requestToEdit, onSuccess }) => {
   const [formData, setFormData] = useState({});

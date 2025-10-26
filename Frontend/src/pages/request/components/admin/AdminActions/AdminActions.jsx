@@ -3,9 +3,9 @@ import { Shield, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import {
   forceApproveRequest,
   forceRejectRequest,
-} from "../../../service/RequestService";
+} from "../../../../../service/RequestService";
 import { toast } from "react-toastify";
-import "../css/AdminActions.css";
+import "./AdminActions.css";
 
 const AdminActions = ({ request, onActionSuccess }) => {
   const [showApproveModal, setShowApproveModal] = useState(false);

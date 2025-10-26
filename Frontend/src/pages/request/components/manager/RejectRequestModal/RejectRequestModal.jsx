@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, XCircle } from "lucide-react";
-import "../css/RejectRequestModal.css"; // Sẽ tạo file CSS này ở bước 2
+import "./RejectRequestModal.css"; 
 
 const RejectRequestModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
   const [reason, setReason] = useState("");

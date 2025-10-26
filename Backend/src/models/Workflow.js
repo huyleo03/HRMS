@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const User = mongoose.model("User");
+const Department = mongoose.model("Department");
 
 const approvalStepSchema = new mongoose.Schema({
   level: {
@@ -93,9 +95,6 @@ workflowSchema.index({ isActive: 1 });
 
 // ===== METHODS =====
 workflowSchema.methods.resolveApprovers = async function (user) {
-  const User = mongoose.model("User");
-  const Department = mongoose.model("Department");
-
   const resolvedApprovers = [];
 
   for (const step of this.approvalFlow) {
@@ -103,10 +102,28 @@ workflowSchema.methods.resolveApprovers = async function (user) {
 
     switch (step.approverType) {
       case "DIRECT_MANAGER":
-        if (user.manager_id) {
-          approver = await User.findById(user.manager_id).select(
+        // Employee: Dùng manager_id (người quản lý trực tiếp)
+        if (user.role === "Employee") {
+          if (user.manager_id) {
+            approver = await User.findById(user.manager_id).select(
+              "_id full_name email avatar"
+            );
+          } else {
+            throw new Error("Employee phải có người quản lý trực tiếp");
+          }
+        } 
+        // Manager: Tự động chuyển lên Admin để duyệt
+        else if (user.role === "Manager") {
+          approver = await User.findOne({ role: "Admin" }).select(
             "_id full_name email avatar"
           );
+          if (!approver) {
+            throw new Error("Không tìm thấy Admin để duyệt đơn của Manager");
+          }
+        } 
+        // Admin: Không được gửi đơn (đã được block ở RequestController)
+        else {
+          throw new Error("Admin không được tạo đơn yêu cầu");
         }
         break;
 

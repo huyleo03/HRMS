@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Shield, Search, Filter, Calendar, User, Eye } from "lucide-react";
-import { getAdminRequests } from "../../../service/RequestService";
-import "../css/AdminRequestList.css";
+import { getAdminRequests } from "../../../../../service/RequestService";
+import "./AdminRequestList.css";
 
 const AdminRequestList = forwardRef(({ onSelectRequest }, ref) => {
   const [requests, setRequests] = useState([]);

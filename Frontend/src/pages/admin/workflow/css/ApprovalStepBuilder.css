@@ -1,0 +1,232 @@
+/* ============================================
+   Approval Step Builder Styles
+   ============================================ */
+
+.approval-step-builder {
+  width: 100%;
+}
+
+/* ============================================
+   Header Section
+   ============================================ */
+.approval-step-builder__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.approval-step-builder__header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.approval-step-builder__header p {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: #8c8c8c;
+}
+
+/* ============================================
+   Steps List
+   ============================================ */
+.approval-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* ============================================
+   Step Item Wrapper (Sortable)
+   ============================================ */
+.approval-step-item-wrapper {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.approval-step-item-wrapper.dragging {
+  opacity: 0.5;
+  z-index: 999;
+}
+
+/* ============================================
+   Step Item Card
+   ============================================ */
+.approval-step-item {
+  border: 2px solid #f0f0f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.approval-step-item:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+}
+
+.approval-step-item .ant-card-head {
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.approval-step-item .ant-card-body {
+  padding: 20px;
+}
+
+/* ============================================
+   Step Title
+   ============================================ */
+.approval-step-item__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.step-drag-handle {
+  cursor: grab;
+  padding: 4px;
+  color: #8c8c8c;
+  transition: color 0.2s;
+}
+
+.step-drag-handle:active {
+  cursor: grabbing;
+}
+
+.step-drag-handle:hover {
+  color: #1890ff;
+}
+
+.step-level {
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.step-icon {
+  font-size: 20px;
+}
+
+/* ============================================
+   Step Info Box
+   ============================================ */
+.approval-step-info {
+  margin-top: 12px;
+}
+
+.approval-step-info ul {
+  list-style-type: disc;
+}
+
+.approval-step-info li {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ============================================
+   Builder Info Footer
+   ============================================ */
+.approval-step-builder__info {
+  padding: 16px;
+  background: #f0f8ff;
+  border-radius: 6px;
+  border: 1px solid #d6e4ff;
+}
+
+.approval-step-builder__info > div > div {
+  font-size: 13px;
+  color: #595959;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+.approval-step-builder .ant-empty {
+  padding: 48px 24px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 2px dashed #d9d9d9;
+  margin-bottom: 24px;
+}
+
+/* ============================================
+   Form Customizations
+   ============================================ */
+.approval-step-item .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.approval-step-item .ant-form-item:last-child {
+  margin-bottom: 0;
+}
+
+.approval-step-item .ant-form-item-label > label {
+  font-weight: 500;
+  color: #262626;
+}
+
+/* ============================================
+   Select Dropdown Custom
+   ============================================ */
+.approval-step-item .ant-select-dropdown {
+  z-index: 9999;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 768px) {
+  .approval-step-builder__header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .approval-step-item .ant-card-body {
+    padding: 16px;
+  }
+
+  .approval-step-builder__info > div > div {
+    font-size: 12px;
+  }
+}
+
+/* ============================================
+   Drag & Drop Visual Feedback
+   ============================================ */
+.approval-step-item-wrapper[style*="transform"] {
+  z-index: 1000;
+}
+
+.approval-step-item-wrapper:active .step-drag-handle {
+  cursor: grabbing;
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+.text-muted {
+  color: #8c8c8c;
+}
+
+/* ============================================
+   Select Dropdown Customization
+   ============================================ */
+/* Fix Select Option with description */
+.ant-select-dropdown .ant-select-item-option-content {
+  white-space: normal !important;
+  line-height: 1.5 !important;
+}
+
+/* Ensure dropdown items have proper height */
+.ant-select-dropdown .ant-select-item {
+  min-height: auto !important;
+  padding: 8px 12px !important;
+}
+
+/* Style for selected value in input */
+.ant-select-selection-item {
+  display: flex;
+  align-items: center;
+}

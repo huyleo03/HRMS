@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, AlertCircle } from "lucide-react";
-import "../css/RequestChangesModal.css"; // Sẽ tạo file CSS này ở bước 2
+import "./RequestChangesModal.css"; 
 
 const RequestChangesModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
   const [comment, setComment] = useState("");

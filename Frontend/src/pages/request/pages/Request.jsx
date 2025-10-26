@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import RequestSidebar from "../components/RequestSidebar";
-import RequestToolbar from "../components/RequestToolbar";
-import RequestList from "../components/RequestList";
-import RequestDetail from "../components/RequestDetail";
-import CreateRequestModal from "../components/CreateRequestModal";
-import AdminRequestList from "../components/AdminRequestList";
-import AdminStats from "../components/AdminStats";
+import RequestSidebar from "../components/employee/RequestSidebar/RequestSidebar";
+import RequestToolbar from "../components/common/RequestToolbar/RequestToolbar";
+import RequestList from "../components/employee/RequestList/RequestList";
+import RequestDetail from "../components/employee/RequestDetail/RequestDetail";
+import CreateRequestModal from "../components/employee/CreateRequestModal/CreateRequestModal";
+import AdminRequestList from "../components/admin/AdminRequestList/AdminRequestList";
+import AdminStats from "../components/admin/AdminStats/AdminStats";
 import { getUserRequests } from "../../../service/RequestService";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -18,7 +18,7 @@ const Request = () => {
 
   // State Management
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const adminListRef = useRef(); // ✅ SỬA: Dùng useRef thay vì React.useRef()
+  const adminListRef = useRef(); 
   const [requests, setRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -39,7 +39,7 @@ const Request = () => {
   const fetchRequests = useCallback(
     async (box = "inbox", page = 1) => {
       setIsLoading(true);
-      const startTime = Date.now(); // ⏱️ Bắt đầu đếm thời gian
+      const startTime = Date.now(); 
       
       try {
         const params = {
@@ -100,22 +100,6 @@ const Request = () => {
     setPrevActiveTab(activeTab);
     return () => clearTimeout(delayDebounceFn);
   }, [activeTab, searchQuery, filterStatus, fetchRequests, prevActiveTab]);
-
-  const handleToggleStar = useCallback((requestId) => {
-    setRequests((prev) =>
-      prev.map((req) =>
-        req._id === requestId
-          ? {
-              ...req,
-              senderStatus: {
-                ...req.senderStatus,
-                isStarred: !req.senderStatus?.isStarred,
-              },
-            }
-          : req
-      )
-    );
-  }, []);
 
   const handleSelectRequest = useCallback((request) => {
     console.log("🔍 [Request] Selected request:", request._id);
@@ -233,7 +217,6 @@ const Request = () => {
               requests={requests}
               selectedRequest={selectedRequest}
               onSelectRequest={handleSelectRequest}
-              onToggleStar={handleToggleStar}
               hasSelectedRequest={!!selectedRequest}
               isLoading={isLoading}
               activeTab={activeTab}

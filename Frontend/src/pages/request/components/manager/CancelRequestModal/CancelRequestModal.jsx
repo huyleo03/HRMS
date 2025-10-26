@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, AlertTriangle } from "lucide-react";
-import "../css/CancelRequestModal.css";
+import "./CancelRequestModal.css";
 
 const CancelRequestModal = ({ isOpen, onClose, onConfirm, isSubmitting }) => {
   const [cancelReason, setCancelReason] = useState("");

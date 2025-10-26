@@ -25,6 +25,8 @@ import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.js
 import EmployeeAttendance from "./pages/attendance/EmployeeAttendance.jsx";
 import ManagerAttendancePage from "./pages/attendance/ManagerAttendancePage.jsx";
 import AdminAttendancePage from "./pages/attendance/AdminAttendancePage.jsx";
+import WorkflowManagement from "./pages/admin/workflow/WorkflowManagement.jsx";
+import WorkflowForm from "./pages/admin/workflow/WorkflowForm.jsx";
 
 function App() {
   return (
@@ -69,6 +71,10 @@ function App() {
             />
             <Route path="/request" element={<Request />} />
             <Route path="/attendance" element={<AdminAttendancePage />} />
+            {/* Workflow Routes */}
+            <Route path="/admin/workflow" element={<WorkflowManagement />} />
+            <Route path="/admin/workflow/create" element={<WorkflowForm />} />
+            <Route path="/admin/workflow/edit/:id" element={<WorkflowForm />} />
           </Route>
 
           {/* --- Manager Routes --- */}

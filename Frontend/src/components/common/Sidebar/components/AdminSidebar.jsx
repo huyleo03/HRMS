@@ -28,6 +28,11 @@ const Sidebar = () => {
       icon: "📅",
     },
     {
+      path: "/admin/workflow",
+      label: "Workflow",
+      icon: "🔄",
+    },
+    {
       path: "/payroll",
       label: "Payroll",
       icon: "💰",
@@ -57,7 +62,8 @@ const Sidebar = () => {
     return (
       location.pathname === path ||
       (path === "/employees" && location.pathname.startsWith("/employees")) ||
-      (path === "/departments" && location.pathname.startsWith("/view-department"))
+      (path === "/departments" && location.pathname.startsWith("/view-department")) ||
+      (path === "/admin/workflow" && location.pathname.startsWith("/admin/workflow"))
     );
   };
 

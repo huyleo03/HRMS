@@ -187,6 +187,36 @@ const requestSchema = new mongoose.Schema(
       },
     ],
 
+    // ===== HISTORY - Lịch sử thay đổi (cho Override) =====
+    history: [
+      {
+        action: {
+          type: String,
+          enum: ["Override", "Escalate", "Reopen"],
+        },
+        performedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        performedByName: {
+          type: String,
+        },
+        oldStatus: {
+          type: String,
+        },
+        newStatus: {
+          type: String,
+        },
+        comment: {
+          type: String,
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
     // ===== THREAD - Thêm mới =====
     threadId: {
       type: String,
@@ -200,14 +230,6 @@ const requestSchema = new mongoose.Schema(
 
     // ===== TRẠNG THÁI NGƯỜI GỬI - Thêm mới =====
     senderStatus: {
-      isDraft: {
-        type: Boolean,
-        default: false,
-      },
-      isStarred: {
-        type: Boolean,
-        default: false,
-      },
       isDeleted: {
         type: Boolean,
         default: false,
@@ -292,9 +314,9 @@ requestSchema.pre("save", function (next) {
   next();
 });
 
-// Set sentAt khi gửi
+// Set sentAt khi gửi (luôn set nếu chưa có)
 requestSchema.pre("save", function (next) {
-  if (!this.senderStatus.isDraft && !this.sentAt) {
+  if (this.isNew && !this.sentAt) {
     this.sentAt = new Date();
   }
   next();
@@ -503,6 +525,70 @@ requestSchema.methods.cancel = function (userId, comment = "") {
   return this.save();
 };
 
+// ===== OVERRIDE - GHI ĐÈ QUYẾT ĐỊNH (CHỈ ADMIN) =====
+requestSchema.methods.override = async function (adminId, newStatus, comment = "") {
+  const User = mongoose.model("User");
+  const admin = await User.findById(adminId).select("role full_name avatar");
+  
+  // Chỉ Admin mới có quyền override
+  if (!admin || admin.role !== "Admin") {
+    throw new Error("Chỉ Admin mới có quyền ghi đè quyết định");
+  }
+  
+  // Kiểm tra newStatus hợp lệ
+  if (!["Pending", "Approved"].includes(newStatus)) {
+    throw new Error("Status không hợp lệ. Chỉ chấp nhận 'Pending' hoặc 'Approved'");
+  }
+  
+  // Không thể override đơn Cancelled hoặc Completed
+  if (["Cancelled", "Completed"].includes(this.status)) {
+    throw new Error("Không thể ghi đè đơn đã hủy hoặc hoàn thành");
+  }
+  
+  if (!comment || comment.trim() === "") {
+    throw new Error("Vui lòng cung cấp lý do ghi đè quyết định");
+  }
+  
+  // Log lại lịch sử override
+  if (!this.history) {
+    this.history = [];
+  }
+  
+  this.history.push({
+    action: "Override",
+    performedBy: adminId,
+    performedByName: admin.full_name,
+    oldStatus: this.status,
+    newStatus: newStatus,
+    comment: comment,
+    timestamp: new Date()
+  });
+  
+  if (newStatus === "Pending") {
+    // Reset tất cả approvers về Pending
+    this.approvalFlow.forEach(approver => {
+      if (approver.role === "Approver") {
+        approver.status = "Pending";
+        approver.comment = "";
+        approver.approvedAt = null;
+      }
+    });
+    this.status = "Pending";
+  } else if (newStatus === "Approved") {
+    // Approve tất cả approvers
+    this.approvalFlow.forEach(approver => {
+      if (approver.role === "Approver") {
+        approver.status = "Approved";
+        approver.comment = `Admin override: ${comment}`;
+        approver.approvedAt = new Date();
+      }
+    });
+    this.status = "Approved";
+  }
+  
+  return this.save();
+};
+
 // Thêm comment
 requestSchema.methods.addComment = function (
   userId,
@@ -520,15 +606,7 @@ requestSchema.methods.addComment = function (
   return this.save();
 };
 
-// Toggle star
-requestSchema.methods.toggleStar = function (userId) {
-  if (this.submittedBy.toString() === userId.toString()) {
-    this.senderStatus.isStarred = !this.senderStatus.isStarred;
-  }
-  return this.save();
-};
-
-// ===== INDEXES =====
+// ===== ĐÁNH DẤU ĐÃ ĐỌC =====
 
 // ✅ BASIC INDEXES
 requestSchema.index({ requestId: 1 }, { unique: true });
