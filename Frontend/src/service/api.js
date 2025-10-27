@@ -124,6 +124,11 @@ export const apiCall = async (endpoint, options = {}) => {
   try {
     const response = await fetch(url, config);
 
+    // Nếu status 204 (No Content) - không có body
+    if (response.status === 204) {
+      return { success: true };
+    }
+
     const data = await response.json();
 
     if (!response.ok) {

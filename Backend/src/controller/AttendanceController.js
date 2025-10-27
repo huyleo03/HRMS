@@ -33,26 +33,25 @@ async function loadConfig() {
 
 // ============ HELPERS ============
 
-// Normalize IP address (convert IPv6 localhost to IPv4, extract IPv4 from IPv6-mapped)
-function normalizeIP(req) {
-  let clientIP = 
-    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-    req.headers['x-real-ip'] ||
-    req.connection.remoteAddress ||
-    req.socket.remoteAddress ||
-    req.ip;
+// Hàm lấy IP thật của client (xử lý proxy, load balancer)
+function getClientIP(req) {
+  // Thử lấy từ các headers khác nhau (do proxy/load balancer set)
+  const forwarded = req.headers['x-forwarded-for'];
+  const realIP = req.headers['x-real-ip'];
+  const cfConnectingIP = req.headers['cf-connecting-ip']; // Cloudflare
   
-  // Convert IPv6 localhost to IPv4 for consistency
-  if (clientIP === '::1' || clientIP === '::ffff:127.0.0.1') {
-    clientIP = '127.0.0.1';
+  // X-Forwarded-For có thể chứa nhiều IP: "client, proxy1, proxy2"
+  // Lấy IP đầu tiên (IP của client thật)
+  if (forwarded) {
+    const ips = forwarded.split(',').map(ip => ip.trim());
+    return ips[0];
   }
   
-  // If it's IPv6-mapped IPv4, extract the IPv4 part
-  if (clientIP && clientIP.startsWith('::ffff:')) {
-    clientIP = clientIP.substring(7);
-  }
+  if (realIP) return realIP;
+  if (cfConnectingIP) return cfConnectingIP;
   
-  return clientIP;
+  // Fallback về req.ip hoặc remoteAddress
+  return req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
 }
 
 function normalizeDate(date) {
@@ -61,83 +60,36 @@ function normalizeDate(date) {
   return d;
 }
 
-function calculateStatus(clockIn, clockOut, config) {
+function calculateStatus(clockIn, config) {
   const clockInTime = new Date(clockIn);
   const [startHour, startMinute] = config.workStartTime.split(":").map(Number);
-  const [endHour, endMinute] = config.workEndTime.split(":").map(Number);
   
-  // Scheduled start time
   const scheduledStart = new Date(clockInTime);
   scheduledStart.setHours(startHour, startMinute, 0, 0);
   
-  // Scheduled end time
-  const scheduledEnd = new Date(clockInTime);
-  scheduledEnd.setHours(endHour, endMinute, 0, 0);
-  
-  // Calculate late minutes (vào muộn)
   const lateMs = clockInTime - scheduledStart;
   const lateMinutes = Math.max(0, Math.floor(lateMs / 60000));
-  const isLate = lateMinutes > config.gracePeriodMinutes;
-  
-  // Calculate early leave (về sớm) - chỉ tính nếu có clockOut
-  let earlyLeaveMinutes = 0;
-  let isEarlyLeave = false;
-  
-  if (clockOut) {
-    const clockOutTime = new Date(clockOut);
-    const earlyMs = scheduledEnd - clockOutTime;
-    earlyLeaveMinutes = Math.max(0, Math.floor(earlyMs / 60000));
-    isEarlyLeave = earlyLeaveMinutes > 0;
-  }
-  
-  // Determine status
-  let status = "Present";
-  if (isLate && isEarlyLeave) {
-    status = "Late & Early Leave";
-  } else if (isLate) {
-    status = "Late";
-  } else if (isEarlyLeave) {
-    status = "Early Leave";
-  }
   
   return {
-    isLate,
-    lateMinutes: isLate ? lateMinutes : 0,
-    isEarlyLeave,
-    earlyLeaveMinutes: isEarlyLeave ? earlyLeaveMinutes : 0,
-    status,
+    isLate: lateMinutes > config.gracePeriodMinutes,
+    lateMinutes: lateMinutes > config.gracePeriodMinutes ? lateMinutes : 0,
+    status: lateMinutes > config.gracePeriodMinutes ? "Late" : "Present",
   };
 }
 
 function calculateWorkHours(clockIn, clockOut, config) {
-  if (!clockIn || !clockOut) return { workHours: 0, overtimeHours: 0, overtimeMinutes: 0 };
+  if (!clockIn || !clockOut) return { workHours: 0, overtimeHours: 0 };
   
-  const clockInTime = new Date(clockIn);
-  const clockOutTime = new Date(clockOut);
-  const [endHour, endMinute] = config.workEndTime.split(":").map(Number);
-  
-  // Calculate actual work time
-  const workMs = clockOutTime - clockInTime;
+  const workMs = new Date(clockOut) - new Date(clockIn);
   const workMinutes = Math.floor(workMs / 60000);
   const workHours = +(workMinutes / 60).toFixed(2);
   
-  // Calculate overtime (làm thêm sau giờ tan làm)
-  const scheduledEnd = new Date(clockInTime);
-  scheduledEnd.setHours(endHour, endMinute, 0, 0);
-  
-  const overtimeMs = Math.max(0, clockOutTime - scheduledEnd);
-  const overtimeMinutes = Math.floor(overtimeMs / 60000);
-  
-  // Chỉ tính OT nếu >= minimum OT minutes
+  const overtimeMinutes = Math.max(0, workMinutes - (config.standardWorkHours * 60));
   const overtimeHours = overtimeMinutes >= config.otMinimumMinutes 
     ? +(overtimeMinutes / 60).toFixed(2) 
     : 0;
   
-  return { 
-    workHours, 
-    overtimeHours,
-    overtimeMinutes: overtimeMinutes >= config.otMinimumMinutes ? overtimeMinutes : 0
-  };
+  return { workHours, overtimeHours };
 }
 
 // ============ EMPLOYEE ENDPOINTS ============
@@ -145,12 +97,10 @@ function calculateWorkHours(clockIn, clockOut, config) {
 // 1. Check-in
 exports.clockIn = async (req, res) => {
   try {
+    const CONFIG = await loadConfig();
     const userId = req.user._id;
     const { photo } = req.body;
-    const clientIP = normalizeIP(req);
-    
-    // Load config từ database
-    const CONFIG = await loadConfig();
+    const clientIP = getClientIP(req);
     
     // Kiểm tra IP (intranet) - so sánh chính xác
     const isIntranet = CONFIG.allowedIPs.some(ip => ip === clientIP);
@@ -158,7 +108,15 @@ exports.clockIn = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Bạn không ở trong mạng nội bộ công ty. Vui lòng kết nối mạng văn phòng.",
-        debug: { clientIP, allowedIPs: CONFIG.allowedIPs },
+        debug: { 
+          clientIP, 
+          allowedIPs: CONFIG.allowedIPs,
+          headers: {
+            'x-forwarded-for': req.headers['x-forwarded-for'],
+            'x-real-ip': req.headers['x-real-ip'],
+            'req.ip': req.ip
+          }
+        },
       });
     }
     
@@ -180,9 +138,7 @@ exports.clockIn = async (req, res) => {
     }
     
     const now = new Date();
-    
-    // Chỉ tính status về "Late" khi check-in, chưa có clockOut
-    const { isLate, lateMinutes, status } = calculateStatus(now, null, CONFIG);
+    const { isLate, lateMinutes, status } = calculateStatus(now, CONFIG);
     
     const attendance = existing || new Attendance({
       userId,
@@ -213,12 +169,10 @@ exports.clockIn = async (req, res) => {
 // 2. Check-out
 exports.clockOut = async (req, res) => {
   try {
+    const CONFIG = await loadConfig();
     const userId = req.user._id;
     const { photo } = req.body;
-    const clientIP = normalizeIP(req);
-    
-    // Load config từ database
-    const CONFIG = await loadConfig();
+    const clientIP = getClientIP(req);
     
     const today = normalizeDate(new Date());
     const attendance = await Attendance.findOne({ userId, date: today });
@@ -239,34 +193,39 @@ exports.clockOut = async (req, res) => {
     }
     
     const now = new Date();
+    const { workHours, overtimeHours } = calculateWorkHours(attendance.clockIn, now, CONFIG);
     
-    // Tính lại status (bao gồm cả early leave) và work hours + OT
-    const statusInfo = calculateStatus(attendance.clockIn, now, CONFIG);
-    const workInfo = calculateWorkHours(attendance.clockIn, now, CONFIG);
+    // ========== OPTION B: KIỂM TRA EARLY LEAVE ==========
+    const clockOutTime = now;
+    const [endHour, endMinute] = CONFIG.workEndTime.split(":").map(Number);
+    const scheduledEnd = new Date(clockOutTime);
+    scheduledEnd.setHours(endHour, endMinute, 0, 0);
+    
+    const isEarlyLeave = clockOutTime < scheduledEnd;
+    
+    // Update status dựa trên cả Late (từ check-in) VÀ Early Leave (từ check-out)
+    let finalStatus = attendance.status; // Giữ status cũ (Present hoặc Late)
+    
+    if (attendance.isLate && isEarlyLeave) {
+      finalStatus = "Late & Early Leave"; // Cả 2 đều sai
+    } else if (isEarlyLeave) {
+      finalStatus = "Early Leave"; // Chỉ về sớm
+    }
+    // Nếu attendance.isLate = true và isEarlyLeave = false → giữ "Late"
+    // Nếu cả 2 đều false → giữ "Present"
     
     attendance.clockOut = now;
     attendance.clockOutIP = clientIP;
     attendance.clockOutPhoto = photo;
-    attendance.status = statusInfo.status;
-    attendance.isLate = statusInfo.isLate;
-    attendance.lateMinutes = statusInfo.lateMinutes;
-    attendance.workHours = workInfo.workHours;
-    attendance.overtimeHours = workInfo.overtimeHours;
+    attendance.workHours = workHours;
+    attendance.overtimeHours = overtimeHours;
+    attendance.status = finalStatus; // CẬP NHẬT STATUS SAU CHECK-OUT
     
     await attendance.save();
     
-    let message = `Check-out thành công! Bạn đã làm việc ${workInfo.workHours} giờ`;
-    if (workInfo.overtimeHours > 0) {
-      message += `, OT ${workInfo.overtimeHours} giờ`;
-    }
-    if (statusInfo.isEarlyLeave) {
-      message += `. ⚠️ Bạn về sớm ${statusInfo.earlyLeaveMinutes} phút`;
-    }
-    message += ".";
-    
     res.status(200).json({
       success: true,
-      message,
+      message: `Check-out thành công! Bạn đã làm việc ${workHours} giờ${overtimeHours > 0 ? `, OT ${overtimeHours} giờ` : ""}.`,
       data: attendance,
     });
   } catch (error) {
@@ -418,24 +377,18 @@ exports.getDepartmentReport = async (req, res) => {
     
     const records = await Attendance.find(query).lean();
     
-    const presentCount = records.filter(r => r.status === "Present").length;
-    const lateCount = records.filter(r => r.status === "Late").length;
-    const absentCount = records.filter(r => r.status === "Absent").length;
-    const onLeaveCount = records.filter(r => r.status === "On Leave").length;
-    
     const stats = {
       totalRecords: records.length,
-      present: presentCount,
-      late: lateCount,
-      absent: absentCount,
-      onLeave: onLeaveCount,
+      present: records.filter(r => r.status === "Present").length,
+      late: records.filter(r => r.status === "Late").length,
+      absent: records.filter(r => r.status === "Absent").length,
+      onLeave: records.filter(r => r.status === "On Leave").length,
       avgWorkHours: records.length > 0 
         ? +(records.reduce((sum, r) => sum + (r.workHours || 0), 0) / records.length).toFixed(2)
         : 0,
       totalOT: +records.reduce((sum, r) => sum + (r.overtimeHours || 0), 0).toFixed(2),
-      // Tỷ lệ đúng giờ = (Present + Late) / Total * 100
       onTimeRate: records.length > 0 
-        ? +(((presentCount + lateCount) / records.length) * 100).toFixed(1)
+        ? +((records.filter(r => !r.isLate).length / records.length) * 100).toFixed(1)
         : 0,
     };
     
@@ -546,24 +499,18 @@ exports.getCompanyReport = async (req, res) => {
     
     const records = await Attendance.find(query).lean();
     
-    const presentCount = records.filter(r => r.status === "Present").length;
-    const lateCount = records.filter(r => r.status === "Late").length;
-    const absentCount = records.filter(r => r.status === "Absent").length;
-    const onLeaveCount = records.filter(r => r.status === "On Leave").length;
-    
     const stats = {
       totalRecords: records.length,
-      present: presentCount,
-      late: lateCount,
-      absent: absentCount,
-      onLeave: onLeaveCount,
+      present: records.filter(r => r.status === "Present").length,
+      late: records.filter(r => r.status === "Late").length,
+      absent: records.filter(r => r.status === "Absent").length,
+      onLeave: records.filter(r => r.status === "On Leave").length,
       avgWorkHours: records.length > 0 
         ? +(records.reduce((sum, r) => sum + (r.workHours || 0), 0) / records.length).toFixed(2)
         : 0,
       totalOT: +records.reduce((sum, r) => sum + (r.overtimeHours || 0), 0).toFixed(2),
-      // Tỷ lệ đúng giờ = (Present + Late) / Total * 100
       onTimeRate: records.length > 0 
-        ? +(((presentCount + lateCount) / records.length) * 100).toFixed(1)
+        ? +((records.filter(r => !r.isLate).length / records.length) * 100).toFixed(1)
         : 0,
     };
     
@@ -578,9 +525,6 @@ exports.manualAdjust = async (req, res) => {
   try {
     const { attendanceId } = req.params;
     const { clockIn, clockOut, status, reason } = req.body;
-    
-    // Load config từ database
-    const CONFIG = await loadConfig();
     
     const attendance = await Attendance.findById(attendanceId);
     if (!attendance) {
@@ -776,28 +720,49 @@ exports.exportData = async (req, res) => {
 
 // ============ PING ENDPOINT (Intranet Check) ============
 exports.pingIntranet = async (req, res) => {
-  try {
-    const clientIP = normalizeIP(req);
-    
-    // Load config từ database
-    const CONFIG = await loadConfig();
-    const isAllowed = CONFIG.allowedIPs.some(ip => ip === clientIP);
-    
-    if (isAllowed) {
-      return res.status(204).send(); // No content - success
-    } else {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Not in office network.",
-        debug: { clientIP, allowedIPs: CONFIG.allowedIPs },
-      });
-    }
-  } catch (error) {
-    return res.status(500).json({
+  const CONFIG = await loadConfig();
+  const clientIP = getClientIP(req);
+  const isAllowed = CONFIG.allowedIPs.some(ip => ip === clientIP);
+  
+  if (isAllowed) {
+    return res.status(204).send(); // No content - success
+  } else {
+    return res.status(403).json({
       success: false,
-      message: error.message,
+      message: "Access denied. Not in office network.",
+      debug: { 
+        clientIP, 
+        allowedIPs: CONFIG.allowedIPs,
+        headers: {
+          'x-forwarded-for': req.headers['x-forwarded-for'],
+          'x-real-ip': req.headers['x-real-ip'],
+          'req.ip': req.ip
+        }
+      },
     });
   }
+};
+
+// ============ DEBUG: CHECK MY IP ============
+exports.checkMyIP = (req, res) => {
+  const clientIP = getClientIP(req);
+  const isAllowed = CONFIG.allowedIPs.some(ip => ip === clientIP);
+  
+  return res.status(200).json({
+    success: true,
+    message: "Thông tin IP của bạn",
+    yourIP: clientIP,
+    isAllowed: isAllowed,
+    allowedIPs: CONFIG.allowedIPs,
+    allHeaders: {
+      'x-forwarded-for': req.headers['x-forwarded-for'],
+      'x-real-ip': req.headers['x-real-ip'],
+      'cf-connecting-ip': req.headers['cf-connecting-ip'],
+      'req.ip': req.ip,
+      'remoteAddress': req.connection?.remoteAddress,
+      'socketAddress': req.socket?.remoteAddress
+    }
+  });
 };
 
 module.exports = exports;

@@ -13,6 +13,10 @@ const routes = require('./src/routes');
 
 const app = express();
 
+// ⭐ Trust proxy - QUAN TRỌNG cho việc lấy IP thật từ proxy/load balancer
+// Render, Heroku, AWS đều dùng reverse proxy
+app.set('trust proxy', true);
+
 // Security middleware - Configure helmet to allow CORS
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -23,7 +27,8 @@ app.use(helmet({
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  message: 'Too many requests from this IP, please try again later.',
+  validate: {trustProxy: false} // Disable warning khi dùng trust proxy
 });
 app.use(limiter);
 
@@ -32,15 +37,23 @@ const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map(url => url.trim())
   : ['http://localhost:3000'];
 
+// Log để debug
+console.log('🌐 Allowed Origins:', allowedOrigins);
+console.log('🔑 Environment:', process.env.NODE_ENV);
+
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('📥 Request from origin:', origin);
+    
     // Cho phép requests không có origin (mobile apps, postman, curl)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+      console.log('✅ CORS allowed for:', origin);
       callback(null, true);
     } else {
       console.log(`❌ CORS blocked origin: ${origin}`);
+      console.log(`   Allowed origins:`, allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import {
   Clock,
@@ -23,18 +23,22 @@ import {
   getTodayStatus,
   getMyHistory,
 } from "../../service/AttendanceService";
+import FaceRecognitionService from "../../service/FaceRecognitionService";
+import { useAuth } from "../../contexts/AuthContext";
 import "./EmployeeAttendance.css";
 
 const ITEMS_PER_PAGE = 10;
 
 const EmployeeAttendance = () => {
   // State Management
+  const { user } = useAuth(); // Lấy user info
   const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'history'
   const [todayStatus, setTodayStatus] = useState(null);
   const [history, setHistory] = useState([]);
   const [isIntranet, setIsIntranet] = useState(false);
   const [isCheckingNetwork, setIsCheckingNetwork] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isFaceVerifying, setIsFaceVerifying] = useState(false); // Face verification state
   const [showCamera, setShowCamera] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [actionType, setActionType] = useState(null); // 'in' | 'out'
@@ -75,6 +79,7 @@ const EmployeeAttendance = () => {
     if (activeTab === "history") {
       fetchHistory(1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, filters]);
 
   // ============ API CALLS ============
@@ -177,8 +182,79 @@ const EmployeeAttendance = () => {
     }
 
     setIsProcessing(true);
+    setIsFaceVerifying(true);
 
     try {
+      // ========== BƯỚC 1: XÁC THỰC KHUÔN MẶT ==========
+      // Verify face cho CẢ check-in VÀ check-out
+      const profilePhoto = user?.avatar;
+
+      if (!profilePhoto) {
+        toast.error("❌ Bạn chưa có ảnh đại diện trong hồ sơ!\n\nVui lòng cập nhật ảnh đại diện trước khi chấm công.", {
+          autoClose: 5000,
+        });
+        setIsProcessing(false);
+        setIsFaceVerifying(false);
+        return;
+      }
+
+      // KIỂM TRA: Nếu ảnh profile là URL external → BẮT BUỘC phải đổi
+      const isExternalUrl = profilePhoto.startsWith('http://') || profilePhoto.startsWith('https://');
+      
+      if (isExternalUrl) {
+        toast.error(
+          "❌ Không thể xác thực khuôn mặt!\n\n" +
+          "Ảnh đại diện của bạn đang là URL external (pravatar.cc).\n\n" +
+          "📸 Vui lòng vào My Profile và UPLOAD ảnh thật của bạn để kích hoạt AI Face Recognition.\n\n" +
+          "Hệ thống yêu cầu ảnh thật để đảm bảo an ninh chấm công!",
+          {
+            autoClose: 8000,
+          }
+        );
+        setIsProcessing(false);
+        setIsFaceVerifying(false);
+        return; // CHẶN cả check-in và check-out
+      }
+
+      // Ảnh profile hợp lệ (base64/blob) → Tiến hành xác thực AI
+      toast.info(`🔍 Đang xác thực khuôn mặt ${actionType === 'in' ? 'Check-in' : 'Check-out'} với AI...`, {
+        autoClose: 2000,
+      });
+
+      // So sánh khuôn mặt
+      const faceResult = await FaceRecognitionService.compareFaces(
+        profilePhoto,
+        capturedPhoto,
+        0.45 // threshold: 0.45 = 55% tương đồng tối thiểu (CHẶT HƠN)
+      );
+
+      setIsFaceVerifying(false);
+
+      if (!faceResult.success) {
+        toast.error(`❌ ${faceResult.message}`, {
+          autoClose: 5000,
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!faceResult.isMatch) {
+        toast.error(
+          `❌ Xác thực khuôn mặt thất bại!\n\n${faceResult.message}\n\nVui lòng chụp lại hoặc liên hệ HR nếu bạn cho rằng đây là lỗi.`,
+          {
+            autoClose: 7000,
+          }
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      // Verify thành công
+      toast.success(`✅ ${faceResult.message}`, {
+        autoClose: 3000,
+      });
+
+      // ========== BƯỚC 2: GỬI REQUEST CHẤM CÔNG ==========
       let response;
 
       if (actionType === "in") {
@@ -188,7 +264,9 @@ const EmployeeAttendance = () => {
       }
 
       if (response.success) {
-        toast.success(response.message);
+        toast.success(response.message, {
+          autoClose: 3000,
+        });
         await fetchTodayStatus();
         stopCamera();
       }
@@ -197,6 +275,7 @@ const EmployeeAttendance = () => {
       toast.error(error?.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
       setIsProcessing(false);
+      setIsFaceVerifying(false);
     }
   };
 
@@ -531,10 +610,15 @@ const EmployeeAttendance = () => {
                 className="btn-success"
                 disabled={isProcessing}
               >
-                {isProcessing ? (
+                {isFaceVerifying ? (
                   <>
                     <Clock className="animate-spin" size={18} />
-                    <span>Đang xử lý...</span>
+                    <span>🔍 Đang xác thực khuôn mặt...</span>
+                  </>
+                ) : isProcessing ? (
+                  <>
+                    <Clock className="animate-spin" size={18} />
+                    <span>Đang gửi...</span>
                   </>
                 ) : (
                   <>

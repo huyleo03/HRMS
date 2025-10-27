@@ -195,6 +195,7 @@ export const pingIntranet = async () => {
     throw new Error("Network error");
   } catch (error) {
     console.error("pingIntranet service error:", error);
-    throw error;
+    // Nếu lỗi 403 hoặc bất kỳ lỗi nào = không trong mạng
+    return { success: false, error: error.message };
   }
 };
