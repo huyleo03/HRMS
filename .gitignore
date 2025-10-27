@@ -48,3 +48,7 @@ Thumbs.db
 # MongoDB
 data/
 dump/
+
+# Face-API models (don't commit heavy binary model files)
+Frontend/public/models/
+public/models/
