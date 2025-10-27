@@ -179,13 +179,12 @@ const EmployeeAttendance = () => {
     setIsProcessing(true);
 
     try {
-      const data = { photo: capturedPhoto };
       let response;
 
       if (actionType === "in") {
-        response = await clockIn(data);
+        response = await clockIn(capturedPhoto);
       } else {
-        response = await clockOut(data);
+        response = await clockOut(capturedPhoto);
       }
 
       if (response.success) {
@@ -224,6 +223,8 @@ const EmployeeAttendance = () => {
     const badges = {
       Present: { label: "Đúng giờ", className: "badge-success", icon: CheckCircle },
       Late: { label: "Đi muộn", className: "badge-warning", icon: AlertCircle },
+      "Early Leave": { label: "Về sớm", className: "badge-warning", icon: AlertCircle },
+      "Late & Early Leave": { label: "Muộn & Về sớm", className: "badge-danger", icon: XCircle },
       Absent: { label: "Vắng", className: "badge-danger", icon: XCircle },
       "On Leave": { label: "Nghỉ phép", className: "badge-info", icon: Calendar },
     };
@@ -387,6 +388,8 @@ const EmployeeAttendance = () => {
             <option value="all">Tất cả</option>
             <option value="Present">Đúng giờ</option>
             <option value="Late">Đi muộn</option>
+            <option value="Early Leave">Về sớm</option>
+            <option value="Late & Early Leave">Muộn & Về sớm</option>
             <option value="Absent">Vắng</option>
             <option value="On Leave">Nghỉ phép</option>
           </select>

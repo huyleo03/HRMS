@@ -342,13 +342,15 @@ const ManagerAttendancePage = () => {
                 <tr key={record._id}>
                   <td>
                     <div className="employee-cell-manager">
-                      {record.userId?.avatar && record.userId.avatar !== 'https://i.pravatar.cc/150' ? (
-                        <img src={record.userId.avatar} alt={record.userId.full_name} className="employee-avatar-manager" />
-                      ) : (
-                        <div className="employee-avatar-fallback-manager">
-                          {record.userId?.full_name ? record.userId.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
-                        </div>
-                      )}
+                      <div className="employee-avatar-manager">
+                        {record.userId?.avatar && record.userId.avatar !== 'https://i.pravatar.cc/150' ? (
+                          <img src={record.userId.avatar} alt={record.userId.full_name} />
+                        ) : (
+                          <span className="avatar-text">
+                            {record.userId?.full_name ? record.userId.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                          </span>
+                        )}
+                      </div>
                       <div className="employee-info-manager">
                         <div className="employee-name-manager">{record.userId?.full_name || "N/A"}</div>
                         <div className="employee-id-manager">{record.userId?.employeeId || "N/A"}</div>

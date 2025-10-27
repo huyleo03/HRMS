@@ -29,6 +29,8 @@ const AttendanceDetailModal = ({ record, onClose }) => {
     const classes = {
       Present: "status-present",
       Late: "status-late",
+      "Early Leave": "status-late",
+      "Late & Early Leave": "status-absent",
       Absent: "status-absent",
       "On Leave": "status-leave",
     };
@@ -37,8 +39,10 @@ const AttendanceDetailModal = ({ record, onClose }) => {
 
   const getStatusText = (status) => {
     const texts = {
-      Present: "Hiện diện",
+      Present: "Đúng giờ",
       Late: "Đi muộn",
+      "Early Leave": "Về sớm",
+      "Late & Early Leave": "Muộn & Về sớm",
       Absent: "Vắng mặt",
       "On Leave": "Nghỉ phép",
     };

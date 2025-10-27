@@ -25,6 +25,7 @@ import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.js
 import EmployeeAttendance from "./pages/attendance/EmployeeAttendance.jsx";
 import ManagerAttendancePage from "./pages/attendance/ManagerAttendancePage.jsx";
 import AdminAttendancePage from "./pages/attendance/AdminAttendancePage.jsx";
+import Settings from "./pages/settings/Settings.jsx";
 
 function App() {
   return (
@@ -66,11 +67,10 @@ function App() {
               path="/view-department/:id"
               element={<DepartmentMembers />}
             />
-            <Route path="/request" element={<Request />} />
-            <Route path="/attendance" element={<AdminAttendancePage />} />
-          </Route>
-
-          {/* --- Manager Routes --- */}
+          <Route path="/request" element={<Request />} />
+          <Route path="/attendance" element={<AdminAttendancePage />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>          {/* --- Manager Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Manager"]} />}>
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/employees" element={<ManagerEmployees />} />

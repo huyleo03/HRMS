@@ -344,7 +344,7 @@
 }
 
 .attendance-table-admin th {
-  padding: 12px 10px;
+  padding: 14px 12px;
   text-align: left;
   font-weight: 600;
   color: #FFFFFF;
@@ -354,13 +354,40 @@
 
 .attendance-table-admin th:first-child {
   border-radius: 0;
-  padding-left: 16px;
+  padding-left: 20px;
+  width: 200px;
+}
+
+.attendance-table-admin th:nth-child(2) {
+  width: 140px;
+}
+
+.attendance-table-admin th:nth-child(3) {
+  width: 110px;
+}
+
+.attendance-table-admin th:nth-child(4),
+.attendance-table-admin th:nth-child(5) {
+  width: 100px;
+}
+
+.attendance-table-admin th:nth-child(6) {
+  width: 120px;
+}
+
+.attendance-table-admin th:nth-child(7),
+.attendance-table-admin th:nth-child(8) {
+  width: 110px;
+}
+
+.attendance-table-admin th:nth-child(9) {
+  width: 120px;
 }
 
 .attendance-table-admin th:last-child {
   border-radius: 0;
   text-align: center;
-  width: 100px;
+  width: 140px;
 }
 
 .attendance-table-admin tbody tr {
@@ -373,13 +400,14 @@
 }
 
 .attendance-table-admin td {
-  padding: 12px 10px;
+  padding: 14px 12px;
   color: #374151;
   font-size: 13px;
+  vertical-align: middle;
 }
 
 .attendance-table-admin td:first-child {
-  padding-left: 16px;
+  padding-left: 20px;
 }
 
 .attendance-table-admin td:last-child {
@@ -394,12 +422,17 @@
 }
 
 .employee-avatar-admin {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   overflow: hidden;
-  background: linear-gradient(135deg, #7152F3 0%, #9333EA 100%);
+  background: linear-gradient(135deg, #7152F3 0%, #9D7EF2 100%);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(113, 82, 243, 0.2);
+  border: 2px solid #fff;
 }
 
 .employee-avatar-admin img {
@@ -415,8 +448,9 @@
   align-items: center;
   justify-content: center;
   color: #FFFFFF;
-  font-weight: 600;
-  font-size: 13px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
 }
 
 .employee-info-admin {
@@ -488,52 +522,6 @@
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-/* Toggle Switch */
-.toggle-switch {
-  position: relative;
-  width: 44px;
-  height: 24px;
-  flex-shrink: 0;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: not-allowed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #E5E7EB;
-  transition: 0.3s;
-  border-radius: 24px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-
-.toggle-switch input:checked + .toggle-slider {
-  background: linear-gradient(135deg, #7152F3 0%, #9333EA 100%);
-}
-
-.toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(20px);
 }
 
 /* Action Buttons */

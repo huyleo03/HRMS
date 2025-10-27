@@ -187,6 +187,8 @@ const AdminAttendancePage = () => {
     const badges = {
       Present: "status-present",
       Late: "status-late",
+      "Early Leave": "status-late",
+      "Late & Early Leave": "status-absent",
       Absent: "status-absent",
       "On Leave": "status-leave",
     };
@@ -196,8 +198,10 @@ const AdminAttendancePage = () => {
   // Get status text in Vietnamese
   const getStatusText = (status) => {
     const texts = {
-      Present: "Hiện diện",
+      Present: "Đúng giờ",
       Late: "Đi muộn",
+      "Early Leave": "Về sớm",
+      "Late & Early Leave": "Muộn & Về sớm",
       Absent: "Vắng mặt",
       "On Leave": "Nghỉ phép",
     };
@@ -265,8 +269,10 @@ const AdminAttendancePage = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">Tất cả</option>
-              <option value="Present">Hiện diện</option>
+              <option value="Present">Đúng giờ</option>
               <option value="Late">Đi muộn</option>
+              <option value="Early Leave">Về sớm</option>
+              <option value="Late & Early Leave">Muộn & Về sớm</option>
               <option value="Absent">Vắng mặt</option>
               <option value="On Leave">Nghỉ phép</option>
             </select>
@@ -305,7 +311,7 @@ const AdminAttendancePage = () => {
               </svg>
             </div>
             <div className="stat-content-admin">
-              <div className="stat-label-admin">Hiện diện</div>
+              <div className="stat-label-admin">Đúng giờ</div>
               <div className="stat-value stat-value-success">{stats.present}</div>
             </div>
           </div>
@@ -440,7 +446,6 @@ const AdminAttendancePage = () => {
                 <th>Giờ làm việc</th>
                 <th>Làm thêm</th>
                 <th>Đi muộn (phút)</th>
-                <th>Điều chỉnh thủ công</th>
                 <th>Hành động</th>
               </tr>
             </thead>
@@ -449,13 +454,15 @@ const AdminAttendancePage = () => {
                 <tr key={record._id}>
                   <td>
                     <div className="employee-cell-admin">
-                      {record.userId?.avatar && record.userId.avatar !== 'https://i.pravatar.cc/150' ? (
-                        <img src={record.userId.avatar} alt={record.userId.full_name} className="employee-avatar-admin" />
-                      ) : (
-                        <div className="employee-avatar-fallback">
-                          {record.userId?.full_name ? record.userId.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
-                        </div>
-                      )}
+                      <div className="employee-avatar-admin">
+                        {record.userId?.avatar && record.userId.avatar !== 'https://i.pravatar.cc/150' ? (
+                          <img src={record.userId.avatar} alt={record.userId.full_name} />
+                        ) : (
+                          <span className="avatar-text">
+                            {record.userId?.full_name ? record.userId.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                          </span>
+                        )}
+                      </div>
                       <div className="employee-info-admin">
                         <div className="employee-name-admin">{record.userId?.full_name || "N/A"}</div>
                         <div className="employee-id-admin">{record.userId?.employeeId || "N/A"}</div>
@@ -475,19 +482,9 @@ const AdminAttendancePage = () => {
                   <td>{record.overtimeHours ? `${record.overtimeHours} giờ` : "0 giờ"}</td>
                   <td>{record.lateMinutes || 0}</td>
                   <td>
-                    <label className="toggle-switch">
-                      <input 
-                        type="checkbox" 
-                        checked={record.isManuallyAdjusted || false}
-                        readOnly
-                      />
-                      <span className="toggle-slider"></span>
-                    </label>
-                  </td>
-                  <td>
                     <div className="action-buttons">
                       <button 
-                        className="action-btn action-btn-info" 
+                        className="action-btn-admin action-btn-info" 
                         onClick={() => handleViewDetails(record)}
                         title="Chi tiết"
                       >
@@ -497,7 +494,7 @@ const AdminAttendancePage = () => {
                         </svg>
                       </button>
                       <button 
-                        className="action-btn action-btn-edit" 
+                        className="action-btn-admin action-btn-edit" 
                         onClick={() => handleAdjust(record)}
                         title="Điều chỉnh"
                       >
