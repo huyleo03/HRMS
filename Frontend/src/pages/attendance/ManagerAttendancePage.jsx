@@ -103,6 +103,8 @@ const ManagerAttendancePage = () => {
     const badges = {
       Present: "status-present",
       Late: "status-late",
+      "Early Leave": "status-late",
+      "Late & Early Leave": "status-absent",
       Absent: "status-absent",
       "On Leave": "status-leave",
     };
@@ -112,8 +114,10 @@ const ManagerAttendancePage = () => {
   // Get status text in Vietnamese
   const getStatusText = (status) => {
     const texts = {
-      Present: "Hiện diện",
+      Present: "Đúng giờ",
       Late: "Đi muộn",
+      "Early Leave": "Về sớm",
+      "Late & Early Leave": "Muộn & Về sớm",
       Absent: "Vắng mặt",
       "On Leave": "Nghỉ phép",
     };
@@ -167,6 +171,8 @@ const ManagerAttendancePage = () => {
             <option value="">Tất cả</option>
             <option value="Present">Hiện diện</option>
             <option value="Late">Đi muộn</option>
+            <option value="Early Leave">Về sớm</option>
+            <option value="Late & Early Leave">Muộn & Về sớm</option>
             <option value="Absent">Vắng mặt</option>
             <option value="On Leave">Nghỉ phép</option>
           </select>
