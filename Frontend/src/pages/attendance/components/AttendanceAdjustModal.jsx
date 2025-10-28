@@ -4,13 +4,31 @@ import { manualAdjust } from "../../../service/AttendanceService";
 import "../css/AttendanceAdjustModal.css";
 
 const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
+  // Helper function to convert UTC date to local datetime-local format
+  const toLocalDateTimeString = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    // Adjust for timezone offset to get local time
+    const offset = date.getTimezoneOffset() * 60000;
+    const localDate = new Date(date.getTime() - offset);
+    return localDate.toISOString().slice(0, 16);
+  };
+
   const [formData, setFormData] = useState({
-    clockIn: record.clockIn ? new Date(record.clockIn).toISOString().slice(0, 16) : "",
-    clockOut: record.clockOut ? new Date(record.clockOut).toISOString().slice(0, 16) : "",
+    clockIn: toLocalDateTimeString(record.clockIn),
+    clockOut: toLocalDateTimeString(record.clockOut),
     status: record.status || "",
     reason: record.adjustmentReason || "",
   });
   const [loading, setLoading] = useState(false);
+
+  // Get current datetime for max attribute
+  const getCurrentDateTimeLocal = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    const localDate = new Date(now.getTime() - offset);
+    return localDate.toISOString().slice(0, 16);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,11 +43,41 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
       return;
     }
 
+    // Validate dates - không cho phép ngày trong tương lai
+    const now = new Date();
+    
+    if (formData.clockIn) {
+      const clockInDate = new Date(formData.clockIn);
+      if (clockInDate > now) {
+        toast.error("Giờ vào không được trong tương lai!");
+        return;
+      }
+    }
+    
+    if (formData.clockOut) {
+      const clockOutDate = new Date(formData.clockOut);
+      if (clockOutDate > now) {
+        toast.error("Giờ ra không được trong tương lai!");
+        return;
+      }
+    }
+
+    // Validate clockOut phải sau clockIn
+    if (formData.clockIn && formData.clockOut) {
+      const clockInDate = new Date(formData.clockIn);
+      const clockOutDate = new Date(formData.clockOut);
+      if (clockOutDate <= clockInDate) {
+        toast.error("Giờ ra phải sau giờ vào!");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const adjustData = {
-        clockIn: formData.clockIn,
-        clockOut: formData.clockOut,
+        // Convert local datetime to ISO string (will be in UTC)
+        clockIn: formData.clockIn ? new Date(formData.clockIn).toISOString() : undefined,
+        clockOut: formData.clockOut ? new Date(formData.clockOut).toISOString() : undefined,
         status: formData.status,
         reason: formData.reason,
       };
@@ -74,7 +122,7 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
                   {record.userId?.avatar && record.userId.avatar !== "https://i.pravatar.cc/150" ? (
                     <img src={record.userId.avatar} alt={record.userId.full_name} />
                   ) : (
-                    <div className="avatar-fallback">
+                    <span className="avatar-initials">
                       {record.userId?.full_name
                         ? record.userId.full_name
                             .split(" ")
@@ -83,7 +131,7 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
                             .toUpperCase()
                             .slice(0, 2)
                         : "U"}
-                    </div>
+                    </span>
                   )}
                 </div>
                 <div className="adjust-employee-detail">
@@ -112,6 +160,7 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
                     className="form-input"
                     value={formData.clockIn}
                     onChange={handleChange}
+                    max={getCurrentDateTimeLocal()}
                   />
                 </div>
 
@@ -129,6 +178,7 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
                     className="form-input"
                     value={formData.clockOut}
                     onChange={handleChange}
+                    max={getCurrentDateTimeLocal()}
                   />
                 </div>
               </div>
@@ -148,8 +198,10 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
                   onChange={handleChange}
                 >
                   <option value="">Chọn trạng thái</option>
-                  <option value="Present">Hiện diện</option>
+                  <option value="Present">Đúng giờ</option>
                   <option value="Late">Đi muộn</option>
+                  <option value="Early Leave">Về sớm</option>
+                  <option value="Late & Early Leave">Muộn & Về sớm</option>
                   <option value="Absent">Vắng mặt</option>
                   <option value="On Leave">Nghỉ phép</option>
                 </select>

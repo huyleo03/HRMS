@@ -25,23 +25,23 @@ import {
 } from "../../service/AttendanceService";
 import FaceRecognitionService from "../../service/FaceRecognitionService";
 import { useAuth } from "../../contexts/AuthContext";
-import "./EmployeeAttendance.css";
+import "./EmployeeAttendance.css"; // Dùng chung CSS với Employee
 
 const ITEMS_PER_PAGE = 10;
 
-const EmployeeAttendance = () => {
+const ManagerAttendance = () => {
   // State Management
-  const { user } = useAuth(); // Lấy user info
-  const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'history'
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [todayStatus, setTodayStatus] = useState(null);
   const [history, setHistory] = useState([]);
   const [isIntranet, setIsIntranet] = useState(false);
   const [isCheckingNetwork, setIsCheckingNetwork] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isFaceVerifying, setIsFaceVerifying] = useState(false); // Face verification state
+  const [isFaceVerifying, setIsFaceVerifying] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
-  const [actionType, setActionType] = useState(null); // 'in' | 'out'
+  const [actionType, setActionType] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -60,7 +60,6 @@ const EmployeeAttendance = () => {
 
   // ============ EFFECTS ============
 
-  // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -68,13 +67,11 @@ const EmployeeAttendance = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Check intranet on mount
   useEffect(() => {
     checkIntranet();
     fetchTodayStatus();
   }, []);
 
-  // Fetch history when switching to history tab
   useEffect(() => {
     if (activeTab === "history") {
       fetchHistory(1);
@@ -185,8 +182,6 @@ const EmployeeAttendance = () => {
     setIsFaceVerifying(true);
 
     try {
-      // ========== BƯỚC 1: XÁC THỰC KHUÔN MẶT ==========
-      // Verify face cho CẢ check-in VÀ check-out
       const profilePhoto = user?.avatar;
 
       if (!profilePhoto) {
@@ -198,7 +193,6 @@ const EmployeeAttendance = () => {
         return;
       }
 
-      // KIỂM TRA: Nếu ảnh profile là URL external → BẮT BUỘC phải đổi
       const isExternalUrl = profilePhoto.startsWith('http://') || profilePhoto.startsWith('https://');
       
       if (isExternalUrl) {
@@ -213,19 +207,17 @@ const EmployeeAttendance = () => {
         );
         setIsProcessing(false);
         setIsFaceVerifying(false);
-        return; // CHẶN cả check-in và check-out
+        return;
       }
 
-      // Ảnh profile hợp lệ (base64/blob) → Tiến hành xác thực AI
       toast.info(`🔍 Đang xác thực khuôn mặt ${actionType === 'in' ? 'Check-in' : 'Check-out'} với AI...`, {
         autoClose: 2000,
       });
 
-      // So sánh khuôn mặt
       const faceResult = await FaceRecognitionService.compareFaces(
         profilePhoto,
         capturedPhoto,
-        0.45 // threshold: 0.45 = 55% tương đồng tối thiểu (CHẶT HƠN)
+        0.45
       );
 
       setIsFaceVerifying(false);
@@ -249,12 +241,10 @@ const EmployeeAttendance = () => {
         return;
       }
 
-      // Verify thành công
       toast.success(`✅ ${faceResult.message}`, {
         autoClose: 3000,
       });
 
-      // ========== BƯỚC 2: GỬI REQUEST CHẤM CÔNG ==========
       let response;
 
       if (actionType === "in") {
@@ -314,7 +304,6 @@ const EmployeeAttendance = () => {
 
   const renderDashboard = () => (
     <div className="attendance-dashboard">
-      {/* Network Status Banner */}
       <div className={`network-banner ${isIntranet ? "connected" : "disconnected"}`}>
         {isCheckingNetwork ? (
           <>
@@ -334,13 +323,11 @@ const EmployeeAttendance = () => {
         )}
       </div>
 
-      {/* Current Time Display */}
       <div className="time-display">
         <div className="current-time">{formatTime(currentTime)}</div>
         <div className="current-date">{formatDate(currentTime)}</div>
       </div>
 
-      {/* Today's Status Card */}
       {todayStatus ? (
         <div className="today-status-card">
           <div className="status-header">
@@ -358,7 +345,6 @@ const EmployeeAttendance = () => {
           </div>
 
           <div className="status-timeline">
-            {/* Clock In */}
             <div className="timeline-item">
               <div className="timeline-icon completed">
                 <LogIn size={20} />
@@ -374,7 +360,6 @@ const EmployeeAttendance = () => {
               </div>
             </div>
 
-            {/* Clock Out */}
             <div className="timeline-item">
               <div className={`timeline-icon ${todayStatus.clockOut ? "completed" : "pending"}`}>
                 <LogOut size={20} />
@@ -388,7 +373,6 @@ const EmployeeAttendance = () => {
             </div>
           </div>
 
-          {/* Work Summary */}
           <div className="work-summary">
             <div className="summary-item">
               <Clock size={18} />
@@ -413,7 +397,6 @@ const EmployeeAttendance = () => {
         </div>
       )}
 
-      {/* Action Buttons */}
       <div className="action-buttons">
         <button
           className="btn-clock-in"
@@ -440,7 +423,6 @@ const EmployeeAttendance = () => {
 
   const renderHistory = () => (
     <div className="attendance-history">
-      {/* Filters */}
       <div className="history-filters">
         <div className="filter-group-employee">
           <label>Từ ngày</label>
@@ -475,7 +457,6 @@ const EmployeeAttendance = () => {
         </div>
       </div>
 
-      {/* History Table */}
       <div className="history-table-wrapper">
         <table className="history-table">
           <thead>
@@ -532,7 +513,6 @@ const EmployeeAttendance = () => {
         </table>
       </div>
 
-      {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="pagination">
           <button
@@ -638,7 +618,6 @@ const EmployeeAttendance = () => {
 
   return (
     <div className="employee-attendance-container">
-      {/* Header with Tabs */}
       <div className="attendance-header">
         <div className="header-tabs">
           <button
@@ -658,15 +637,13 @@ const EmployeeAttendance = () => {
         </div>
       </div>
 
-      {/* Content */}
       <div className="attendance-content">
         {activeTab === "dashboard" ? renderDashboard() : renderHistory()}
       </div>
 
-      {/* Camera Modal */}
       {showCamera && renderCameraModal()}
     </div>
   );
 };
 
-export default EmployeeAttendance;
+export default ManagerAttendance;

@@ -75,6 +75,13 @@ export const API_CONFIG = {
     MANUAL_ADJUST: (id) => `/api/attendance/${id}/adjust`,
     MARK_ABSENT: "/api/attendance/mark-absent",
     EXPORT_ATTENDANCE: "/api/attendance/export",
+
+    // CONFIG
+    GET_COMPANY_CONFIG: "/api/config/company",
+    UPDATE_COMPANY_CONFIG: "/api/config/company",
+    TEST_IP: "/api/config/test-ip",
+    RESET_CONFIG: "/api/config/reset",
+    GET_CURRENT_IP: "/api/config/current-ip",
   },
 };
 

@@ -1,32 +1,35 @@
  const Attendance = require("../models/Attendance");
 const User = require("../models/User");
 const XLSX = require("xlsx");
+const { getSystemConfig } = require("./ConfigController");
 
-// Cấu hình chấm công (hardcoded, có thể chuyển sang DB sau)
-const CONFIG = {
+// Cấu hình mặc định (fallback nếu không load được từ DB)
+const DEFAULT_CONFIG = {
   workStartTime: "08:00",
   workEndTime: "17:00",
   standardWorkHours: 8,
   gracePeriodMinutes: 15,
   otMinimumMinutes: 30,
-  allowedIPs: [
-    // Localhost (để test trên máy local)
-    "::1",
-    "127.0.0.1",
-    "::ffff:127.0.0.1",
-    
-    // IP public của máy bạn (cập nhật: 22/10/2025)
-    "118.70.211.232",
-    
-    // IP cũ (backup)
-    "42.118.89.199",
-    
-    // IPv6 của bạn (nếu cần)
-    "2402:800:6106:4fc0::2",
-    "2402:800:6106:4fc0:3de3:19da:bce2:5d05",
-  ],
+  allowedIPs: ["::1", "127.0.0.1", "::ffff:127.0.0.1"],
 };
 
+// Load config từ database
+async function loadConfig() {
+  try {
+    const systemConfig = await getSystemConfig();
+    return {
+      workStartTime: systemConfig.workSchedule.workStartTime,
+      workEndTime: systemConfig.workSchedule.workEndTime,
+      standardWorkHours: systemConfig.workSchedule.standardWorkHours,
+      gracePeriodMinutes: systemConfig.workSchedule.gracePeriodMinutes,
+      otMinimumMinutes: systemConfig.overtime.otMinimumMinutes,
+      allowedIPs: systemConfig.network.allowedIPs,
+    };
+  } catch (error) {
+    console.error("⚠️ Failed to load system config, using defaults:", error.message);
+    return DEFAULT_CONFIG;
+  }
+}
 
 // ============ HELPERS ============
 
@@ -94,6 +97,7 @@ function calculateWorkHours(clockIn, clockOut, config) {
 // 1. Check-in
 exports.clockIn = async (req, res) => {
   try {
+    const CONFIG = await loadConfig();
     const userId = req.user._id;
     const { photo } = req.body;
     const clientIP = getClientIP(req);
@@ -165,6 +169,7 @@ exports.clockIn = async (req, res) => {
 // 2. Check-out
 exports.clockOut = async (req, res) => {
   try {
+    const CONFIG = await loadConfig();
     const userId = req.user._id;
     const { photo } = req.body;
     const clientIP = getClientIP(req);
@@ -190,11 +195,31 @@ exports.clockOut = async (req, res) => {
     const now = new Date();
     const { workHours, overtimeHours } = calculateWorkHours(attendance.clockIn, now, CONFIG);
     
+    // ========== OPTION B: KIỂM TRA EARLY LEAVE ==========
+    const clockOutTime = now;
+    const [endHour, endMinute] = CONFIG.workEndTime.split(":").map(Number);
+    const scheduledEnd = new Date(clockOutTime);
+    scheduledEnd.setHours(endHour, endMinute, 0, 0);
+    
+    const isEarlyLeave = clockOutTime < scheduledEnd;
+    
+    // Update status dựa trên cả Late (từ check-in) VÀ Early Leave (từ check-out)
+    let finalStatus = attendance.status; // Giữ status cũ (Present hoặc Late)
+    
+    if (attendance.isLate && isEarlyLeave) {
+      finalStatus = "Late & Early Leave"; // Cả 2 đều sai
+    } else if (isEarlyLeave) {
+      finalStatus = "Early Leave"; // Chỉ về sớm
+    }
+    // Nếu attendance.isLate = true và isEarlyLeave = false → giữ "Late"
+    // Nếu cả 2 đều false → giữ "Present"
+    
     attendance.clockOut = now;
     attendance.clockOutIP = clientIP;
     attendance.clockOutPhoto = photo;
     attendance.workHours = workHours;
     attendance.overtimeHours = overtimeHours;
+    attendance.status = finalStatus; // CẬP NHẬT STATUS SAU CHECK-OUT
     
     await attendance.save();
     
@@ -279,10 +304,11 @@ exports.getDepartmentOverview = async (req, res) => {
     
     const { page = 1, limit = 50, date, startDate, endDate, status } = req.query;
     
-    // Tìm tất cả users trong department
+    // Tìm tất cả users trong department (CHỈ EMPLOYEE, KHÔNG BAO GỒM MANAGER)
     const departmentUsers = await User.find({
       "department.department_id": manager.department.department_id,
       status: "Active",
+      role: "Employee", // ✅ Chỉ lấy Employee
     }).select("_id");
     
     const userIds = departmentUsers.map(u => u._id);
@@ -335,10 +361,11 @@ exports.getDepartmentReport = async (req, res) => {
     
     const { startDate, endDate } = req.query;
     
-    // Tìm tất cả users trong department
+    // Tìm tất cả users trong department (CHỈ EMPLOYEE)
     const departmentUsers = await User.find({
       "department.department_id": manager.department.department_id,
       status: "Active",
+      role: "Employee", // ✅ Chỉ lấy Employee
     }).select("_id");
     
     const userIds = departmentUsers.map(u => u._id);
@@ -694,7 +721,8 @@ exports.exportData = async (req, res) => {
 };
 
 // ============ PING ENDPOINT (Intranet Check) ============
-exports.pingIntranet = (req, res) => {
+exports.pingIntranet = async (req, res) => {
+  const CONFIG = await loadConfig();
   const clientIP = getClientIP(req);
   const isAllowed = CONFIG.allowedIPs.some(ip => ip === clientIP);
   

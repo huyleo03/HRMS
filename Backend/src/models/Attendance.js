@@ -44,7 +44,7 @@ const attendanceSchema = new mongoose.Schema(
     // ===== STATUS & CALCULATIONS =====
     status: {
       type: String,
-      enum: ["Present", "Late", "Absent", "On Leave"],
+      enum: ["Present", "Late", "Absent", "On Leave", "Early Leave", "Late & Early Leave"],
       default: "Absent",
       index: true,
     },
@@ -223,9 +223,10 @@ attendanceSchema.statics.getStats = async function (query) {
   const stats = {
     totalRecords: records.length,
     present: records.filter((r) => r.status === "Present").length,
-    late: records.filter((r) => r.status === "Late").length,
+    late: records.filter((r) => r.status === "Late" || r.status === "Late & Early Leave").length,
     absent: records.filter((r) => r.status === "Absent").length,
     onLeave: records.filter((r) => r.status === "On Leave").length,
+    earlyLeave: records.filter((r) => r.status === "Early Leave" || r.status === "Late & Early Leave").length,
     avgWorkHours:
       records.length > 0
         ? +(

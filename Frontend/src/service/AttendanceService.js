@@ -172,11 +172,27 @@ export const exportAttendanceData = async (params = {}) => {
 // Ping intranet
 export const pingIntranet = async () => {
   try {
-    const response = await apiCall(API_CONFIG.ENDPOINTS.PING_INTRANET, {
+    const token = localStorage.getItem("auth_token");
+    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PING_INTRANET}`, {
       method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-    // Status 204 = success (no content)
-    return { success: true };
+    
+    // 204 No Content = Success (trong intranet)
+    if (response.status === 204) {
+      return { success: true };
+    }
+    
+    // 403 = Ngoài intranet
+    if (response.status === 403) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Ngoài intranet");
+    }
+    
+    // Other errors
+    throw new Error("Network error");
   } catch (error) {
     console.error("pingIntranet service error:", error);
     // Nếu lỗi 403 hoặc bất kỳ lỗi nào = không trong mạng

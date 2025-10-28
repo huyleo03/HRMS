@@ -23,8 +23,10 @@ import ChangePass from "./pages/authentication/ChangePass.jsx";
 import Request from "./pages/request/pages/Request.jsx";
 import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.jsx";
 import EmployeeAttendance from "./pages/attendance/EmployeeAttendance.jsx";
-import ManagerAttendancePage from "./pages/attendance/ManagerAttendancePage.jsx";
+import ManagerAttendance from "./pages/attendance/ManagerAttendance.jsx"; // Manager chấm công cá nhân
+import ManagerAttendancePage from "./pages/attendance/ManagerAttendancePage.jsx"; // Xem phòng ban
 import AdminAttendancePage from "./pages/attendance/AdminAttendancePage.jsx";
+import Settings from "./pages/settings/Settings.jsx";
 import WorkflowManagement from "./pages/workflow/WorkflowManagement.jsx";
 import WorkflowForm from "./pages/workflow/WorkflowForm.jsx";
 import WorkflowDetailPage from "./pages/workflow/WorkflowDetailPage.jsx";
@@ -70,22 +72,22 @@ function App() {
               path="/view-department/:id"
               element={<DepartmentMembers />}
             />
-            <Route path="/request" element={<Request />} />
-            <Route path="/attendance" element={<AdminAttendancePage />} />
+          <Route path="/request" element={<Request />} />
+          <Route path="/attendance" element={<AdminAttendancePage />} />
             {/* Workflow Routes */}
             <Route path="/admin/workflow" element={<WorkflowManagement />} />
             <Route path="/admin/workflow/create" element={<WorkflowForm />} />
             <Route path="/admin/workflow/:id" element={<WorkflowDetailPage />} />
             <Route path="/admin/workflow/edit/:id" element={<WorkflowForm />} />
-          </Route>
-
-          {/* --- Manager Routes --- */}
+          <Route path="/settings" element={<Settings />} />
+        </Route>          {/* --- Manager Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Manager"]} />}>
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/employees" element={<ManagerEmployees />} />
             <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />}/>
             <Route path="/manager/request" element={<Request />} />
-            <Route path="/manager/attendance" element={<ManagerAttendancePage />} />
+            <Route path="/manager/my-attendance" element={<ManagerAttendance />} /> {/* Chấm công cá nhân */}
+            <Route path="/manager/attendance" element={<ManagerAttendancePage />} /> {/* Xem phòng ban */}
           </Route>
 
           {/* --- Employee Routes --- */}
