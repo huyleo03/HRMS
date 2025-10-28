@@ -151,7 +151,6 @@ const Settings = () => {
     }));
     setHasChanges(true);
     setTestIP("");
-    setTestResult(null);
     toast.success("Đã thêm IP vào danh sách");
   };
 

@@ -23,7 +23,8 @@ import ChangePass from "./pages/authentication/ChangePass.jsx";
 import Request from "./pages/request/pages/Request.jsx";
 import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.jsx";
 import EmployeeAttendance from "./pages/attendance/EmployeeAttendance.jsx";
-import ManagerAttendancePage from "./pages/attendance/ManagerAttendancePage.jsx";
+import ManagerAttendance from "./pages/attendance/ManagerAttendance.jsx"; // Manager chấm công cá nhân
+import ManagerAttendancePage from "./pages/attendance/ManagerAttendancePage.jsx"; // Xem phòng ban
 import AdminAttendancePage from "./pages/attendance/AdminAttendancePage.jsx";
 import Settings from "./pages/settings/Settings.jsx";
 
@@ -76,7 +77,8 @@ function App() {
             <Route path="/manager/employees" element={<ManagerEmployees />} />
             <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />}/>
             <Route path="/manager/request" element={<Request />} />
-            <Route path="/manager/attendance" element={<ManagerAttendancePage />} />
+            <Route path="/manager/my-attendance" element={<ManagerAttendance />} /> {/* Chấm công cá nhân */}
+            <Route path="/manager/attendance" element={<ManagerAttendancePage />} /> {/* Xem phòng ban */}
           </Route>
 
           {/* --- Employee Routes --- */}

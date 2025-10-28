@@ -304,10 +304,11 @@ exports.getDepartmentOverview = async (req, res) => {
     
     const { page = 1, limit = 50, date, startDate, endDate, status } = req.query;
     
-    // Tìm tất cả users trong department
+    // Tìm tất cả users trong department (CHỈ EMPLOYEE, KHÔNG BAO GỒM MANAGER)
     const departmentUsers = await User.find({
       "department.department_id": manager.department.department_id,
       status: "Active",
+      role: "Employee", // ✅ Chỉ lấy Employee
     }).select("_id");
     
     const userIds = departmentUsers.map(u => u._id);
@@ -360,10 +361,11 @@ exports.getDepartmentReport = async (req, res) => {
     
     const { startDate, endDate } = req.query;
     
-    // Tìm tất cả users trong department
+    // Tìm tất cả users trong department (CHỈ EMPLOYEE)
     const departmentUsers = await User.find({
       "department.department_id": manager.department.department_id,
       status: "Active",
+      role: "Employee", // ✅ Chỉ lấy Employee
     }).select("_id");
     
     const userIds = departmentUsers.map(u => u._id);

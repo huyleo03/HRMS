@@ -175,6 +175,17 @@ exports.updateCompanyConfig = async (req, res) => {
     
     await config.save();
     
+    // 🔄 Nếu thay đổi config auto mark absent, refresh cron job ngay lập tức
+    if (updates.autoActions) {
+      try {
+        const autoMarkAbsentService = require('../services/autoMarkAbsentService');
+        await autoMarkAbsentService.setupCronJob();
+        console.log('🔄 Auto mark absent cron job refreshed after config update');
+      } catch (error) {
+        console.error('⚠️ Error refreshing cron job:', error.message);
+      }
+    }
+    
     res.status(200).json({
       success: true,
       message: "Cập nhật cấu hình thành công",
