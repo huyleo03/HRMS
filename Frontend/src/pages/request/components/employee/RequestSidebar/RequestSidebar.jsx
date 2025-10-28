@@ -73,7 +73,7 @@ const RequestSidebar = ({
     },
   ];
 
-  console.log("🔍 [RequestSidebar] sidebarItems with counts:", sidebarItems.map(i => ({ id: i.id, count: i.count })));
+  
 
   // ✅ ĐƠN TÔI XỬ LÝ (Manager only)
   const myActionsItems = [

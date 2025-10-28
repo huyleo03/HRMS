@@ -127,7 +127,6 @@ exports.authorize = (...roles) => {
   return (req, res, next) => {
     // Kiểm tra user có tồn tại không
     if (!req.user) {
-      console.log("❌ No user in request");
       return res.status(401).json({
         message: "Unauthorized",
       });

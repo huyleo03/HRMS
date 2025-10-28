@@ -25,7 +25,7 @@ import {
 } from "../../service/AttendanceService";
 import FaceRecognitionService from "../../service/FaceRecognitionService";
 import { useAuth } from "../../contexts/AuthContext";
-import "./EmployeeAttendance.css"; // Dùng chung CSS với Employee
+import "./EmployeeAttendance.css"; 
 
 const ITEMS_PER_PAGE = 10;
 

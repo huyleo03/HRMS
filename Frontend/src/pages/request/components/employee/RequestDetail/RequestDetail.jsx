@@ -40,7 +40,7 @@ import EditRequestForm from "../EditRequestForm/EditRequestForm";
 import AdminActions from "../../admin/AdminActions/AdminActions";
 import RequestComments from "../RequestComments/RequestComments";
 
-const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
+const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin, viewMode = "employee" }) => {
   const { user } = useAuth();
   const [currentRequest, setCurrentRequest] = useState(request);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,6 +71,10 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
     isCurrentUserSubmitter &&
     ["Pending", "Manager_Approved"].includes(currentRequest.status);
   const canEdit = isCurrentUserSubmitter && currentRequest.status === "NeedsReview";
+
+  // Logic hiển thị actions theo context
+  const showApproverActions = isCurrentUserApprover && viewMode === "employee";
+  const showAdminActions = isAdmin && viewMode === "admin";
 
   const StatusIcon = {
     CheckCircle,
@@ -379,14 +383,14 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
         {/* Comments Section */}
         <RequestComments requestId={currentRequest._id} />
 
-        {/* Admin Actions */}
-        {isAdmin && (
+        {/* Admin Actions - Chỉ hiển thị khi viewMode = "admin" */}
+        {showAdminActions && (
           <AdminActions request={currentRequest} onActionSuccess={onActionSuccess} />
         )}
 
-        {/* Actions */}
+        {/* Approver Actions - Chỉ hiển thị khi viewMode = "employee" */}
         <div className="detail-actions">
-          {isCurrentUserApprover && (
+          {showApproverActions && (
             <>
               <button
                 className="btn btn-success"

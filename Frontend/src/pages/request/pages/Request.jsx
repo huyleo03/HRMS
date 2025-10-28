@@ -91,13 +91,12 @@ const Request = () => {
   // Fetch request counts for sidebar badges
   const fetchCounts = useCallback(async () => {
     try {
-      console.log("🔄 [Request] Fetching request counts...");
       const response = await getRequestCounts();
-      console.log("✅ [Request] Full response:", response);
+
       
       // Backend returns { counts: {...} } directly
       if (response && response.counts) {
-        console.log("✅ [Request] Counts data:", response.counts);
+
         setRequestCounts(response.counts);
       } else {
         console.warn("⚠️ [Request] No counts found in response");
@@ -131,7 +130,7 @@ const Request = () => {
   }, [activeTab, searchQuery, filterStatus, fetchRequests, prevActiveTab]);
 
   const handleSelectRequest = useCallback((request) => {
-    console.log("🔍 [Request] Selected request:", request._id);
+
     setSelectedRequest(request);
   }, []);
 
@@ -161,7 +160,7 @@ const Request = () => {
 
   const handleActionSuccess = useCallback(
     (updatedRequest, shouldCloseDetail = false) => {
-      console.log("✅ [Request] Action success:", updatedRequest._id, "shouldClose:", shouldCloseDetail);
+ 
       
       setSelectedRequest(updatedRequest);
 
@@ -180,7 +179,7 @@ const Request = () => {
           
           // ✅ THÊM: Refresh AdminRequestList nếu ở admin view
           if (activeTab === "admin-all") {
-            console.log("🔄 [Request] Refreshing AdminRequestList...");
+   
             if (adminListRef.current?.refreshList) {
               adminListRef.current.refreshList();
             } else {
@@ -264,6 +263,7 @@ const Request = () => {
                 onClose={handleCloseDetail}
                 onActionSuccess={handleActionSuccess}
                 isAdmin={isAdmin}
+                viewMode="employee"
               />
             )}
           </div>
@@ -283,6 +283,7 @@ const Request = () => {
               onClose={handleCloseDetail}
               onActionSuccess={handleActionSuccess}
               isAdmin={isAdmin}
+              viewMode="admin"
             />
           </div>
         </div>
