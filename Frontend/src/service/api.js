@@ -61,6 +61,7 @@ export const API_CONFIG = {
     MARK_ALL_AS_READ: "/api/notifications/read-all",
     DELETE_NOTIFICATION: (id) => `/api/notifications/${id}`,
     DELETE_ALL_READ: "/api/notifications/read",
+    SEND_NOTIFICATION: "/api/notifications/send",
 
     // ATTENDANCE
     PING_INTRANET: "/api/attendance/ping",

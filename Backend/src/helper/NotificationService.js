@@ -5,7 +5,6 @@ const Notification = require("../models/Notification");
  */
 const createNotificationForUser = async ({
   userId,
-  userName,
   senderId,
   senderName,
   senderAvatar,
@@ -18,7 +17,6 @@ const createNotificationForUser = async ({
     const notification = await Notification.create({
       targetAudience: "Individual",
       userId,
-      userName,
       senderId,
       senderName,
       senderAvatar,
@@ -29,7 +27,6 @@ const createNotificationForUser = async ({
       isRead: false,
     });
     
-    console.log(`✅ Notification created for user ${userId}`);
     
     return notification;
   } catch (error) {
@@ -69,49 +66,11 @@ const createNotificationForMultipleUsers = async (
 
     const createdNotifications = await Notification.insertMany(notifications);
     
-    console.log(`✅ ${createdNotifications.length} notifications created`);
+    
     
     return createdNotifications;
   } catch (error) {
     console.error("❌ Lỗi tạo thông báo cho nhiều users:", error);
-    throw error;
-  }
-};
-
-/**
- * Tạo thông báo cho phòng ban
- */
-const createNotificationForDepartment = async ({
-  departmentId,
-  departmentName,
-  senderId,
-  senderName,
-  senderAvatar,
-  type,
-  message,
-  relatedId,
-  metadata = {},
-}) => {
-  try {
-    const notification = await Notification.create({
-      targetAudience: "Department",
-      departmentId,
-      departmentName,
-      senderId,
-      senderName,
-      senderAvatar,
-      type,
-      message,
-      relatedId,
-      metadata,
-      readBy: [],
-    });
-    
-    console.log(`✅ Department notification created for department ${departmentName}`);
-    
-    return notification;
-  } catch (error) {
-    console.error("❌ Lỗi tạo thông báo cho phòng ban:", error);
     throw error;
   }
 };
@@ -140,8 +99,7 @@ const createNotificationForAll = async ({
       metadata,
       readBy: [],
     });
-    
-    console.log('✅ Notification created for all users');
+  
     
     return notification;
   } catch (error) {
@@ -153,6 +111,5 @@ const createNotificationForAll = async ({
 module.exports = {
   createNotificationForUser,
   createNotificationForMultipleUsers,
-  createNotificationForDepartment,
   createNotificationForAll,
 };

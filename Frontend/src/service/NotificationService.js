@@ -93,3 +93,25 @@ export const deleteAllReadNotifications = async () => {
     throw error;
   }
 };
+
+/**
+ * Gửi thông báo (Admin/Manager only)
+ * POST /api/notifications/send
+ * 
+ * @param {Object} payload
+ * @param {string} payload.message - Nội dung thông báo
+ * @param {string} payload.type - Loại thông báo (default: "General")
+ * @param {string} payload.targetType - "all" | "department" | "specific"
+ * @param {string[]} [payload.targetUserIds] - Array userId (for specific users)
+ */
+export const sendNotification = async (payload) => {
+  try {
+    return await apiCall(API_CONFIG.ENDPOINTS.SEND_NOTIFICATION, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.error("sendNotification error:", error);
+    throw error;
+  }
+};

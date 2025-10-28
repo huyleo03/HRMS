@@ -1,7 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const notificationController = require("../controller/NotificationController");
-const { authenticate } = require("../middlewares/authMiddleware");
+const { authenticate, authorize } = require("../middlewares/authMiddleware");
+const { validateSendNotification } = require("../middlewares/validationMiddleware");
+
+// ============ ADMIN/MANAGER ROUTES ============
+
+// Gửi thông báo (Admin/Manager only)
+router.post(
+  "/send",
+  authenticate,
+  authorize("Admin", "Manager"),
+  validateSendNotification,
+  notificationController.sendNotification
+);
 
 // ============ USER ROUTES ============
 // Tất cả routes đều cần authentication

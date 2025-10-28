@@ -7,7 +7,6 @@ import {
   markAllAsRead,
   deleteNotification,
 } from "../../../service/NotificationService";
-import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -18,7 +17,6 @@ const NotificationDropdown = () => {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("all"); // 'all' or 'unread'
   const dropdownRef = useRef(null);
-  const navigate = useNavigate();
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -83,22 +81,15 @@ const NotificationDropdown = () => {
     setIsOpen(!isOpen);
   };
 
-  // Mark as read and navigate
+  // Mark as read only (no navigation)
   const handleNotificationClick = async (notification) => {
     try {
       // Mark as read if unread
       if (!notification.isReadByCurrentUser) {
         await markAsRead(notification._id);
         setUnreadCount((prev) => Math.max(0, prev - 1));
+        fetchNotifications(); // Refresh list
       }
-
-      // Navigate to related page
-      if (notification.metadata?.actionUrl) {
-        navigate(notification.metadata.actionUrl);
-      }
-
-      setIsOpen(false);
-      fetchNotifications(); // Refresh list
     } catch (error) {
       console.error("Error handling notification click:", error);
     }

@@ -164,28 +164,6 @@ const requestSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    comments: [
-      {
-        commentId: {
-          type: String,
-          default: () => crypto.randomUUID(),
-        },
-        userId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        userName: String,
-        userAvatar: String,
-        content: {
-          type: String,
-          required: true,
-        },
-        createdAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
 
     // ===== HISTORY - Lịch sử thay đổi (cho Override) =====
     history: [
@@ -528,23 +506,6 @@ requestSchema.methods.override = async function (adminId, newStatus, comment = "
     this.status = "Approved";
   }
   
-  return this.save();
-};
-
-// Thêm comment
-requestSchema.methods.addComment = function (
-  userId,
-  userName,
-  userAvatar,
-  content
-) {
-  this.comments.push({
-    userId,
-    userName,
-    userAvatar,
-    content,
-    createdAt: new Date(),
-  });
   return this.save();
 };
 

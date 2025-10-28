@@ -38,7 +38,6 @@ import RejectRequestModal from "../../manager/RejectRequestModal/RejectRequestMo
 import RequestChangesModal from "../../manager/RequestChangesModal/RequestChangesModal";
 import EditRequestForm from "../EditRequestForm/EditRequestForm";
 import AdminActions from "../../admin/AdminActions/AdminActions";
-import RequestComments from "../RequestComments/RequestComments";
 
 const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin, viewMode = "employee" }) => {
   const { user } = useAuth();
@@ -379,9 +378,6 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin, viewMode = 
             </div>
           )}
         </div>
-
-        {/* Comments Section */}
-        <RequestComments requestId={currentRequest._id} />
 
         {/* Admin Actions - Chỉ hiển thị khi viewMode = "admin" */}
         {showAdminActions && (

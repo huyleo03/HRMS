@@ -1,5 +1,6 @@
 const Notification = require("../models/Notification");
 const User = require("../models/User");
+const mongoose = require("mongoose"); // 🔹 ADDED: For ObjectId type checking
 
 /**
  * Lấy danh sách notifications của user hiện tại
@@ -15,15 +16,8 @@ exports.getUserNotifications = async (req, res) => {
       $or: [
         // Individual notifications
         { targetAudience: "Individual", userId: userId },
-        // Department notifications
-        {
-          targetAudience: "Department",
-          departmentId: req.user.department?.department_id,
-        },
         // All users notifications
         { targetAudience: "All" },
-        // Specific users notifications
-        { targetAudience: "SpecificUsers", targetUserIds: userId },
       ],
     };
 
@@ -36,7 +30,7 @@ exports.getUserNotifications = async (req, res) => {
             { targetAudience: "Individual", isRead: false },
             // Các loại khác: user chưa có trong readBy
             {
-              targetAudience: { $in: ["All", "Department", "SpecificUsers"] },
+              targetAudience: { $in: ["All", "Department"] },
               readBy: { $nin: [userId] },
             },
           ],
@@ -78,14 +72,9 @@ exports.getUserNotifications = async (req, res) => {
       $or: [
         // Individual notifications chưa đọc
         { targetAudience: "Individual", userId: userId, isRead: false },
-        // Department/All/SpecificUsers chưa đọc
+        // All chưa đọc
         {
-          targetAudience: { $in: ["All", "Department", "SpecificUsers"] },
-          $or: [
-            { departmentId: req.user.department?.department_id },
-            { targetAudience: "All" },
-            { targetUserIds: userId },
-          ],
+          targetAudience: "All",
           readBy: { $nin: [userId] },
         },
       ],
@@ -121,14 +110,9 @@ exports.getUnreadCount = async (req, res) => {
       $or: [
         // Individual notifications chưa đọc
         { targetAudience: "Individual", userId: userId, isRead: false },
-        // Department/All/SpecificUsers chưa đọc
+        // All chưa đọc
         {
-          targetAudience: { $in: ["All", "Department", "SpecificUsers"] },
-          $or: [
-            { departmentId: req.user.department?.department_id },
-            { targetAudience: "All" },
-            { targetUserIds: userId },
-          ],
+          targetAudience: "All",
           readBy: { $nin: [userId] },
         },
       ],
@@ -172,7 +156,7 @@ exports.markAsRead = async (req, res) => {
       }
       notification.isRead = true;
     } else {
-      // Department, All, SpecificUsers
+      // Department, All
       if (!notification.readBy.includes(userId)) {
         notification.readBy.push(userId);
       }
@@ -207,10 +191,10 @@ exports.markAllAsRead = async (req, res) => {
       { isRead: true }
     );
 
-    // Update Department/All/SpecificUsers notifications
+    // Update All notifications
     await Notification.updateMany(
       {
-        targetAudience: { $in: ["All", "Department", "SpecificUsers"] },
+        targetAudience: "All",
         readBy: { $nin: [userId] },
       },
       { $addToSet: { readBy: userId } }
@@ -290,6 +274,208 @@ exports.deleteAllRead = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Lỗi khi xóa notifications đã đọc:", error);
+    res.status(500).json({
+      message: "Lỗi server",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Gửi thông báo (Admin/Manager only)
+ * POST /api/notifications/send
+ * 
+ * Body:
+ * {
+ *   "message": "Nội dung thông báo",
+ *   "type": "General",
+ *   "targetType": "all" | "department" | "specific",
+ *   "targetUserIds": ["user1", "user2"] (optional, for specific users)
+ * }
+ */
+exports.sendNotification = async (req, res) => {
+  try {
+    const senderId = req.user.id;
+    const senderRole = req.user.role;
+    const { message, type = "General", targetType, targetUserIds } = req.body;
+
+    // Validate required fields
+    if (!message || !message.trim()) {
+      return res.status(400).json({ 
+        message: "Nội dung thông báo không được để trống" 
+      });
+    }
+
+    if (!targetType || !["all", "department", "specific"].includes(targetType)) {
+      return res.status(400).json({ 
+        message: "targetType phải là 'all', 'department', hoặc 'specific'" 
+      });
+    }
+
+    // Get sender info
+    const sender = await User.findById(senderId).select("full_name avatar email department");
+    if (!sender) {
+      return res.status(404).json({ message: "Sender không tồn tại" });
+    }
+
+    let notification;
+    let affectedUsers = [];
+
+    // ===== ADMIN: Gửi cho tất cả (trừ Admin) =====
+    if (senderRole === "Admin") {
+      if (targetType === "all") {
+        // Tạo 1 broadcast notification
+        notification = await Notification.create({
+          targetAudience: "All",
+          senderId: sender._id,
+          senderName: sender.full_name,
+          senderAvatar: sender.avatar,
+          type,
+          message: message.trim(),
+          relatedId: null,
+          readBy: [],
+        });
+
+        // Đếm số users sẽ nhận (exclude Admin)
+        const userCount = await User.countDocuments({ 
+          role: { $ne: "Admin" },
+          status: "Active" // 🔹 FIXED: Capital "A"
+        });
+        
+        affectedUsers = [`${userCount} users (tất cả Manager và Employee)`];
+
+      } else if (targetType === "specific") {
+        if (!targetUserIds || !Array.isArray(targetUserIds) || targetUserIds.length === 0) {
+          return res.status(400).json({ 
+            message: "targetUserIds là bắt buộc khi targetType='specific'" 
+          });
+        }
+
+        // Tạo Individual notifications cho từng user
+        const users = await User.find({ 
+          _id: { $in: targetUserIds },
+          status: "Active" // 🔹 FIXED: Capital "A"
+        }).select("full_name");
+
+        const notifications = targetUserIds.map(userId => ({
+          targetAudience: "Individual",
+          userId,
+          senderId: sender._id,
+          senderName: sender.full_name,
+          senderAvatar: sender.avatar,
+          type,
+          message: message.trim(),
+          relatedId: null,
+          isRead: false,
+        }));
+
+        const createdNotifications = await Notification.insertMany(notifications);
+        notification = { count: createdNotifications.length };
+        affectedUsers = users.map(u => u.full_name);
+      }
+
+    // ===== MANAGER: Chỉ gửi cho Employee trong phòng ban =====
+    } else if (senderRole === "Manager") {
+      // Kiểm tra Manager có phòng ban không
+      if (!sender.department || !sender.department.department_id) {
+        return res.status(403).json({ 
+          message: "Manager phải thuộc một phòng ban để gửi thông báo" 
+        });
+      }
+
+      const managerDepartmentId = sender.department.department_id;
+
+      if (targetType === "all") {
+        return res.status(403).json({ 
+          message: "Manager không có quyền gửi thông báo toàn hệ thống. Chỉ Admin mới có quyền này." 
+        });
+      }
+
+      if (targetType === "department") {
+        // Lấy danh sách Employee trong phòng ban
+        const departmentEmployees = await User.find({
+          "department.department_id": managerDepartmentId,
+          role: "Employee",  // Chỉ Employee
+          status: "Active" // 🔹 FIXED: Capital "A" to match database
+        }).select("_id full_name");
+
+        if (departmentEmployees.length === 0) {
+          return res.status(400).json({ 
+            message: "Không có Employee nào trong phòng ban của bạn" 
+          });
+        }
+
+        // Tạo Individual notifications cho từng Employee
+        const notifications = departmentEmployees.map(emp => ({
+          targetAudience: "Individual",
+          userId: emp._id,
+          senderId: sender._id,
+          senderName: sender.full_name,
+          senderAvatar: sender.avatar,
+          type,
+          message: message.trim(),
+          relatedId: null,
+          isRead: false,
+        }));
+
+        const createdNotifications = await Notification.insertMany(notifications);
+        notification = { count: createdNotifications.length };
+        affectedUsers = departmentEmployees.map(u => u.full_name);
+
+      } else if (targetType === "specific") {
+        if (!targetUserIds || !Array.isArray(targetUserIds) || targetUserIds.length === 0) {
+          return res.status(400).json({ 
+            message: "targetUserIds là bắt buộc khi targetType='specific'" 
+          });
+        }
+
+        // Kiểm tra tất cả targetUsers phải là Employee trong phòng ban
+        const targetUsers = await User.find({ 
+          _id: { $in: targetUserIds },
+          "department.department_id": managerDepartmentId,
+          role: "Employee",  // Chỉ Employee
+          status: "Active" // 🔹 FIXED: Capital "A"
+        }).select("_id full_name");
+
+        if (targetUsers.length !== targetUserIds.length) {
+          return res.status(403).json({ 
+            message: "Manager chỉ có thể gửi thông báo cho Employee trong phòng ban của mình" 
+          });
+        }
+
+        // Tạo Individual notifications
+        const notifications = targetUsers.map(user => ({
+          targetAudience: "Individual",
+          userId: user._id,
+          senderId: sender._id,
+          senderName: sender.full_name,
+          senderAvatar: sender.avatar,
+          type,
+          message: message.trim(),
+          relatedId: null,
+          isRead: false,
+        }));
+
+        const createdNotifications = await Notification.insertMany(notifications);
+        notification = { count: createdNotifications.length };
+        affectedUsers = targetUsers.map(u => u.full_name);
+      }
+
+    // ===== EMPLOYEE: Không có quyền gửi =====
+    } else {
+      return res.status(403).json({ 
+        message: "Employee không có quyền gửi thông báo. Chỉ Admin và Manager mới có quyền này." 
+      });
+    }
+
+    res.status(201).json({
+      message: "Gửi thông báo thành công",
+      notification,
+      affectedUsers: affectedUsers.length <= 10 ? affectedUsers : `${affectedUsers.length} users`,
+    });
+
+  } catch (error) {
+    console.error("❌ Lỗi khi gửi thông báo:", error);
     res.status(500).json({
       message: "Lỗi server",
       error: error.message,

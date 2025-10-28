@@ -185,6 +185,7 @@ async resetPassword(req, res) {
           role: user.role,
           avatar: user.avatar,
           profileCompleted: user.profileCompleted,
+          department: user.department || null, // Thêm department info
         }
       });
     } catch (err) {

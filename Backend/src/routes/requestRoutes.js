@@ -14,8 +14,6 @@ const {
   forceRejectRequest,
   getAdminStats,
   getRequestCounts,
-  addCommentToRequest,
-  getRequestComments,
 } = require("../controller/RequestController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
@@ -173,24 +171,6 @@ router.put(
   validateObjectId("requestId"),
   validateComment,  // Validate comment (required)
   overrideRequest
-);
-
-// ===== COMMENTS =====
-// Get comments of a request
-router.get(
-  "/:requestId/comments",
-  authenticate,
-  validateObjectId("requestId"),
-  getRequestComments
-);
-
-// Add comment to a request
-router.post(
-  "/:requestId/comments",
-  authenticate,
-  strictLimiter, // Rate limit: 10/minute
-  validateObjectId("requestId"),
-  addCommentToRequest
 );
 
 module.exports = router;

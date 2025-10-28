@@ -18,6 +18,7 @@
     top: 0;
     background: rgba(162, 161, 168, 0.05);
     border-radius: 20px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
 
@@ -149,6 +150,56 @@
     opacity: 1;
 }
 
+/* Quick Action Section */
+.sidebar-quick-action {
+    position: absolute;
+    bottom: 30px;
+    left: 20px;
+    right: 20px;
+    padding: 0 10px;
+}
+
+.quick-action-btn {
+    width: 100%;
+    height: 48px;
+    background: linear-gradient(135deg, #7152F3 0%, #8D75F5 100%);
+    border: none;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    font-family: 'Lexend', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(113, 82, 243, 0.2);
+}
+
+.quick-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(113, 82, 243, 0.3);
+    background: linear-gradient(135deg, #5d3ecc 0%, #7152F3 100%);
+}
+
+.quick-action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(113, 82, 243, 0.2);
+}
+
+.quick-action-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: white;
+}
+
+.quick-action-btn span {
+    color: white;
+    font-weight: 500;
+}
+
 /* Hover Effects */
 .nav-item:hover {
     transform: translateX(2px);
@@ -254,6 +305,53 @@
     
     .side-menu:hover .nav-indicator {
         right: 0;
+    }
+
+    /* Quick Action Button in collapsed state */
+    .sidebar-quick-action {
+        bottom: 20px;
+        left: 10px;
+        right: 10px;
+        padding: 0;
+    }
+
+    .quick-action-btn {
+        width: 50px;
+        height: 50px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .quick-action-btn span {
+        display: none;
+    }
+
+    .quick-action-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    /* Show full button on hover */
+    .side-menu:hover .sidebar-quick-action {
+        left: 20px;
+        right: 20px;
+        padding: 0 10px;
+    }
+
+    .side-menu:hover .quick-action-btn {
+        width: 100%;
+        height: 48px;
+        border-radius: 12px;
+    }
+
+    .side-menu:hover .quick-action-btn span {
+        display: inline;
+    }
+
+    .side-menu:hover .quick-action-btn svg {
+        width: 20px;
+        height: 20px;
     }
 }
 

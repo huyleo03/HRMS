@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import SendNotificationModal from "../../../common/SendNotificationModal/SendNotificationModal";
 import "../css/Sidebar.css";
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isSendNotificationModalOpen, setIsSendNotificationModalOpen] = useState(false);
 
   const menuItems = [
     {
@@ -56,6 +58,14 @@ const Sidebar = () => {
 
   const handleNavigation = (path) => {
     navigate(path);
+  };
+
+  const openSendNotificationModal = () => {
+    setIsSendNotificationModalOpen(true);
+  };
+
+  const closeSendNotificationModal = () => {
+    setIsSendNotificationModalOpen(false);
   };
 
   const isActiveRoute = (path) => {
@@ -141,6 +151,26 @@ const Sidebar = () => {
           </div>
         ))}
       </div>
+
+      {/* Quick Access: Send Notification */}
+      <div className="sidebar-quick-action">
+        <button 
+          className="quick-action-btn send-notification-quick-btn"
+          onClick={openSendNotificationModal}
+          title="Send Notification"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span>Send Notification</span>
+        </button>
+      </div>
+
+      {/* Send Notification Modal */}
+      <SendNotificationModal 
+        isOpen={isSendNotificationModalOpen}
+        onClose={closeSendNotificationModal}
+      />
     </div>
   );
 };

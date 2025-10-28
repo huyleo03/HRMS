@@ -407,4 +407,111 @@ exports.sanitizeSearchQuery = (req, res, next) => {
   }
 };
 
+/**
+ * Validate Send Notification payload
+ */
+exports.validateSendNotification = (req, res, next) => {
+  try {
+    const { message, type, targetType, targetDepartmentId, targetUserIds } = req.body;
+
+    // Validate message
+    if (!message || typeof message !== "string" || !message.trim()) {
+      return res.status(400).json({
+        message: "Nội dung thông báo là bắt buộc và không được để trống",
+      });
+    }
+
+    if (message.length > 1000) {
+      return res.status(400).json({
+        message: "Nội dung thông báo không được vượt quá 1000 ký tự",
+      });
+    }
+
+    // Sanitize message
+    req.body.message = sanitizeString(message);
+
+    // Validate type (optional)
+    if (type) {
+      const validTypes = [
+        "TaskAssigned",
+        "RequestApproved",
+        "RequestRejected",
+        "RequestNeedsReview",
+        "RequestResubmitted",
+        "RequestCancelled",
+        "RequestOverride",
+        "NewRequest",
+        "AttendanceUpdate",
+        "General",
+        "RequestUpdate",
+      ];
+
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({
+          message: `Loại thông báo không hợp lệ: ${type}`,
+        });
+      }
+    }
+
+    // Validate targetType
+    if (!targetType) {
+      return res.status(400).json({
+        message: "targetType là bắt buộc",
+      });
+    }
+
+    if (!["all", "department", "specific"].includes(targetType)) {
+      return res.status(400).json({
+        message: "targetType phải là 'all', 'department', hoặc 'specific'",
+      });
+    }
+
+    // Validate targetDepartmentId if provided
+    if (targetDepartmentId) {
+      if (!validator.isMongoId(targetDepartmentId)) {
+        return res.status(400).json({
+          message: "targetDepartmentId không hợp lệ",
+        });
+      }
+    }
+
+    // Validate targetUserIds if provided
+    if (targetUserIds) {
+      if (!Array.isArray(targetUserIds)) {
+        return res.status(400).json({
+          message: "targetUserIds phải là một array",
+        });
+      }
+
+      if (targetUserIds.length === 0) {
+        return res.status(400).json({
+          message: "targetUserIds không được rỗng",
+        });
+      }
+
+      if (targetUserIds.length > 100) {
+        return res.status(400).json({
+          message: "Không thể gửi thông báo cho hơn 100 users cùng lúc",
+        });
+      }
+
+      // Validate each userId is MongoId
+      for (const userId of targetUserIds) {
+        if (!validator.isMongoId(userId)) {
+          return res.status(400).json({
+            message: `userId không hợp lệ: ${userId}`,
+          });
+        }
+      }
+    }
+
+    next();
+  } catch (error) {
+    console.error("❌ Validation error:", error);
+    return res.status(400).json({
+      message: error.message || "Dữ liệu không hợp lệ",
+    });
+  }
+};
+
 module.exports = exports;

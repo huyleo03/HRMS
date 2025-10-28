@@ -4,11 +4,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "./Header.css";
 import { useAuth } from "../../../contexts/AuthContext";
 import NotificationDropdown from "../NotificationDropdown/NotificationDropdown";
+import SendNotificationModal from "../SendNotificationModal/SendNotificationModal";
 
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSendNotificationModalOpen, setIsSendNotificationModalOpen] = useState(false);
   const { user, logout } = useAuth();
 
   // Lưu tên phòng ban vào sessionStorage khi điều hướng có state
@@ -91,6 +93,14 @@ const Header = () => {
     setIsDropdownOpen(false);
   };
 
+  const openSendNotificationModal = () => {
+    setIsSendNotificationModalOpen(true);
+  };
+
+  const closeSendNotificationModal = () => {
+    setIsSendNotificationModalOpen(false);
+  };
+
   const toggleDropdown = () => setIsDropdownOpen((v) => !v);
 
   const { title, description } = getHeaderContent();
@@ -107,7 +117,6 @@ const Header = () => {
 
       {/* Right Section: Notification + User Profile */}
       <div className="header-right-section">
-        {/* Notification Dropdown Component */}
         <NotificationDropdown />
 
         {user && (
@@ -174,6 +183,12 @@ const Header = () => {
           </div>
         )}
       </div>
+
+      {/* Send Notification Modal */}
+      <SendNotificationModal 
+        isOpen={isSendNotificationModalOpen}
+        onClose={closeSendNotificationModal}
+      />
     </div>
   );
 };

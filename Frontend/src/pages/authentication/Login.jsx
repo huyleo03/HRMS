@@ -48,7 +48,7 @@ function Login() {
       if (data && data.token) {
         localStorage.setItem("auth_token", data.token);
         
-        // ✅ Get user info from response
+        // ✅ Get user info from response (include department)
         const userInfo = {
           id: data.user?.id,
           role: data.user?.role,
@@ -56,6 +56,7 @@ function Login() {
           avatar: data.user?.avatar,
           email: data.user?.email,
           profileCompleted: data.user?.profileCompleted,
+          department: data.user?.department || null, // ✅ Add department field
         };
 
         login(data.token, userInfo);

@@ -113,12 +113,6 @@ exports.createRequest = async (req, res) => {
         subject ? `: ${subject}` : ""
       } cần bạn phê duyệt.`,
       relatedId: newRequest._id,
-      metadata: {
-        requestType: type,
-        requestSubject: subject,
-        priority: priority || "Normal",
-        actionUrl: `/requests/${newRequest._id}`,
-      },
     });
 
     // Gửi thông báo cho CC (nếu có)
@@ -132,12 +126,6 @@ exports.createRequest = async (req, res) => {
           subject ? `: ${subject}` : ""
         } của ${submitter.full_name}.`,
         relatedId: newRequest._id,
-        metadata: {
-          requestType: type,
-          requestSubject: subject,
-          priority: priority || "Normal",
-          actionUrl: `/requests/${newRequest._id}`,
-        },
       });
     }
 
@@ -386,10 +374,6 @@ exports.approveRequest = async (req, res) => {
           type: "RequestUpdate",
           message: `Đơn ${request.type} của ${request.submittedByName} đã được ${approver.full_name} phê duyệt.`,
           relatedId: request._id,
-          metadata: {
-            requestType: request.type,
-            actionUrl: `/requests/${request._id}`,
-          },
         });
       }
       const allApproved = request.approvalFlow.every(
@@ -406,12 +390,6 @@ exports.approveRequest = async (req, res) => {
             request.type
           } của bạn.${comment ? ` Nhận xét: ${comment}` : ""}`,
           relatedId: request._id,
-          metadata: {
-            requestType: request.type,
-            requestSubject: request.subject,
-            actionUrl: `/requests/${request._id}`,
-            comment: comment || "",
-          },
         });
       }
 
@@ -475,12 +453,6 @@ exports.rejectRequest = async (req, res) => {
         type: "RequestRejected",
         message: `${approver.full_name} đã từ chối đơn ${request.type} của bạn. Lý do: ${comment}`,
         relatedId: request._id,
-        metadata: {
-          requestType: request.type,
-          requestSubject: request.subject,
-          actionUrl: `/requests/${request._id}`,
-          comment: comment,
-        },
       });
 
     return res.status(200).json({
@@ -544,12 +516,6 @@ exports.requestChanges = async (req, res) => {
       type: "RequestNeedsReview",
       message: `${approver.full_name} yêu cầu bạn chỉnh sửa đơn ${request.type}. Nội dung: ${comment}`,
       relatedId: request._id,
-      metadata: {
-        requestType: request.type,
-        requestSubject: request.subject,
-        actionUrl: `/requests/${request._id}/edit`,
-        comment: comment,
-      },
     });
 
     res.status(200).json({
@@ -667,11 +633,6 @@ exports.resubmitRequest = async (req, res) => {
           type: "RequestResubmitted",
           message: `${submitter.full_name} đã chỉnh sửa và gửi lại đơn ${request.type}.`,
           relatedId: request._id,
-          metadata: {
-            requestType: request.type,
-            requestSubject: request.subject,
-            actionUrl: `/requests/${request._id}`,
-          },
         });
       }
     } catch (e) {
@@ -723,12 +684,6 @@ exports.cancelRequest = async (req, res) => {
           comment ? ` Lý do: ${comment}` : ""
         }`,
         relatedId: request._id,
-        metadata: {
-          requestType: request.type,
-          requestSubject: request.subject,
-          actionUrl: `/requests/${request._id}`,
-          comment: comment || "",
-        },
       });
     }
     await request.populate([
@@ -793,13 +748,6 @@ exports.overrideRequest = async (req, res) => {
       type: "RequestOverride",
       message: `Admin ${admin.full_name} đã ghi đè quyết định đơn ${request.type} của bạn. Trạng thái mới: ${newStatus}. Lý do: ${comment}`,
       relatedId: request._id,
-      metadata: {
-        requestType: request.type,
-        requestSubject: request.subject,
-        newStatus: newStatus,
-        actionUrl: `/requests/${request._id}`,
-        comment: comment,
-      },
     });
 
     // 6. Gửi notification cho các approvers (nếu reset về Pending)
@@ -816,11 +764,6 @@ exports.overrideRequest = async (req, res) => {
           type: "RequestOverride",
           message: `Admin đã ghi đè và reset đơn ${request.type} về trạng thái Pending. Vui lòng xem xét lại.`,
           relatedId: request._id,
-          metadata: {
-            requestType: request.type,
-            requestSubject: request.subject,
-            actionUrl: `/requests/${request._id}`,
-          },
         });
       }
     }
@@ -1025,12 +968,6 @@ exports.forceApproveRequest = async (req, res) => {
       type: "RequestApproved",
       message: `Đơn "${populatedRequest.subject}" đã được Admin phê duyệt. Lý do: ${comment}`,
       relatedId: populatedRequest._id,
-      metadata: {
-        requestType: populatedRequest.type,
-        requestSubject: populatedRequest.subject,
-        actionUrl: `/requests/${populatedRequest._id}`,
-        comment: comment,
-      },
     });
 
     // ✅ TRẢ VỀ populatedRequest THAY VÌ request
@@ -1113,12 +1050,6 @@ exports.forceRejectRequest = async (req, res) => {
       type: "RequestRejected",
       message: `Đơn "${populatedRequest.subject}" đã bị Admin từ chối. Lý do: ${comment}`,
       relatedId: populatedRequest._id,
-      metadata: {
-        requestType: populatedRequest.type,
-        requestSubject: populatedRequest.subject,
-        actionUrl: `/requests/${populatedRequest._id}`,
-        comment: comment,
-      },
     });
     res.status(200).json({
       message: "Đã từ chối đơn thành công",
@@ -1281,7 +1212,7 @@ exports.getAdminStats = async (req, res) => {
 // ===== GET REQUEST COUNTS FOR SIDEBAR BADGES =====
 exports.getRequestCounts = async (req, res) => {
   try {
-    console.log("🔔 [getRequestCounts] API called by user:", req.user.id);
+   
     const userId = req.user.id;
     const userObjectId = toObjectId(userId);
     const currentUser = await User.findById(userObjectId).select('role');
@@ -1289,8 +1220,6 @@ exports.getRequestCounts = async (req, res) => {
     if (!currentUser) {
       return res.status(404).json({ message: "User không tồn tại" });
     }
-
-    console.log("🔔 [getRequestCounts] User role:", currentUser.role);
     const counts = {};
 
     // Inbox: Đơn chờ BẠN duyệt
@@ -1366,103 +1295,11 @@ exports.getRequestCounts = async (req, res) => {
     if (currentUser.role === "Admin") {
       counts.adminAll = await Request.countDocuments({});
     }
-
-    console.log("🔔 [getRequestCounts] Final counts:", counts);
     res.status(200).json({ counts });
   } catch (error) {
     console.error("❌ [getRequestCounts] Lỗi khi lấy counts:", error);
     res.status(500).json({
       message: "Lỗi server",
-      error: error.message
-    });
-  }
-};
-
-// ===== ADD COMMENT TO REQUEST =====
-exports.addCommentToRequest = async (req, res) => {
-  try {
-    const { requestId } = req.params;
-    const { content } = req.body;
-    const userId = req.user.id;
-
-    // Validate content
-    if (!content || content.trim() === "") {
-      return res.status(400).json({
-        message: "Nội dung comment không được để trống"
-      });
-    }
-
-    // Find request
-    const request = await Request.findById(requestId);
-    if (!request) {
-      return res.status(404).json({ message: "Không tìm thấy đơn" });
-    }
-
-    // Get user info
-    const user = await User.findById(userId).select("full_name avatar");
-    if (!user) {
-      return res.status(404).json({ message: "User không tồn tại" });
-    }
-
-    // Add comment using model method
-    await request.addComment(
-      user._id,
-      user.full_name,
-      user.avatar,
-      content.trim()
-    );
-
-    // Populate để trả về full data
-    await request.populate([
-      { path: "submittedBy", select: "full_name avatar email" },
-      { path: "approvalFlow.approverId", select: "full_name avatar" },
-      { path: "comments.userId", select: "full_name avatar" }
-    ]);
-
-    // TODO: Gửi notification cho stakeholders (submitter, approvers)
-    // await createNotificationForMultipleUsers(...)
-
-    res.status(200).json({
-      success: true,
-      message: "Đã thêm comment thành công",
-      data: {
-        request,
-        newComment: request.comments[request.comments.length - 1]
-      }
-    });
-  } catch (error) {
-    console.error("❌ Lỗi khi thêm comment:", error);
-    res.status(500).json({
-      message: "Lỗi server khi thêm comment",
-      error: error.message
-    });
-  }
-};
-
-// ===== GET COMMENTS OF REQUEST =====
-exports.getRequestComments = async (req, res) => {
-  try {
-    const { requestId } = req.params;
-
-    const request = await Request.findById(requestId)
-      .select("comments")
-      .populate("comments.userId", "full_name avatar");
-
-    if (!request) {
-      return res.status(404).json({ message: "Không tìm thấy đơn" });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Lấy comments thành công",
-      data: {
-        comments: request.comments || []
-      }
-    });
-  } catch (error) {
-    console.error("❌ Lỗi khi lấy comments:", error);
-    res.status(500).json({
-      message: "Lỗi server khi lấy comments",
       error: error.message
     });
   }
