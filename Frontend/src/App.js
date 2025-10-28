@@ -57,7 +57,6 @@ function App() {
           <Route element={<ProtectedRoute noSidebar={true} />}>
             <Route path="/change-password" element={<ChangePass />} />
           </Route>
-
           {/* --- Admin Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
             <Route path="/dashboard" element={<AdminDashboard />} />
@@ -72,36 +71,55 @@ function App() {
               path="/view-department/:id"
               element={<DepartmentMembers />}
             />
-          <Route path="/request" element={<Request />} />
-          <Route path="/attendance" element={<AdminAttendancePage />} />
+            <Route path="/request" element={<Request />} />
+            <Route path="/attendance" element={<AdminAttendancePage />} />
             {/* Workflow Routes */}
             <Route path="/admin/workflow" element={<WorkflowManagement />} />
             <Route path="/admin/workflow/create" element={<WorkflowForm />} />
-            <Route path="/admin/workflow/:id" element={<WorkflowDetailPage />} />
+            <Route
+              path="/admin/workflow/:id"
+              element={<WorkflowDetailPage />}
+            />
             <Route path="/admin/workflow/edit/:id" element={<WorkflowForm />} />
-          <Route path="/settings" element={<Settings />} />
-        </Route>          {/* --- Manager Routes --- */}
+            <Route path="/settings" element={<Settings />} />
+          </Route>{" "}
+          {/* --- Manager Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Manager"]} />}>
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/employees" element={<ManagerEmployees />} />
-            <Route path="/manager/employees/:id" element={<ManagerViewEmployeeDetails />}/>
+            <Route
+              path="/manager/employees/:id"
+              element={<ManagerViewEmployeeDetails />}
+            />
             <Route path="/manager/request" element={<Request />} />
-            <Route path="/manager/my-attendance" element={<ManagerAttendance />} /> {/* Chấm công cá nhân */}
-            <Route path="/manager/attendance" element={<ManagerAttendancePage />} /> {/* Xem phòng ban */}
+            <Route
+              path="/manager/my-attendance"
+              element={<ManagerAttendance />}
+            />{" "}
+            {/* Chấm công cá nhân */}
+            <Route
+              path="/manager/attendance"
+              element={<ManagerAttendancePage />}
+            />{" "}
+            {/* Xem phòng ban */}
           </Route>
-
           {/* --- Employee Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Employee"]} />}>
             <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
             <Route path="/employee/requests" element={<Request />} />
-            <Route path="/employee/attendance" element={<EmployeeAttendance />} />
+            <Route
+              path="/employee/attendance"
+              element={<EmployeeAttendance />}
+            />
           </Route>
-
           {/* --- Shared Routes (All roles can access) --- */}
-          <Route element={<ProtectedRoute allowedRoles={["Admin", "Manager", "Employee"]} />}>
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Manager", "Employee"]} />
+            }
+          >
             <Route path="/my-profile" element={<MyProfile />} />
           </Route>
-
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
