@@ -217,18 +217,7 @@ const requestSchema = new mongoose.Schema(
       },
     ],
 
-    // ===== THREAD - Thêm mới =====
-    threadId: {
-      type: String,
-      index: true,
-    },
-    inReplyTo: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Request",
-      default: null,
-    },
-
-    // ===== TRẠNG THÁI NGƯỜI GỬI - Thêm mới =====
+    // ===== TRẠNG THÁI NGƯỜI GỬI =====
     senderStatus: {
       isDeleted: {
         type: Boolean,
@@ -241,45 +230,6 @@ const requestSchema = new mongoose.Schema(
         type: Date,
       },
       cancelReason: {
-        type: String,
-      },
-    },
-
-    // ===== SLA TRACKING =====
-    sla: {
-      deadline: {
-        type: Date, // SLA deadline (e.g., sentAt + 48 hours)
-      },
-      isOverdue: {
-        type: Boolean,
-        default: false,
-        index: true, // Index for finding overdue requests
-      },
-      overdueHours: {
-        type: Number,
-        default: 0,
-      },
-      remindersSent: {
-        type: [
-          {
-            sentAt: Date,
-            type: {
-              type: String,
-              enum: ["24h", "36h", "overdue"],
-            },
-            recipientIds: [mongoose.Schema.Types.ObjectId],
-          },
-        ],
-        default: [],
-      },
-      escalatedTo: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-      escalatedAt: {
-        type: Date,
-      },
-      escalationReason: {
         type: String,
       },
     },
@@ -302,14 +252,6 @@ requestSchema.pre("save", function (next) {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substring(2, 6);
     this.requestId = `REQ-${timestamp}-${random}`.toUpperCase();
-  }
-  next();
-});
-
-// Tự động tạo threadId
-requestSchema.pre("save", function (next) {
-  if (this.isNew && !this.threadId) {
-    this.threadId = this.inReplyTo ? undefined : this.requestId;
   }
   next();
 });
@@ -616,7 +558,6 @@ requestSchema.index({ priority: 1 });
 requestSchema.index({ type: 1 });
 requestSchema.index({ "department.department_id": 1 });
 requestSchema.index({ "approvalFlow.approverId": 1 });
-requestSchema.index({ threadId: 1 });
 requestSchema.index({ sentAt: -1 });
 
 // ✅ COMPOUND INDEXES (Optimize common queries)

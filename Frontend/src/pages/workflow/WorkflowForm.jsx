@@ -8,10 +8,10 @@ import {
   getAllWorkflows, 
   createWorkflow, 
   updateWorkflow 
-} from '../../../service/WorkflowService';
-import { getDepartmentOptions } from '../../../service/DepartmentService';
-import { getUsers } from '../../../service/UserService';
-import { REQUEST_TYPES, validateApprovalFlow } from '../../../utils/workflowConstants';
+} from '../../service/WorkflowService';
+import { getDepartmentOptions } from '../../service/DepartmentService';
+import { getApprovers } from '../../service/UserService';
+import { REQUEST_TYPES, validateApprovalFlow } from '../../utils/workflowConstants';
 import './css/WorkflowForm.css';
 
 const WorkflowForm = () => {
@@ -44,9 +44,9 @@ const WorkflowForm = () => {
    */
   const fetchDependencies = async () => {
     try {
-      const [deptsRes, usersRes, workflowsRes] = await Promise.all([
+      const [deptsRes, approversRes, workflowsRes] = await Promise.all([
         getDepartmentOptions(token),
-        getUsers(),
+        getApprovers(),
         getAllWorkflows(),
       ]);
       
@@ -57,9 +57,9 @@ const WorkflowForm = () => {
         setDepartments([]);
       }
       
-      // Handle users response
-      if (usersRes && usersRes.success && Array.isArray(usersRes.data)) {
-        setUsers(usersRes.data);
+      // Handle approvers response (Admin + Manager only)
+      if (approversRes && approversRes.success && Array.isArray(approversRes.data)) {
+        setUsers(approversRes.data);
       } else {
         setUsers([]);
       }
@@ -187,8 +187,8 @@ const WorkflowForm = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <Spin size="large" tip="Đang tải workflow..." />
+      <div className="loading-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Spin size="large" />
       </div>
     );
   }
@@ -282,7 +282,7 @@ const WorkflowForm = () => {
                   </Select.Option>
                 ))
               ) : (
-                <Select.Option disabled>Đang tải...</Select.Option>
+                <Select.Option disabled value="loading">Đang tải...</Select.Option>
               )}
             </Select>
           </Form.Item>

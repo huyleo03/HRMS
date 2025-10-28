@@ -14,6 +14,8 @@ import {
   XOctagon,
   Edit3,
   Download,
+  RefreshCw,
+  History,
 } from "lucide-react";
 import {
   getStatusInfo,
@@ -36,6 +38,7 @@ import RejectRequestModal from "../../manager/RejectRequestModal/RejectRequestMo
 import RequestChangesModal from "../../manager/RequestChangesModal/RequestChangesModal";
 import EditRequestForm from "../EditRequestForm/EditRequestForm";
 import AdminActions from "../../admin/AdminActions/AdminActions";
+import RequestComments from "../RequestComments/RequestComments";
 
 const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
   const { user } = useAuth();
@@ -327,7 +330,54 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin }) => {
               })}
             </div>
           </div>
+
+          {/* History - Admin Override Actions */}
+          {currentRequest.history && currentRequest.history.length > 0 && (
+            <div className="history-section">
+              <h4>
+                <History size={18} style={{ marginRight: "8px" }} />
+                Lịch sử thay đổi
+              </h4>
+              <div className="history-timeline">
+                {currentRequest.history.map((entry, index) => (
+                  <div key={index} className="history-entry">
+                    <div className="history-marker">
+                      <RefreshCw size={18} className="history-icon" />
+                    </div>
+                    <div className="history-content">
+                      <div className="history-header">
+                        <span className="history-action">
+                          <strong>{entry.performedByName || entry.performedBy?.full_name}</strong>
+                          {" đã "}
+                          {entry.action === "Override" && "ghi đè quyết định"}
+                          {entry.action === "Escalate" && "chuyển lên cấp cao hơn"}
+                          {entry.action === "Reopen" && "mở lại đơn"}
+                        </span>
+                        <span className="history-time">
+                          {formatDateTime(entry.timestamp)}
+                        </span>
+                      </div>
+                      <div className="history-change">
+                        <span className="status-old">{entry.oldStatus}</span>
+                        <span className="arrow">→</span>
+                        <span className="status-new">{entry.newStatus}</span>
+                      </div>
+                      {entry.comment && (
+                        <div className="history-comment">
+                          <span className="comment-label">Lý do:</span>
+                          <span className="comment-text">"{entry.comment}"</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Comments Section */}
+        <RequestComments requestId={currentRequest._id} />
 
         {/* Admin Actions */}
         {isAdmin && (

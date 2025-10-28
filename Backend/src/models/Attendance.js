@@ -260,6 +260,6 @@ attendanceSchema.pre("save", function (next) {
   next();
 });
 
-const Attendance = mongoose.model("Attendance", attendanceSchema);
+const Attendance = mongoose.model("Attendance", attendanceSchema, "Attendance");
 
 module.exports = Attendance;

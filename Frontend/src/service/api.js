@@ -43,10 +43,12 @@ export const API_CONFIG = {
     GET_REQUEST_BY_ID: (id) => `/api/requests/${id}`,
     FORCE_APPROVE_REQUEST: (id) => `/api/requests/admin/${id}/force-approve`,
     FORCE_REJECT_REQUEST: (id) => `/api/requests/admin/${id}/force-reject`,
+    OVERRIDE_REQUEST: (id) => `/api/requests/${id}/override`,
     GET_ADMIN_STATS: "/api/requests/admin/stats",
 
     // WORKFLOWS
     GET_WORKFLOWS: "/api/workflows",
+    GET_WORKFLOW_BY_ID: (id) => `/api/workflows/${id}`,
     GET_WORKFLOW_TEMPLATE: "/api/workflows/template",
     CREATE_WORKFLOW: "/api/workflows",
     UPDATE_WORKFLOW: (id) => `/api/workflows/${id}`,

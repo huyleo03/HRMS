@@ -26,6 +26,14 @@ router.get(
   workflowController.getAllWorkflows
 );
 
+// Get workflow by ID (MUST be before /:id update/delete routes to avoid conflicts with /template)
+router.get(
+  "/:id",
+  authenticate,
+  authorize("Admin"),
+  workflowController.getWorkflowById
+);
+
 router.post(
   "/",
   authenticate,

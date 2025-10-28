@@ -78,7 +78,7 @@ const auditLogSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    
+
     // Before and after values (for updates)
     changes: {
       before: mongoose.Schema.Types.Mixed,
@@ -140,10 +140,10 @@ auditLogSchema.index({ action: 1, timestamp: -1 });
 auditLogSchema.index({ status: 1, timestamp: -1 });
 
 // Text index for searching descriptions
-auditLogSchema.index({ 
-  description: "text", 
-  userName: "text", 
-  userEmail: "text" 
+auditLogSchema.index({
+  description: "text",
+  userName: "text",
+  userEmail: "text",
 });
 
 // ===================================================================
@@ -346,4 +346,4 @@ auditLogSchema.methods.toSummary = function () {
   };
 };
 
-module.exports = mongoose.model("AuditLog", auditLogSchema);
+module.exports = mongoose.model("AuditLog", auditLogSchema, "AuditLog");

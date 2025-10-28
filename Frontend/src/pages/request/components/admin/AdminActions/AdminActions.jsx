@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Shield, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Shield, CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import {
   forceApproveRequest,
   forceRejectRequest,
+  overrideRequest,
 } from "../../../../../service/RequestService";
 import { toast } from "react-toastify";
 import "./AdminActions.css";
@@ -10,12 +11,16 @@ import "./AdminActions.css";
 const AdminActions = ({ request, onActionSuccess }) => {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [comment, setComment] = useState("");
+  const [overrideStatus, setOverrideStatus] = useState("Pending");
   const [loading, setLoading] = useState(false);
 
   const canTakeAction = ["Pending", "Manager_Approved", "NeedsReview"].includes(
     request.status
   );
+  
+  const canOverride = ["Approved", "Rejected"].includes(request.status);
 
   const handleForceApprove = async () => {
     if (!comment || comment.trim() === "") {
@@ -78,17 +83,135 @@ const AdminActions = ({ request, onActionSuccess }) => {
     }
   };
 
-  if (!canTakeAction) {
+  const handleOverride = async () => {
+    if (!comment.trim()) {
+      toast.warning("Vui lòng nhập lý do ghi đè");
+      return;
+    }
+    if (!["Approved", "Rejected"].includes(request.status)) {
+      toast.error(
+        `Chỉ có thể ghi đè đơn đã Approved hoặc Rejected. Trạng thái hiện tại: ${request.status}`
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await overrideRequest(request._id, overrideStatus, comment);
+      toast.success(response.message || "Ghi đè quyết định thành công!");
+      setShowOverrideModal(false);
+      setComment("");
+      setOverrideStatus("Pending");
+      if (onActionSuccess) {
+        onActionSuccess(response.request, true);
+      }
+    } catch (error) {
+      console.error("Lỗi khi ghi đè:", error);
+      toast.error(error.message || "Có lỗi xảy ra khi ghi đè quyết định");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!canTakeAction && !canOverride) {
     return (
       <div className="admin-actions-disabled">
         <AlertCircle className="icon" />
         <p>
-          {request.status === "Approved" && "Đơn này đã được phê duyệt"}
-          {request.status === "Rejected" && "Đơn này đã bị từ chối"}
           {request.status === "Cancelled" && "Đơn này đã bị hủy"}
-          {!["Approved", "Rejected", "Cancelled"].includes(request.status) &&
+          {request.status === "Completed" && "Đơn này đã hoàn tất"}
+          {!["Cancelled", "Completed"].includes(request.status) &&
             "Không thể thao tác với đơn ở trạng thái hiện tại"}
         </p>
+      </div>
+    );
+  }
+
+  if (canOverride) {
+    return (
+      <div className="admin-actions">
+        <div className="admin-actions-header">
+          <Shield className="icon" />
+          <h3>Quyền Admin - Ghi đè quyết định</h3>
+        </div>
+        <p className="admin-actions-description">
+          Đơn này đã được {request.status === "Approved" ? "phê duyệt" : "từ chối"}.
+          Bạn có thể ghi đè quyết định này để thay đổi trạng thái.
+        </p>
+        <div className="admin-actions-buttons">
+          <button
+            className="admin-btn override-btn"
+            onClick={() => setShowOverrideModal(true)}
+          >
+            <RefreshCw className="icon" />
+            Ghi đè quyết định
+          </button>
+        </div>
+
+        {/* Override Modal */}
+        {showOverrideModal && (
+          <div
+            className="modal-overlay"
+            onClick={() => setShowOverrideModal(false)}
+          >
+            <div className="modal-contentt" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Ghi đè quyết định (Admin)</h3>
+                <button
+                  className="modal-close"
+                  onClick={() => setShowOverrideModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="modal-body">
+                <p>
+                  Đơn này đang ở trạng thái <strong>{request.status}</strong>.
+                  Bạn có thể ghi đè để thay đổi trạng thái.
+                </p>
+                
+                <label>
+                  Trạng thái mới <span className="required">*</span>:
+                </label>
+                <select
+                  value={overrideStatus}
+                  onChange={(e) => setOverrideStatus(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="Pending">Pending (Đưa về chờ duyệt)</option>
+                  <option value="Approved">Approved (Phê duyệt)</option>
+                </select>
+
+                <label style={{ marginTop: "15px" }}>
+                  Lý do ghi đè <span className="required">*</span>:
+                </label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Nhập lý do ghi đè..."
+                  rows={4}
+                  required
+                />
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="btn-secondary"
+                  onClick={() => setShowOverrideModal(false)}
+                  disabled={loading}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="btn-primary"
+                  onClick={handleOverride}
+                  disabled={loading || !comment.trim()}
+                >
+                  {loading ? "Đang xử lý..." : "Xác nhận ghi đè"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

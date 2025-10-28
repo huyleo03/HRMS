@@ -3,7 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
-const rateLimit = require('express-rate-limit');
+// ❌ REMOVED: Global rate limiter - sử dụng specific limiters trong routes thay vì global
+// const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const routes = require('./src/routes');
 
@@ -20,13 +21,8 @@ app.set('trust proxy', true);
 // Security middleware
 app.use(helmet());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use(limiter);
+// ❌ REMOVED: Global rate limiting đã bị xóa để tránh chồng chéo với specific limiters
+// Mỗi route sẽ có rate limiter riêng phù hợp với mục đích sử dụng
 
 // CORS configuration - Hỗ trợ nhiều origins
 const allowedOrigins = process.env.CLIENT_URL 

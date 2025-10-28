@@ -6,7 +6,7 @@ import RequestDetail from "../components/employee/RequestDetail/RequestDetail";
 import CreateRequestModal from "../components/employee/CreateRequestModal/CreateRequestModal";
 import AdminRequestList from "../components/admin/AdminRequestList/AdminRequestList";
 import AdminStats from "../components/admin/AdminStats/AdminStats";
-import { getUserRequests } from "../../../service/RequestService";
+import { getUserRequests, getRequestCounts } from "../../../service/RequestService";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../css/Request.css";
@@ -27,6 +27,7 @@ const Request = () => {
   const [prevActiveTab, setPrevActiveTab] = useState("inbox");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [requestCounts, setRequestCounts] = useState({});
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -87,6 +88,34 @@ const Request = () => {
     [searchQuery, filterStatus, filterPriority]
   );
   
+  // Fetch request counts for sidebar badges
+  const fetchCounts = useCallback(async () => {
+    try {
+      console.log("🔄 [Request] Fetching request counts...");
+      const response = await getRequestCounts();
+      console.log("✅ [Request] Full response:", response);
+      
+      // Backend returns { counts: {...} } directly
+      if (response && response.counts) {
+        console.log("✅ [Request] Counts data:", response.counts);
+        setRequestCounts(response.counts);
+      } else {
+        console.warn("⚠️ [Request] No counts found in response");
+      }
+    } catch (error) {
+      console.error("❌ [Request] Lỗi fetch counts:", error);
+    }
+  }, []);
+
+  // Fetch counts on mount and after actions
+  useEffect(() => {
+    fetchCounts();
+    
+    // Refresh counts every 30 seconds
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
+  }, [fetchCounts]);
+
   useEffect(() => {
     if (activeTab.startsWith("admin-") || prevActiveTab.startsWith("admin-")) {
       setPrevActiveTab(activeTab);
@@ -119,13 +148,16 @@ const Request = () => {
   }, []);
 
   const handleCreateRequest = useCallback(() => {
+    // Refresh counts after creating new request
+    fetchCounts();
+    
     if (activeTab === "sent") {
       fetchRequests(activeTab, 1);
     } else if (activeTab === "admin-all") {
       toast.success("Đơn đã được tạo! Refresh trang để xem.");
     }
     handleCloseModal();
-  }, [activeTab, fetchRequests, handleCloseModal]);
+  }, [activeTab, fetchRequests, fetchCounts, handleCloseModal]);
 
   const handleActionSuccess = useCallback(
     (updatedRequest, shouldCloseDetail = false) => {
@@ -138,6 +170,9 @@ const Request = () => {
           req._id === updatedRequest._id ? updatedRequest : req
         )
       );
+
+      // ✅ Refresh counts after action
+      fetchCounts();
 
       if (shouldCloseDetail) {
         setTimeout(() => {
@@ -160,7 +195,7 @@ const Request = () => {
         }, 1000);
       }
     },
-    [activeTab, fetchRequests]
+    [activeTab, fetchRequests, fetchCounts]
   );
 
   const handlePageChange = useCallback(
@@ -174,14 +209,12 @@ const Request = () => {
     setActiveTab(tabId);
   }, []);
 
-  const unreadCount = activeTab === "inbox" ? pagination.totalRequests : 0;
-
   return (
     <div className="request-container">
       <RequestSidebar
         activeTab={activeTab}
         setActiveTab={handleTabChange}
-        unreadCount={unreadCount}
+        counts={requestCounts}
         onComposeClick={handleOpenModal}
         userRole={user?.role}
       />

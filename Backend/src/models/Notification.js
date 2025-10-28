@@ -13,10 +13,11 @@ const notificationSchema = new mongoose.Schema(
         "TaskAssigned",
         "RequestApproved",
         "RequestRejected",
-        "RequestNeedsReview", // ✅ THÊM MỚI
-        "RequestResubmitted", // ✅ THÊM MỚI
-        "RequestCancelled", // ✅ THÊM MỚI
-        "NewRequest", // ✅ THÊM MỚI
+        "RequestNeedsReview",
+        "RequestResubmitted",
+        "RequestCancelled",
+        "RequestOverride",
+        "NewRequest",
         "AttendanceUpdate",
         "General",
         "RequestUpdate",

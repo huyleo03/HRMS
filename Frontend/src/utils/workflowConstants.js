@@ -4,7 +4,7 @@
  */
 
 // Request Types - Map with Vietnamese labels and icons
-export const REQUEST_TYPES = [
+export const  REQUEST_TYPES = [
   { 
     value: 'Leave', 
     label: 'Đơn xin nghỉ phép', 

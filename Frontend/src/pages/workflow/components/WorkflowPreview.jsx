@@ -3,7 +3,7 @@ import { Modal, Steps, Tag, Descriptions, Alert, Divider } from 'antd';
 import { 
   REQUEST_TYPES, 
   APPROVER_TYPES
-} from '../../../../utils/workflowConstants';
+} from '../../../utils/workflowConstants';
 
 const WorkflowPreview = ({ visible, onClose, workflow, departments, users }) => {
   if (!workflow) {
@@ -80,7 +80,7 @@ const WorkflowPreview = ({ visible, onClose, workflow, departments, users }) => 
           bordered 
           column={2}
           size="middle"
-          labelStyle={{ fontWeight: 600, background: '#fafafa' }}
+          styles={{ label: { fontWeight: 600, background: '#fafafa' } }}
         >
           <Descriptions.Item label="Tên Workflow" span={2}>
             <strong style={{ fontSize: '16px' }}>{workflow.name}</strong>

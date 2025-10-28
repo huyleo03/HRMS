@@ -25,13 +25,15 @@ import { createRequest } from "../.././../../../service/RequestService";
 import {
   getCcSuggestions,
   searchUsersForCc,
+  getAdminUser,
 } from "../.././../../../service/UserService";
 import { uploadFileToCloudinary } from "../.././../../../service/CloudinaryService";
 import { useAuth } from "../../../../../contexts/AuthContext";
 
 const CreateRequestModal = ({ onClose, onSubmit }) => {
-  const { user } = useAuth(); // ✅ Get current user
-  const isAdmin = user?.role === "Admin"; // ✅ Check if admin
+  const { user } = useAuth();
+  const isAdmin = user?.role === "Admin";
+  const isManager = user?.role === "Manager"; 
   const [formData, setFormData] = useState({
     type: "Leave",
     subject: "",
@@ -76,13 +78,59 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     const fetchWorkflow = async () => {
       if (!formData.type) return;
 
-      // ✅ ADMIN KHÔNG CẦN FETCH WORKFLOW (tự động duyệt)
+      // ✅ ADMIN KHÔNG CẦN FETCH WORKFLOW (không được tạo đơn)
       if (isAdmin) {
-        setWorkflow({ isLoading: false, error: null, name: "Tự động phê duyệt (Admin)" });
+        setWorkflow({ isLoading: false, error: null, name: "Admin không được phép tạo đơn" });
         setFormData((prev) => ({ ...prev, approvers: [] }));
         return;
       }
 
+      // ✅ MANAGER: Chỉ Admin duyệt (bypass workflow)
+      if (isManager) {
+        setWorkflow({ isLoading: true, error: null, name: "" });
+        
+        try {
+          // Fetch Admin user từ backend
+          const adminUser = await getAdminUser();
+          
+          if (!adminUser) {
+            setWorkflow({
+              isLoading: false,
+              error: "Không tìm thấy Admin trong hệ thống. Vui lòng liên hệ IT.",
+              name: ""
+            });
+            return;
+          }
+
+          setWorkflow({ 
+            isLoading: false, 
+            error: null, 
+            name: "Quy trình đơn giản (Chỉ Admin duyệt)" 
+          });
+          setFormData((prev) => ({ 
+            ...prev, 
+            approvers: [
+              {
+                level: 1,
+                approverId: adminUser._id,
+                approverName: adminUser.full_name,
+                approverEmail: adminUser.email,
+                role: "Approver"
+              }
+            ] 
+          }));
+        } catch (error) {
+          console.error("Failed to fetch admin user:", error);
+          setWorkflow({
+            isLoading: false,
+            error: "Lỗi khi tải thông tin Admin",
+            name: ""
+          });
+        }
+        return;
+      }
+
+      // ✅ EMPLOYEE: Quy trình nhiều cấp
       setWorkflow({ isLoading: true, error: null, name: "" });
       setFormData((prev) => ({ ...prev, approvers: [] }));
 
@@ -118,7 +166,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     };
 
     fetchWorkflow();
-  }, [formData.type, isAdmin]);
+  }, [formData.type, isAdmin, isManager]);
 
   useEffect(() => {
     const fetchInitialSuggestions = async () => {
@@ -575,7 +623,16 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
                 formData.approvers.length > 0 && (
                   <>
                     <div className="workflow-name">
-                      Áp dụng quy trình: <strong>{workflow.name}</strong>
+                      {isManager ? (
+                        <>
+                          <Shield size={14} style={{ marginRight: '4px' }} />
+                          Quy trình đơn giản: <strong>{workflow.name}</strong>
+                        </>
+                      ) : (
+                        <>
+                          Áp dụng quy trình: <strong>{workflow.name}</strong>
+                        </>
+                      )}
                     </div>
                     <div className="user-list read-only">
                       {formData.approvers.map((approver, index) => (

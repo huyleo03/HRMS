@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Table, Tag, Button, Space, Tooltip, Empty, Input, Select } from 'antd';
+import { Table, Tag, Button, Space, Tooltip, Empty, Input, Select, Popconfirm } from 'antd';
 import { 
   EditOutlined, 
   EyeOutlined, 
@@ -13,7 +13,7 @@ import {
   REQUEST_TYPES, 
   getRequestTypeDisplay, 
   WORKFLOW_STATUS_LABELS 
-} from '../../../../utils/workflowConstants';
+} from '../../../utils/workflowConstants';
 
 const { Option } = Select;
 
@@ -24,13 +24,9 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [sortBy, setSortBy] = useState('name-asc'); // Format: 'field-direction'
 
-  /**
-   * Filter and sort workflows based on toolbar state
-   */
   const processedWorkflows = useMemo(() => {
     let result = [...workflows];
 
-    // Apply search filter (name or description)
     if (searchText.trim()) {
       const searchLower = searchText.toLowerCase();
       result = result.filter(workflow => 
@@ -39,18 +35,15 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
       );
     }
 
-    // Apply request type filter
     if (selectedRequestType !== 'all') {
       result = result.filter(workflow => workflow.requestType === selectedRequestType);
     }
 
-    // Apply status filter
     if (selectedStatus !== 'all') {
       const isActive = selectedStatus === 'active';
       result = result.filter(workflow => workflow.isActive === isActive);
     }
 
-    // Apply sorting
     const [field, direction] = sortBy.split('-');
     result.sort((a, b) => {
       let compareResult = 0;
@@ -80,9 +73,6 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
     return result;
   }, [workflows, searchText, selectedRequestType, selectedStatus, sortBy]);
 
-  /**
-   * Reset all filters
-   */
   const handleResetFilters = () => {
     setSearchText('');
     setSelectedRequestType('all');
@@ -90,9 +80,6 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
     setSortBy('name-asc');
   };
 
-  /**
-   * Get request type label with icon
-   */
   const getRequestTypeLabel = (type) => {
     return getRequestTypeDisplay(type);
   };
@@ -220,14 +207,29 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
               onClick={() => onEdit(record)}
             />
           </Tooltip>
-          <Tooltip title="Xóa">
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => onDelete(record)}
-            />
-          </Tooltip>
+          <Popconfirm
+            title="Xác nhận xóa workflow"
+            description={
+              <>
+                <div>Bạn có chắc chắn muốn xóa workflow <strong>{record.name}</strong>?</div>
+                <div style={{ color: '#999', fontSize: '12px', marginTop: '4px' }}>
+                  Workflow này sẽ bị vô hiệu hóa và không thể sử dụng nữa.
+                </div>
+              </>
+            }
+            onConfirm={() => onDelete(record)}
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+          >
+            <Tooltip title="Xóa">
+              <Button
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+              />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -235,10 +237,8 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
 
   return (
     <div className="workflow-list">
-      {/* Custom Toolbar with Search, Filters, and Sort */}
       <div className="workflow-list__toolbar" style={{ marginBottom: '16px' }}>
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          {/* First Row: Search and Actions */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <Input
               placeholder="Tìm kiếm theo tên hoặc mô tả workflow..."
@@ -270,10 +270,8 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
             </Space>
           </div>
 
-          {/* Second Row: Filters and Sort */}
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <Space size="middle">
-              {/* Request Type Filter */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FilterOutlined style={{ color: '#1890ff' }} />
                 <span style={{ fontWeight: 500 }}>Loại đơn:</span>
@@ -291,7 +289,6 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
                 </Select>
               </div>
 
-              {/* Status Filter */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FilterOutlined style={{ color: '#1890ff' }} />
                 <span style={{ fontWeight: 500 }}>Trạng thái:</span>
@@ -306,7 +303,6 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
                 </Select>
               </div>
 
-              {/* Sort Selector */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <SortAscendingOutlined style={{ color: '#1890ff' }} />
                 <span style={{ fontWeight: 500 }}>Sắp xếp:</span>
@@ -328,7 +324,6 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
             </Space>
           </div>
 
-          {/* Third Row: Results Count */}
           <div style={{ fontSize: '14px', color: '#666' }}>
             Hiển thị <strong>{processedWorkflows.length}</strong> / <strong>{workflows.length}</strong> workflows
             {(searchText || selectedRequestType !== 'all' || selectedStatus !== 'all') && (
@@ -340,7 +335,6 @@ const WorkflowList = ({ workflows, loading, onEdit, onView, onDelete, onRefresh 
         </Space>
       </div>
 
-      {/* Table with processed data */}
       <Table
         columns={columns}
         dataSource={processedWorkflows}

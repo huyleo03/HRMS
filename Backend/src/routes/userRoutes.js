@@ -15,6 +15,12 @@ router.get(
   authorize("Admin", "Manager"),
   userController.getAllUsers
 );
+router.get(
+  "/approvers",
+  authenticate,
+  authorize("Admin"),
+  userController.getApprovers
+);
 router.put(
   "/update/:id",
   authenticate,

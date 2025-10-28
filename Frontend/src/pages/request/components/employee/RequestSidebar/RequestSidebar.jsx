@@ -12,7 +12,6 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  AlertTriangle,
 } from "lucide-react";
 
 const RequestSidebar = ({
@@ -23,6 +22,10 @@ const RequestSidebar = ({
   userRole, 
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Debug: Log counts prop
+  console.log("🔍 [RequestSidebar] Received counts:", counts);
+  console.log("🔍 [RequestSidebar] Sample item.count:", counts.myPending);
 
   // ✅ MENU CHO MANAGER VÀ EMPLOYEE - HỘP THƯ
   const sidebarItems = [
@@ -70,6 +73,8 @@ const RequestSidebar = ({
     },
   ];
 
+  console.log("🔍 [RequestSidebar] sidebarItems with counts:", sidebarItems.map(i => ({ id: i.id, count: i.count })));
+
   // ✅ ĐƠN TÔI XỬ LÝ (Manager only)
   const myActionsItems = [
     {
@@ -83,17 +88,6 @@ const RequestSidebar = ({
       label: "Tôi đã từ chối",
       icon: <XCircle size={20} />,
       count: counts.rejectedByMe || 0,
-    },
-  ];
-
-  // ✅ ESSENTIAL BOX - PRIORITY
-  const priorityItems = [
-    {
-      id: "overdue",
-      label: "Quá hạn",
-      icon: <AlertTriangle size={20} />,
-      count: counts.overdue || 0,
-      priority: true, // đánh dấu là priority box
     },
   ];
 
@@ -186,7 +180,7 @@ const RequestSidebar = ({
               <span className="item-icon">{item.icon}</span>
               {!isCollapsed && <span className="item-label">{item.label}</span>}
             </div>
-            {!isCollapsed && item.count > 0 && (
+            {!isCollapsed && (
               <span className="item-count">{item.count}</span>
             )}
             {isCollapsed && item.count > 0 && (
@@ -194,42 +188,6 @@ const RequestSidebar = ({
             )}
           </div>
         ))}
-
-        {/* ✅ PRIORITY BOX - QUẢN HẠN */}
-        {userRole !== "Admin" && (
-          <>
-            {!isCollapsed && (
-              <div className="sidebar-divider">
-                <span className="divider-text">Ưu tiên</span>
-              </div>
-            )}
-            {isCollapsed && <div className="sidebar-divider-line"></div>}
-
-            {priorityItems.map((item) => (
-              <div
-                key={item.id}
-                className={`sidebar-item priority-item ${
-                  activeTab === item.id ? "active" : ""
-                }`}
-                onClick={() => setActiveTab(item.id)}
-                title={isCollapsed ? item.label : ""}
-              >
-                <div className="item-content">
-                  <span className="item-icon priority-icon">{item.icon}</span>
-                  {!isCollapsed && (
-                    <span className="item-label">{item.label}</span>
-                  )}
-                </div>
-                {!isCollapsed && item.count > 0 && (
-                  <span className="item-count priority-count">{item.count}</span>
-                )}
-                {isCollapsed && item.count > 0 && (
-                  <span className="item-count-dot priority-dot"></span>
-                )}
-              </div>
-            ))}
-          </>
-        )}
 
         {/* ✅ ĐƠN TÔI XỬ LÝ (chỉ Manager) */}
         {userRole !== "Employee" && userRole !== "Admin" && (

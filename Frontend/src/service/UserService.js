@@ -8,7 +8,33 @@ export const getUsers = async (params = {}) => {
       params: params,
     });
   } catch (error) {
-    console.error("getUsers service error:", error);
+    console.error("searchUsersForCc service error:", error);
+    throw error;
+  }
+};
+
+// Lấy thông tin Admin user (GET /api/users?role=Admin&limit=1)
+export const getAdminUser = async () => {
+  try {
+    const response = await apiCall(API_CONFIG.ENDPOINTS.GET_USERS, {
+      method: "GET",
+      params: { role: "Admin", limit: 1 },
+    });
+    return response?.users?.[0] || null;
+  } catch (error) {
+    console.error("getAdminUser service error:", error);
+    throw error;
+  }
+};
+
+// Lấy danh sách người duyệt (Admin + Manager) cho workflow (GET /api/users/approvers)
+export const getApprovers = async () => {
+  try {
+    return await apiCall(`${API_CONFIG.ENDPOINTS.GET_USERS}/approvers`, {
+      method: "GET",
+    });
+  } catch (error) {
+    console.error("getApprovers service error:", error);
     throw error;
   }
 };

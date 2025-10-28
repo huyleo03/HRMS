@@ -6,7 +6,7 @@ const {
   createNotificationForMultipleUsers,
 } = require("../helper/NotificationService");
 const Workflow = require("../models/Workflow");
-const archivingService = require("../services/archivingService");
+const { getObjectId, toObjectId, isUserTurn } = require("./request/helpers");
 
 // ===== 1. TẠO VÀ GỬI ĐƠN =====
 exports.createRequest = async (req, res) => {
@@ -37,21 +37,44 @@ exports.createRequest = async (req, res) => {
 
     const ccUserIds = (cc || []).map((c) => c.userId);
 
-    // Bước 2: Tìm Workflow Template phù hợp dựa trên 'type' của đơn
-    const workflow = await Workflow.getActiveWorkflow(
-      type,
-      submitter.department?.department_id?._id
-    );
-    if (!workflow) {
-      return res.status(400).json({
-        message: `Không tìm thấy quy trình phê duyệt nào cho loại đơn "${type}". Vui lòng liên hệ Admin.`,
-      });
-    }
-    const resolvedApprovalFlow = await workflow.resolveApprovers(submitter);
-    if (!resolvedApprovalFlow || resolvedApprovalFlow.length === 0) {
-      return res.status(400).json({
-        message: `Quy trình phê duyệt cho loại đơn "${type}" không hợp lệ hoặc không tìm thấy người duyệt.`,
-      });
+    let resolvedApprovalFlow;
+    if (submitter.role === "Manager") {
+      const adminUser = await User.findOne({ role: "Admin" }).select("_id full_name email");
+      
+      if (!adminUser) {
+        return res.status(400).json({
+          message: "Không tìm thấy Admin để duyệt đơn. Vui lòng liên hệ IT.",
+        });
+      }
+      resolvedApprovalFlow = [
+        {
+          level: 1,
+          approverId: adminUser._id,
+          approverName: adminUser.full_name,
+          approverEmail: adminUser.email,
+          role: "Approver",
+          status: "Pending",
+        },
+      ];
+    } else {
+      const workflow = await Workflow.getActiveWorkflow(
+        type,
+        submitter.department?.department_id?._id
+      );
+      
+      if (!workflow) {
+        return res.status(400).json({
+          message: `Không tìm thấy quy trình phê duyệt nào cho loại đơn "${type}". Vui lòng liên hệ Admin.`,
+        });
+      }
+
+      resolvedApprovalFlow = await workflow.resolveApprovers(submitter);
+      
+      if (!resolvedApprovalFlow || resolvedApprovalFlow.length === 0) {
+        return res.status(400).json({
+          message: `Quy trình phê duyệt cho loại đơn "${type}" không hợp lệ hoặc không tìm thấy người duyệt.`,
+        });
+      }
     }
 
     const newRequest = new Request({
@@ -131,13 +154,12 @@ exports.createRequest = async (req, res) => {
   }
 };
 
-// Lấy ra các request của user hiện tại
 exports.getUserRequests = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userObjectId = toObjectId(userId);
+    const currentUser = await User.findById(userObjectId).select('role');
     
-    // ✅ Lấy thông tin user để kiểm tra role
-    const currentUser = await User.findById(userId).select('role');
     if (!currentUser) {
       return res.status(404).json({ message: "User không tồn tại" });
     }
@@ -158,19 +180,15 @@ exports.getUserRequests = async (req, res) => {
     let baseQuery = {};
     switch (box.toLowerCase()) {
       case "inbox":
-        // ✅ FIX: Chỉ hiển thị đơn đã đến lượt user hiện tại
         if (currentUser.role === "Admin") {
-          // Admin chỉ nhận đơn status = "Manager_Approved" (đã qua Manager)
-          // HOẶC đơn gửi trực tiếp cho Admin (workflow 1 cấp)
           baseQuery = {
-            "approvalFlow.approverId": userId,
+            "approvalFlow.approverId": userObjectId,
             "approvalFlow.status": "Pending",
-            status: "Manager_Approved"  // Chỉ lấy đơn đã qua Manager
+            status: { $in: ["Pending", "Manager_Approved"] }
           };
         } else {
-          // Manager/Employee: Lấy đơn Pending hoặc Manager_Approved
           baseQuery = {
-            "approvalFlow.approverId": userId,
+            "approvalFlow.approverId": userObjectId,
             "approvalFlow.status": "Pending",
             status: { $in: ["Pending", "Manager_Approved"] }
           };
@@ -178,24 +196,21 @@ exports.getUserRequests = async (req, res) => {
         break;
       case "sent":
         baseQuery = {
-          submittedBy: userId,
+          submittedBy: userObjectId,
         };
         break;
       case "cc":
-        baseQuery = { cc: userId };
+        baseQuery = { cc: userObjectId };
         break;
       case "all":
-        // ✅ FIX: Admin xem tất cả đơn, Employee/Manager chỉ xem đơn liên quan
         if (currentUser.role === "Admin") {
-          // Admin xem tất cả (không filter)
           baseQuery = {};
         } else {
-          // Employee/Manager: Chỉ xem đơn liên quan
           baseQuery = {
             $or: [
-              { "approvalFlow.approverId": userId },
-              { submittedBy: userId },
-              { cc: userId },
+              { "approvalFlow.approverId": userObjectId },
+              { submittedBy: userObjectId },
+              { cc: userObjectId },
             ],
           };
         }
@@ -206,7 +221,7 @@ exports.getUserRequests = async (req, res) => {
       // Đơn tôi đã duyệt (Manager/Admin)
       case "approved-by-me":
         baseQuery = {
-          "approvalFlow.approverId": userId,
+          "approvalFlow.approverId": userObjectId,
           "approvalFlow.status": "Approved",
         };
         break;
@@ -214,7 +229,7 @@ exports.getUserRequests = async (req, res) => {
       // Đơn tôi đã từ chối (Manager/Admin)
       case "rejected-by-me":
         baseQuery = {
-          "approvalFlow.approverId": userId,
+          "approvalFlow.approverId": userObjectId,
           "approvalFlow.status": "Rejected",
         };
         break;
@@ -222,7 +237,7 @@ exports.getUserRequests = async (req, res) => {
       // Đơn của tôi đã được duyệt hoàn toàn
       case "my-approved":
         baseQuery = {
-          submittedBy: userId,
+          submittedBy: userObjectId,
           status: "Approved",
         };
         break;
@@ -230,7 +245,7 @@ exports.getUserRequests = async (req, res) => {
       // Đơn của tôi bị từ chối
       case "my-rejected":
         baseQuery = {
-          submittedBy: userId,
+          submittedBy: userObjectId,
           status: "Rejected",
         };
         break;
@@ -238,7 +253,7 @@ exports.getUserRequests = async (req, res) => {
       // Đơn của tôi đang chờ duyệt
       case "my-pending":
         baseQuery = {
-          submittedBy: userId,
+          submittedBy: userObjectId,
           status: { $in: ["Pending", "Manager_Approved"] },
         };
         break;
@@ -246,25 +261,13 @@ exports.getUserRequests = async (req, res) => {
       // Đơn của tôi cần bổ sung thông tin
       case "my-needs-review":
         baseQuery = {
-          submittedBy: userId,
+          submittedBy: userObjectId,
           status: "NeedsReview",
         };
         break;
 
-      // Đơn quá hạn SLA (cần xử lý gấp)
-      case "overdue":
-        const now = new Date();
-        baseQuery = {
-          "approvalFlow.approverId": userId,
-          "approvalFlow.status": "Pending",
-          status: { $in: ["Pending", "Manager_Approved"] },
-          "slaTracking.slaDeadline": { $lt: now },
-        };
-        break;
-
-      // ✅ NEW: Đơn bị từ chối (Admin xem để có thể override)
+      // Đơn bị từ chối (Admin xem để có thể override)
       case "rejected":
-        // Chỉ Admin/Manager mới có box này
         if (!["Admin", "Manager"].includes(currentUser.role)) {
           return res.status(403).json({
             message: "Chỉ Admin/Manager mới có quyền xem box này"
@@ -272,8 +275,8 @@ exports.getUserRequests = async (req, res) => {
         }
         
         baseQuery = {
-          "approvalFlow.approverId": userId,  // Đơn có user trong approval flow
-          status: "Rejected"  // Đơn đã bị reject
+          "approvalFlow.approverId": userObjectId,
+          status: "Rejected"
         };
         break;
 
@@ -316,17 +319,29 @@ exports.getUserRequests = async (req, res) => {
 
     const sortOptions = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
 
-    const [requests, totalRequests] = await Promise.all([
+    // Query database
+    const [allRequests, totalRequests] = await Promise.all([
       Request.find(baseQuery)
         .sort(sortOptions)
         .skip(skip)
-        .limit(limitNum)
+        .limit(limitNum * 2)
         .populate("submittedBy", "full_name avatar")
         .populate("approvalFlow.approverId", "full_name avatar")
+        .populate("history.performedBy", "full_name avatar")
         .populate("cc", "full_name avatar")
         .lean(),
       Request.countDocuments(baseQuery),
     ]);
+
+
+    // Filter: Chỉ lấy đơn "đến lượt" user nếu là inbox
+    let requests = allRequests;
+    if (box.toLowerCase() === "inbox") {
+      requests = allRequests.filter(req => isUserTurn(req, userObjectId));
+    }
+
+    // Cắt về đúng limit sau khi filter
+    requests = requests.slice(0, limitNum);
 
     res.status(200).json({
       message: `Lấy danh sách đơn trong hộp thư '${box}' thành công`,
@@ -334,9 +349,8 @@ exports.getUserRequests = async (req, res) => {
         requests,
         pagination: {
           currentPage: pageNum,
-          totalPages: Math.ceil(totalRequests / limitNum),
-          totalRequests,
-          limit: limitNum,
+          totalPages: Math.ceil(requests.length / limitNum),
+          totalRequests: requests.length,
         },
       },
     });
@@ -1264,118 +1278,194 @@ exports.getAdminStats = async (req, res) => {
   }
 };
 
-// ===== ARCHIVING ENDPOINTS =====
-
-/**
- * Get archived requests (Admin only)
- */
-exports.getArchivedRequests = async (req, res) => {
+// ===== GET REQUEST COUNTS FOR SIDEBAR BADGES =====
+exports.getRequestCounts = async (req, res) => {
   try {
-    const {
-      userId,
-      requestType,
-      status,
-      startDate,
-      endDate,
-      searchText,
-      limit = 50,
-      skip = 0,
-    } = req.query;
+    console.log("🔔 [getRequestCounts] API called by user:", req.user.id);
+    const userId = req.user.id;
+    const userObjectId = toObjectId(userId);
+    const currentUser = await User.findById(userObjectId).select('role');
 
-    const filters = {
-      userId,
-      requestType,
-      status,
-      startDate,
-      endDate,
-      searchText,
-      limit: parseInt(limit),
-      skip: parseInt(skip),
-    };
+    if (!currentUser) {
+      return res.status(404).json({ message: "User không tồn tại" });
+    }
 
-    const archivedRequests = await archivingService.getArchivedRequests(filters);
+    console.log("🔔 [getRequestCounts] User role:", currentUser.role);
+    const counts = {};
 
-    res.status(200).json({
-      success: true,
-      count: archivedRequests.length,
-      data: archivedRequests,
+    // Inbox: Đơn chờ BẠN duyệt
+    if (currentUser.role === "Admin") {
+      counts.inbox = await Request.countDocuments({
+        "approvalFlow.approverId": userObjectId,
+        "approvalFlow.status": "Pending",
+        status: { $in: ["Pending", "Manager_Approved"] }
+      });
+    } else {
+      // Manager và Employee
+      const inboxQuery = {
+        "approvalFlow.approverId": userObjectId,
+        "approvalFlow.status": "Pending",
+        status: { $in: ["Pending", "Manager_Approved"] }
+      };
+
+      const inboxRequests = await Request.find(inboxQuery).lean();
+      const filteredInbox = inboxRequests.filter(request => 
+        isUserTurn(request, userObjectId)
+      );
+      counts.inbox = filteredInbox.length;
+    }
+
+    // Sent: Đơn BẠN đã gửi
+    counts.sent = await Request.countDocuments({
+      submittedBy: userObjectId
     });
+
+    // CC: Đơn BẠN được CC
+    counts.cc = await Request.countDocuments({
+      ccList: userObjectId
+    });
+
+    // My Approved: Đơn BẠN gửi đã được duyệt hoàn toàn
+    counts.myApproved = await Request.countDocuments({
+      submittedBy: userObjectId,
+      status: "Approved"
+    });
+
+    // My Rejected: Đơn BẠN gửi bị từ chối
+    counts.myRejected = await Request.countDocuments({
+      submittedBy: userObjectId,
+      status: "Rejected"
+    });
+
+    // My Pending: Đơn BẠN gửi đang chờ duyệt
+    counts.myPending = await Request.countDocuments({
+      submittedBy: userObjectId,
+      status: { $in: ["Pending", "Manager_Approved"] }
+    });
+
+    // My Needs Review: Đơn BẠN gửi cần bổ sung
+    counts.myNeedsReview = await Request.countDocuments({
+      submittedBy: userObjectId,
+      status: "NeedsReview"
+    });
+
+    // Manager only: Đơn tôi đã xử lý
+    if (currentUser.role === "Manager") {
+      counts.approvedByMe = await Request.countDocuments({
+        "approvalFlow.approverId": userObjectId,
+        "approvalFlow.status": "Approved"
+      });
+
+      counts.rejectedByMe = await Request.countDocuments({
+        "approvalFlow.approverId": userObjectId,
+        "approvalFlow.status": "Rejected"
+      });
+    }
+
+    // Admin only: Tất cả đơn
+    if (currentUser.role === "Admin") {
+      counts.adminAll = await Request.countDocuments({});
+    }
+
+    console.log("🔔 [getRequestCounts] Final counts:", counts);
+    res.status(200).json({ counts });
   } catch (error) {
-    console.error("Error getting archived requests:", error);
+    console.error("❌ [getRequestCounts] Lỗi khi lấy counts:", error);
     res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
+      message: "Lỗi server",
+      error: error.message
     });
   }
 };
 
-/**
- * Restore archived request (Admin only)
- */
-exports.restoreArchivedRequest = async (req, res) => {
+// ===== ADD COMMENT TO REQUEST =====
+exports.addCommentToRequest = async (req, res) => {
   try {
-    const { archivedRequestId } = req.params;
-    const restoredBy = req.user.id;
+    const { requestId } = req.params;
+    const { content } = req.body;
+    const userId = req.user.id;
 
-    const restoredRequest = await archivingService.restoreFromArchive(
-      archivedRequestId,
-      restoredBy
+    // Validate content
+    if (!content || content.trim() === "") {
+      return res.status(400).json({
+        message: "Nội dung comment không được để trống"
+      });
+    }
+
+    // Find request
+    const request = await Request.findById(requestId);
+    if (!request) {
+      return res.status(404).json({ message: "Không tìm thấy đơn" });
+    }
+
+    // Get user info
+    const user = await User.findById(userId).select("full_name avatar");
+    if (!user) {
+      return res.status(404).json({ message: "User không tồn tại" });
+    }
+
+    // Add comment using model method
+    await request.addComment(
+      user._id,
+      user.full_name,
+      user.avatar,
+      content.trim()
     );
 
+    // Populate để trả về full data
+    await request.populate([
+      { path: "submittedBy", select: "full_name avatar email" },
+      { path: "approvalFlow.approverId", select: "full_name avatar" },
+      { path: "comments.userId", select: "full_name avatar" }
+    ]);
+
+    // TODO: Gửi notification cho stakeholders (submitter, approvers)
+    // await createNotificationForMultipleUsers(...)
+
     res.status(200).json({
       success: true,
-      message: "Request restored successfully",
-      data: restoredRequest,
+      message: "Đã thêm comment thành công",
+      data: {
+        request,
+        newComment: request.comments[request.comments.length - 1]
+      }
     });
   } catch (error) {
-    console.error("Error restoring archived request:", error);
+    console.error("❌ Lỗi khi thêm comment:", error);
     res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
+      message: "Lỗi server khi thêm comment",
+      error: error.message
     });
   }
 };
 
-/**
- * Get archiving statistics (Admin only)
- */
-exports.getArchivingStats = async (req, res) => {
+// ===== GET COMMENTS OF REQUEST =====
+exports.getRequestComments = async (req, res) => {
   try {
-    const stats = await archivingService.getArchivingStats();
+    const { requestId } = req.params;
+
+    const request = await Request.findById(requestId)
+      .select("comments")
+      .populate("comments.userId", "full_name avatar");
+
+    if (!request) {
+      return res.status(404).json({ message: "Không tìm thấy đơn" });
+    }
 
     res.status(200).json({
       success: true,
-      data: stats,
+      message: "Lấy comments thành công",
+      data: {
+        comments: request.comments || []
+      }
     });
   } catch (error) {
-    console.error("Error getting archiving stats:", error);
+    console.error("❌ Lỗi khi lấy comments:", error);
     res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
+      message: "Lỗi server khi lấy comments",
+      error: error.message
     });
   }
 };
 
-/**
- * Manually trigger archiving (Admin only)
- */
-exports.runArchiving = async (req, res) => {
-  try {
-    const { monthsOld = 6 } = req.body;
-
-    const result = await archivingService.archiveBatch(parseInt(monthsOld));
-
-    res.status(200).json({
-      success: true,
-      message: `Archiving completed. Archived: ${result.archived}, Failed: ${result.failed}`,
-      data: result,
-    });
-  } catch (error) {
-    console.error("Error running archiving:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
-    });
-  }
-};
 

@@ -131,16 +131,23 @@ exports.getAllUsers = async (req, res) => {
       department,
     } = req.query;
     let query = {};
-    if (req.user.role === "Manager") {
-      query.role = "Employee";
-      if (req.user.department && req.user.department.department_id) {
-        query["department.department_id"] = req.user.department.department_id;
+    
+    // Filter by role từ query params (có thể query Admin)
+    if (role) {
+      query.role = role;
+    } else {
+      // Nếu không có role params, apply default filter theo user role
+      if (req.user.role === "Manager") {
+        query.role = "Employee";
+        if (req.user.department && req.user.department.department_id) {
+          query["department.department_id"] = req.user.department.department_id;
+        }
+      } else if (req.user.role === "Admin") {
+        query.role = { $in: ["Manager", "Employee"] };
       }
-    } else if (req.user.role === "Admin") {
-      query.role = { $in: ["Manager", "Employee"] };
     }
+    
     if (name) query.full_name = { $regex: name.trim(), $options: "i" };
-    if (role) query.role = role;
     if (status) query.status = status;
     if (department)
       query["department.department_name"] = {
@@ -164,6 +171,31 @@ exports.getAllUsers = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Lỗi server khi lấy danh sách người dùng.",
+      error: error.message,
+    });
+  }
+};
+
+// Get approvers (Admin + Manager) for workflow configuration
+exports.getApprovers = async (req, res) => {
+  try {
+    // Only get Admin and Manager roles, no pagination
+    const approvers = await User.find({ 
+      role: { $in: ["Admin", "Manager"] },
+      status: "Active"
+    })
+      .select("_id full_name email role department jobTitle avatar")
+      .sort({ role: -1, full_name: 1 }); // Admin first, then Manager, sorted by name
+
+    res.status(200).json({
+      success: true,
+      data: approvers,
+      total: approvers.length
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy danh sách người duyệt.",
       error: error.message,
     });
   }

@@ -24,6 +24,16 @@ export const getAllWorkflows = async () => {
   }
 };
 
+export const getWorkflowById = async (id) => {
+  try {
+    return await apiCall(API_CONFIG.ENDPOINTS.GET_WORKFLOW_BY_ID(id), {
+      method: "GET",
+    });
+  } catch (error) {
+    console.error("getWorkflowById service error:", error);
+    throw error;
+  }
+};
 
 export const createWorkflow = async (workflowData) => {
   try {

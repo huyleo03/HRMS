@@ -26,6 +26,38 @@ exports.getAllWorkflows = async (req, res) => {
 };
 
 /**
+ * Lấy workflow theo ID (dành cho Admin xem chi tiết)
+ * GET /api/workflows/:id
+ */
+exports.getWorkflowById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const workflow = await Workflow.findById(id)
+      .populate("createdBy", "full_name email role")
+      .populate("applicableDepartments", "department_name code")
+      .populate("approvalFlow.approverId", "full_name email role");
+
+    if (!workflow) {
+      return res.status(404).json({
+        message: "Không tìm thấy workflow",
+      });
+    }
+
+    res.status(200).json({
+      message: "Lấy thông tin workflow thành công",
+      data: workflow,
+    });
+  } catch (error) {
+    console.error("Error in getWorkflowById:", error);
+    res.status(500).json({
+      message: "Lỗi khi lấy thông tin workflow",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Lấy workflow template theo loại đơn (cho người dùng tạo đơn)
  * GET /api/workflows/template?type=Leave
  */
@@ -99,8 +131,6 @@ exports.createWorkflow = async (req, res) => {
             details: "Workflow phải có ít nhất một approver có thể được resolve."
           });
         }
-        
-        console.log(`✅ Workflow validation passed. Resolved ${resolvedApprovers.length} approver(s).`);
       } else {
         console.warn("⚠️  No non-admin user found for workflow validation. Skipping validation.");
       }
@@ -165,8 +195,6 @@ exports.updateWorkflow = async (req, res) => {
             details: "Workflow phải có ít nhất một approver có thể được resolve."
           });
         }
-        
-        console.log(`✅ Workflow update validation passed. Resolved ${resolvedApprovers.length} approver(s).`);
       } else {
         console.warn("⚠️  No non-admin user found for workflow validation. Skipping validation.");
       }

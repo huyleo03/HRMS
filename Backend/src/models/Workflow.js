@@ -96,13 +96,13 @@ workflowSchema.index({ isActive: 1 });
 // ===== METHODS =====
 workflowSchema.methods.resolveApprovers = async function (user) {
   const resolvedApprovers = [];
+  const seenApproverIds = new Set(); // ✅ Track để tránh duplicate
 
   for (const step of this.approvalFlow) {
     let approver = null;
 
     switch (step.approverType) {
       case "DIRECT_MANAGER":
-        // Employee: Dùng manager_id (người quản lý trực tiếp)
         if (user.role === "Employee") {
           if (user.manager_id) {
             approver = await User.findById(user.manager_id).select(
@@ -112,7 +112,6 @@ workflowSchema.methods.resolveApprovers = async function (user) {
             throw new Error("Employee phải có người quản lý trực tiếp");
           }
         } 
-        // Manager: Tự động chuyển lên Admin để duyệt
         else if (user.role === "Manager") {
           approver = await User.findOne({ role: "Admin" }).select(
             "_id full_name email avatar"
@@ -121,10 +120,6 @@ workflowSchema.methods.resolveApprovers = async function (user) {
             throw new Error("Không tìm thấy Admin để duyệt đơn của Manager");
           }
         } 
-        // Admin: Không được gửi đơn (đã được block ở RequestController)
-        else {
-          throw new Error("Admin không được tạo đơn yêu cầu");
-        }
         break;
 
       case "SPECIFIC_DEPARTMENT_HEAD":
@@ -151,6 +146,17 @@ workflowSchema.methods.resolveApprovers = async function (user) {
     }
 
     if (approver) {
+      const approverIdString = approver._id.toString();
+      
+      // ✅ KIỂM TRA DUPLICATE: Bỏ qua nếu approver đã tồn tại
+      if (seenApproverIds.has(approverIdString)) {
+        console.log(`⚠️ [Workflow] Bỏ qua duplicate approver: ${approver.full_name} (Level ${step.level})`);
+        continue; // Skip duplicate
+      }
+      
+      // ✅ Thêm vào Set để track
+      seenApproverIds.add(approverIdString);
+      
       resolvedApprovers.push({
         level: step.level,
         approverId: approver._id,

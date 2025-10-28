@@ -13,10 +13,9 @@ const {
   forceApproveRequest,
   forceRejectRequest,
   getAdminStats,
-  getArchivedRequests,
-  restoreArchivedRequest,
-  getArchivingStats,
-  runArchiving,
+  getRequestCounts,
+  addCommentToRequest,
+  getRequestComments,
 } = require("../controller/RequestController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
@@ -85,41 +84,8 @@ router.put(
 // Lấy thống kê (Admin)
 router.get("/admin/stats", authenticate, authorize("Admin"), getAdminStats);
 
-// Lấy archived requests (Admin)
-router.get(
-  "/admin/archived",
-  authenticate,
-  authorize("Admin"),
-  searchLimiter, // ✅ Rate limit searches
-  getArchivedRequests
-);
-
-// Restore archived request (Admin)
-router.post(
-  "/admin/archived/:archivedRequestId/restore",
-  authenticate,
-  authorize("Admin"),
-  adminLimiter, // ✅ Rate limit admin operations
-  validateObjectId("archivedRequestId"), // ✅ Validate archivedRequestId
-  restoreArchivedRequest
-);
-
-// Get archiving statistics (Admin)
-router.get(
-  "/admin/archiving/stats",
-  authenticate,
-  authorize("Admin"),
-  getArchivingStats
-);
-
-// Manually trigger archiving (Admin)
-router.post(
-  "/admin/archiving/run",
-  authenticate,
-  authorize("Admin"),
-  adminLimiter, // ✅ Rate limit admin operations
-  runArchiving
-);
+// Lấy counts cho sidebar badges (All roles)
+router.get("/counts", authenticate, getRequestCounts);
 
 
 // ============ USER ROUTES ============
@@ -207,6 +173,24 @@ router.put(
   validateObjectId("requestId"),
   validateComment,  // Validate comment (required)
   overrideRequest
+);
+
+// ===== COMMENTS =====
+// Get comments of a request
+router.get(
+  "/:requestId/comments",
+  authenticate,
+  validateObjectId("requestId"),
+  getRequestComments
+);
+
+// Add comment to a request
+router.post(
+  "/:requestId/comments",
+  authenticate,
+  strictLimiter, // Rate limit: 10/minute
+  validateObjectId("requestId"),
+  addCommentToRequest
 );
 
 module.exports = router;
