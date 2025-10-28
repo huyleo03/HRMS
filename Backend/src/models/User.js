@@ -330,9 +330,6 @@ userSchema.pre("save", async function (next) {
       // Nếu phòng ban có managerId, gán vào
       if (department && department.managerId) {
         this.manager_id = department.managerId;
-        console.log(
-          `✅ Tự động gán Manager ${department.managerId} cho Employee ${this.full_name}`
-        );
       } else {
         console.log(
           `⚠️ Phòng ban "${this.department.department_name}" chưa có Manager. Employee ${this.full_name} sẽ có manager_id = null.`
