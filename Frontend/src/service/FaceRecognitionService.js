@@ -5,6 +5,22 @@ class FaceRecognitionService {
     this.isModelsLoaded = false;
     // Models đã được clone về local bằng degit
     this.MODEL_URL = '/models';
+    
+    // Liveness Detection Configuration
+    this.livenessConfig = {
+      blinkThreshold: 0.25, // Eye Aspect Ratio threshold để detect chớp mắt
+      minBlinks: 1, // Số lần chớp mắt tối thiểu
+      detectionTimeWindow: 5000, // 5 giây để hoàn thành challenge
+      headMovementThreshold: 15, // Độ nghiêng đầu tối thiểu (degrees)
+    };
+    
+    // Tracking state for liveness detection
+    this.livenessState = {
+      blinkCount: 0,
+      previousEAR: null,
+      headPositions: [],
+      challengeType: null, // 'blink' hoặc 'head_turn'
+    };
   }
 
   /**
@@ -182,7 +198,7 @@ class FaceRecognitionService {
   }
 
   /**
-   * Vẽ face detection lên canvas (để debug/preview)
+   * Helper: Vẽ face detection lên canvas (để debug/preview)
    */
   async drawDetection(canvasElement, imageElement, detection) {
     if (!detection) return;
@@ -198,6 +214,313 @@ class FaceRecognitionService {
     canvasElement.getContext('2d').clearRect(0, 0, canvasElement.width, canvasElement.height);
     faceapi.draw.drawDetections(canvasElement, resizedDetections);
     faceapi.draw.drawFaceLandmarks(canvasElement, resizedDetections);
+  }
+
+  /**
+   * ===========================================
+   * 🛡️ LIVENESS DETECTION - CHỐNG GIAN LẬN 
+   * ===========================================
+   */
+
+  /**
+   * Tính Eye Aspect Ratio (EAR) để detect chớp mắt
+   * EAR < 0.25 = mắt đang nhắm
+   */
+  calculateEAR(landmarks) {
+    const leftEye = landmarks.getLeftEye();
+    const rightEye = landmarks.getRightEye();
+
+    const leftEAR = this.getEyeAspectRatio(leftEye);
+    const rightEAR = this.getEyeAspectRatio(rightEye);
+
+    return (leftEAR + rightEAR) / 2.0;
+  }
+
+  /**
+   * Công thức EAR:
+   * EAR = (||p2 - p6|| + ||p3 - p5||) / (2 * ||p1 - p4||)
+   */
+  getEyeAspectRatio(eyePoints) {
+    const p1 = eyePoints[0];
+    const p2 = eyePoints[1];
+    const p3 = eyePoints[2];
+    const p4 = eyePoints[3];
+    const p5 = eyePoints[4];
+    const p6 = eyePoints[5];
+
+    const vertical1 = this.euclideanDistance(p2, p6);
+    const vertical2 = this.euclideanDistance(p3, p5);
+    const horizontal = this.euclideanDistance(p1, p4);
+
+    return (vertical1 + vertical2) / (2.0 * horizontal);
+  }
+
+  euclideanDistance(p1, p2) {
+    return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+  }
+
+  /**
+   * Detect chớp mắt từ video stream
+   * @returns {Promise<boolean>} True nếu detect được chớp mắt
+   */
+  async detectBlink(videoElement, onProgress) {
+    return new Promise(async (resolve, reject) => {
+      await this.loadModels();
+
+      let blinkCount = 0;
+      let isEyeClosed = false;
+      const startTime = Date.now();
+      const timeout = this.livenessConfig.detectionTimeWindow;
+
+      const checkBlink = async () => {
+        try {
+          // Kiểm tra timeout
+          if (Date.now() - startTime > timeout) {
+            reject(new Error('⏱️ Hết thời gian! Vui lòng thử lại.'));
+            return;
+          }
+
+          // Detect face với landmarks
+          const detection = await faceapi
+            .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks();
+
+          if (!detection) {
+            onProgress && onProgress({ message: '👤 Không tìm thấy khuôn mặt', blinkCount });
+            requestAnimationFrame(checkBlink);
+            return;
+          }
+
+          // Tính EAR
+          const ear = this.calculateEAR(detection.landmarks);
+
+          // Detect trạng thái mắt
+          if (ear < this.livenessConfig.blinkThreshold) {
+            // Mắt đang nhắm
+            if (!isEyeClosed) {
+              isEyeClosed = true;
+            }
+          } else {
+            // Mắt đang mở
+            if (isEyeClosed) {
+              // Vừa mở mắt → Đã chớp 1 lần
+              blinkCount++;
+              isEyeClosed = false;
+
+              onProgress && onProgress({
+                message: `✅ Phát hiện chớp mắt ${blinkCount}/${this.livenessConfig.minBlinks}`,
+                blinkCount,
+              });
+
+              // Đủ số lần chớp → Success
+              if (blinkCount >= this.livenessConfig.minBlinks) {
+                resolve(true);
+                return;
+              }
+            }
+          }
+
+          onProgress && onProgress({
+            message: `👁️ Vui lòng chớp mắt ${blinkCount}/${this.livenessConfig.minBlinks}`,
+            blinkCount,
+            ear: ear.toFixed(3),
+          });
+
+          // Continue checking
+          requestAnimationFrame(checkBlink);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      // Start checking
+      checkBlink();
+    });
+  }
+
+  /**
+   * Tính góc nghiêng đầu (Head Pose Estimation)
+   */
+  calculateHeadPose(landmarks) {
+    const nose = landmarks.getNose();
+    const leftEye = landmarks.getLeftEye();
+    const rightEye = landmarks.getRightEye();
+
+    // Tính trung điểm 2 mắt
+    const eyeCenter = {
+      x: (leftEye[0].x + rightEye[3].x) / 2,
+      y: (leftEye[0].y + rightEye[3].y) / 2,
+    };
+
+    // Tính vector từ mũi đến trung điểm mắt
+    const nosePoint = nose[3]; // Tip of nose
+    const dx = nosePoint.x - eyeCenter.x;
+    const dy = nosePoint.y - eyeCenter.y;
+
+    // Tính góc yaw (xoay trái/phải)
+    const yaw = Math.atan2(dx, dy) * (180 / Math.PI);
+
+    return { yaw };
+  }
+
+  /**
+   * Detect xoay đầu
+   * @param {string} direction - 'left' hoặc 'right'
+   */
+  async detectHeadTurn(videoElement, direction = 'left', onProgress) {
+    return new Promise(async (resolve, reject) => {
+      await this.loadModels();
+
+      let centerYaw = null;
+      let maxDeviation = 0;
+      const startTime = Date.now();
+      const timeout = this.livenessConfig.detectionTimeWindow;
+      const threshold = this.livenessConfig.headMovementThreshold;
+
+      const checkHeadTurn = async () => {
+        try {
+          if (Date.now() - startTime > timeout) {
+            reject(new Error('⏱️ Hết thời gian! Vui lòng thử lại.'));
+            return;
+          }
+
+          const detection = await faceapi
+            .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks();
+
+          if (!detection) {
+            onProgress && onProgress({ message: '👤 Không tìm thấy khuôn mặt' });
+            requestAnimationFrame(checkHeadTurn);
+            return;
+          }
+
+          const { yaw } = this.calculateHeadPose(detection.landmarks);
+
+          // Lần đầu tiên → Lưu vị trí trung tâm
+          if (centerYaw === null) {
+            centerYaw = yaw;
+            onProgress && onProgress({
+              message: `📸 Vui lòng xoay đầu sang ${direction === 'left' ? 'TRÁI' : 'PHẢI'}`,
+            });
+            requestAnimationFrame(checkHeadTurn);
+            return;
+          }
+
+          // Tính độ lệch
+          const deviation = yaw - centerYaw;
+          maxDeviation = Math.max(maxDeviation, Math.abs(deviation));
+
+          const expectedDeviation = direction === 'left' ? deviation < -threshold : deviation > threshold;
+
+          if (expectedDeviation) {
+            resolve(true);
+            return;
+          }
+
+          onProgress && onProgress({
+            message: `🔄 Đang xoay... ${Math.abs(deviation).toFixed(0)}°/${threshold}°`,
+            deviation: deviation.toFixed(1),
+          });
+
+          requestAnimationFrame(checkHeadTurn);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      checkHeadTurn();
+    });
+  }
+
+  /**
+   * MAIN FUNCTION: Liveness Check với Random Challenge
+   * @param {HTMLVideoElement} videoElement 
+   * @param {Function} onProgress - Callback để update UI
+   * @returns {Promise<Object>}
+   */
+  async performLivenessCheck(videoElement, onProgress) {
+    try {
+      // Random challenge: 70% blink, 30% head turn
+      const challenges = ['blink', 'blink', 'blink', 'head_turn'];
+      const selectedChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+
+      console.log('🎲 Selected challenge:', selectedChallenge);
+
+      if (selectedChallenge === 'blink') {
+        onProgress && onProgress({
+          challengeType: 'blink',
+          message: '👁️ Vui lòng CHỚP MẮT để xác nhận bạn là người thật',
+        });
+
+        await this.detectBlink(videoElement, onProgress);
+
+        return {
+          success: true,
+          challengeType: 'blink',
+          message: '✅ Xác thực thành công! Bạn là người thật.',
+        };
+      } else {
+        // Head turn (random left/right)
+        const direction = Math.random() > 0.5 ? 'left' : 'right';
+
+        onProgress && onProgress({
+          challengeType: 'head_turn',
+          direction,
+          message: `🔄 Vui lòng XOAY ĐẦU SANG ${direction === 'left' ? 'TRÁI' : 'PHẢI'}`,
+        });
+
+        await this.detectHeadTurn(videoElement, direction, onProgress);
+
+        return {
+          success: true,
+          challengeType: 'head_turn',
+          message: '✅ Xác thực thành công! Bạn là người thật.',
+        };
+      }
+    } catch (error) {
+      console.error('❌ Liveness check failed:', error);
+      return {
+        success: false,
+        message: error.message || 'Xác thực thất bại. Vui lòng thử lại.',
+      };
+    }
+  }
+
+  /**
+   * Kiểm tra chất lượng ảnh (chống ảnh mờ/tối)
+   */
+  async checkImageQuality(base64Image) {
+    try {
+      const img = await this.base64ToImage(base64Image);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      // Tính độ sáng trung bình
+      let totalBrightness = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        totalBrightness += brightness;
+      }
+      const avgBrightness = totalBrightness / (data.length / 4);
+
+      // Kiểm tra
+      if (avgBrightness < 50) {
+        return { success: false, message: '🌑 Ảnh quá tối! Vui lòng chụp ở nơi sáng hơn.' };
+      }
+      if (avgBrightness > 240) {
+        return { success: false, message: '☀️ Ảnh quá sáng! Vui lòng giảm ánh sáng.' };
+      }
+
+      return { success: true, brightness: avgBrightness.toFixed(0) };
+    } catch (error) {
+      return { success: false, message: 'Không thể kiểm tra chất lượng ảnh' };
+    }
   }
 }
 

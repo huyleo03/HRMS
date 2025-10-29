@@ -39,6 +39,8 @@ const EmployeeAttendance = () => {
   const [isCheckingNetwork, setIsCheckingNetwork] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isFaceVerifying, setIsFaceVerifying] = useState(false); // Face verification state
+  const [isLivenessChecking, setIsLivenessChecking] = useState(false); // Liveness detection state
+  const [livenessProgress, setLivenessProgress] = useState(null); // Liveness progress info
   const [showCamera, setShowCamera] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [actionType, setActionType] = useState(null); // 'in' | 'out'
@@ -164,6 +166,49 @@ const EmployeeAttendance = () => {
     }
   };
 
+  /**
+   * 🛡️ LIVENESS CHECK - Bắt buộc trước khi chụp ảnh
+   */
+  const performLivenessCheck = async () => {
+    setIsLivenessChecking(true);
+    setLivenessProgress({ message: '🔍 Đang khởi động Liveness Detection...', challengeType: null });
+
+    try {
+      const video = videoRef.current;
+      if (!video) {
+        throw new Error('Video không khả dụng');
+      }
+
+      // Thực hiện liveness check
+      const result = await FaceRecognitionService.performLivenessCheck(
+        video,
+        (progress) => {
+          setLivenessProgress(progress);
+        }
+      );
+
+      if (result.success) {
+        toast.success('✅ ' + result.message, { autoClose: 2000 });
+        setLivenessProgress(null);
+        setIsLivenessChecking(false);
+        
+        // Liveness check thành công → Tự động chụp ảnh
+        setTimeout(() => {
+          capturePhoto();
+        }, 500);
+      } else {
+        toast.error('❌ ' + result.message, { autoClose: 4000 });
+        setIsLivenessChecking(false);
+        setLivenessProgress(null);
+      }
+    } catch (error) {
+      console.error('Liveness check error:', error);
+      toast.error('❌ Lỗi xác thực: ' + error.message, { autoClose: 4000 });
+      setIsLivenessChecking(false);
+      setLivenessProgress(null);
+    }
+  };
+
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -172,6 +217,8 @@ const EmployeeAttendance = () => {
     setShowCamera(false);
     setCapturedPhoto(null);
     setActionType(null);
+    setIsLivenessChecking(false);
+    setLivenessProgress(null);
   };
 
   const submitAttendance = async () => {
@@ -184,7 +231,19 @@ const EmployeeAttendance = () => {
     setIsFaceVerifying(true);
 
     try {
-      // ========== BƯỚC 1: XÁC THỰC KHUÔN MẶT ==========
+      // ========== BƯỚC 1: KIỂM TRA CHẤT LƯỢNG ẢNH ==========
+      toast.info('🔍 Đang kiểm tra chất lượng ảnh...', { autoClose: 1500 });
+      const qualityCheck = await FaceRecognitionService.checkImageQuality(capturedPhoto);
+      
+      if (!qualityCheck.success) {
+        toast.error(qualityCheck.message, { autoClose: 4000 });
+        setIsProcessing(false);
+        setIsFaceVerifying(false);
+        setCapturedPhoto(null); // Cho phép chụp lại
+        return;
+      }
+
+      // ========== BƯỚC 2: XÁC THỰC KHUÔN MẶT ==========
       // Verify face cho CẢ check-in VÀ check-out
       const profilePhoto = user?.avatar;
 
@@ -253,7 +312,7 @@ const EmployeeAttendance = () => {
         autoClose: 3000,
       });
 
-      // ========== BƯỚC 2: GỬI REQUEST CHẤM CÔNG ==========
+      // ========== BƯỚC 3: GỬI REQUEST CHẤM CÔNG ==========
       let response;
 
       if (actionType === "in") {
@@ -576,6 +635,29 @@ const EmployeeAttendance = () => {
             <div className="camera-preview">
               <video ref={videoRef} autoPlay playsInline />
               <canvas ref={canvasRef} style={{ display: "none" }} />
+              
+              {/* Liveness Detection Overlay */}
+              {isLivenessChecking && livenessProgress && (
+                <div className="liveness-overlay">
+                  <div className="liveness-message">
+                    {livenessProgress.challengeType === 'blink' && (
+                      <div className="challenge-icon">👁️</div>
+                    )}
+                    {livenessProgress.challengeType === 'head_turn' && (
+                      <div className="challenge-icon">🔄</div>
+                    )}
+                    <p>{livenessProgress.message}</p>
+                    {livenessProgress.blinkCount !== undefined && (
+                      <div className="progress-bar">
+                        <div 
+                          className="progress-fill" 
+                          style={{ width: `${(livenessProgress.blinkCount / 1) * 100}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="photo-preview">
@@ -587,12 +669,25 @@ const EmployeeAttendance = () => {
         <div className="camera-actions">
           {!capturedPhoto ? (
             <>
-              <button onClick={stopCamera} className="btn-secondary">
+              <button onClick={stopCamera} className="btn-secondary" disabled={isLivenessChecking}>
                 Hủy
               </button>
-              <button onClick={capturePhoto} className="btn-primary">
-                <Camera size={18} />
-                <span>Chụp ảnh</span>
+              <button 
+                onClick={performLivenessCheck} 
+                className="btn-primary"
+                disabled={isLivenessChecking}
+              >
+                {isLivenessChecking ? (
+                  <>
+                    <Clock className="animate-spin" size={18} />
+                    <span>🛡️ Đang xác thực...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera size={18} />
+                    <span>🛡️ Bắt đầu xác thực</span>
+                  </>
+                )}
               </button>
             </>
           ) : (
