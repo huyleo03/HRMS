@@ -35,18 +35,23 @@ class FaceRecognitionService {
     try {
       console.log('📥 Loading Face-API models from:', this.MODEL_URL);
       
-      // Load models - files nằm trực tiếp trong /models (không có subfolder)
+      // Load models từ subfolders
       await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(this.MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(this.MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(this.MODEL_URL),
+        faceapi.nets.tinyFaceDetector.loadFromUri(`${this.MODEL_URL}/tiny_face_detector`),
+        faceapi.nets.faceLandmark68Net.loadFromUri(`${this.MODEL_URL}/face_landmark_68`),
+        faceapi.nets.faceRecognitionNet.loadFromUri(`${this.MODEL_URL}/face_recognition`),
       ]);
       
       this.isModelsLoaded = true;
       console.log('✅ Face-API models loaded successfully');
     } catch (error) {
       console.error('❌ Error loading Face-API models:', error);
-      throw new Error('Không thể tải models AI. Vui lòng kiểm tra kết nối internet.');
+      console.error('📍 Attempted to load from:', {
+        tinyFaceDetector: `${this.MODEL_URL}/tiny_face_detector`,
+        faceLandmark68Net: `${this.MODEL_URL}/face_landmark_68`,
+        faceRecognitionNet: `${this.MODEL_URL}/face_recognition`,
+      });
+      throw new Error('Không thể tải models AI. Vui lòng kiểm tra thư mục /public/models/');
     }
   }
 
