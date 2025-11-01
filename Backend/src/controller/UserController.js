@@ -296,12 +296,8 @@ exports.updateUserByAdmin = async (req, res) => {
       const newDepartment = await Department.findById(department.department_id);
       if (newDepartment && newDepartment.managerId) {
         userToUpdate.manager_id = newDepartment.managerId;
-        console.log(
-          `✅ Tự động gán Manager mới cho Employee "${userToUpdate.full_name}"`
-        );
       } else {
         userToUpdate.manager_id = null;
-        console.log(`⚠️ Phòng ban mới chưa có Manager. manager_id = null`);
       }
     }
 
@@ -449,5 +445,115 @@ exports.searchUsersForCc = async (req, res) => {
   } catch (error) {
     console.error("Lỗi khi tìm kiếm người dùng CC:", error);
     res.status(500).json({ message: "Lỗi server khi tìm kiếm người dùng." });
+  }
+};
+
+// ===== DEACTIVATE USER =====
+// Admin vô hiệu hóa tài khoản (chuyển status từ Active → Inactive)
+exports.deactivateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUser = req.user;
+
+    // ✅ Chỉ Admin mới được deactivate
+    if (currentUser.role !== "Admin") {
+      return res.status(403).json({ 
+        message: "Chỉ Admin mới có quyền vô hiệu hóa tài khoản" 
+      });
+    }
+
+    // ✅ Tìm user cần deactivate
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    // ✅ Không cho phép Admin tự deactivate chính mình
+    if (user._id.toString() === currentUser.id) {
+      return res.status(400).json({ 
+        message: "Bạn không thể vô hiệu hóa tài khoản của chính mình" 
+      });
+    }
+
+    // ✅ Kiểm tra user đã bị deactivate chưa
+    if (user.status === "Inactive") {
+      return res.status(400).json({ 
+        message: "Tài khoản này đã bị vô hiệu hóa rồi" 
+      });
+    }
+
+    // ✅ Cập nhật status sang Inactive
+    user.status = "Inactive";
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Đã vô hiệu hóa tài khoản của ${user.full_name}`,
+      data: {
+        userId: user._id,
+        full_name: user.full_name,
+        email: user.email,
+        status: user.status,
+        deactivatedAt: new Date()
+      }
+    });
+  } catch (error) {
+    console.error("❌ Lỗi khi vô hiệu hóa tài khoản:", error);
+    res.status(500).json({ 
+      message: "Lỗi server khi vô hiệu hóa tài khoản",
+      error: error.message 
+    });
+  }
+};
+
+// ===== REACTIVATE USER =====
+// Admin kích hoạt lại tài khoản (chuyển status từ Inactive → Active)
+exports.reactivateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUser = req.user;
+
+    // ✅ Chỉ Admin mới được reactivate
+    if (currentUser.role !== "Admin") {
+      return res.status(403).json({ 
+        message: "Chỉ Admin mới có quyền kích hoạt lại tài khoản" 
+      });
+    }
+
+    // ✅ Tìm user cần reactivate
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    // ✅ Kiểm tra user có đang bị deactivate không
+    if (user.status !== "Inactive") {
+      return res.status(400).json({ 
+        message: `Tài khoản này đang ở trạng thái "${user.status}", không thể kích hoạt lại`,
+        currentStatus: user.status
+      });
+    }
+
+    // ✅ Cập nhật status sang Active
+    user.status = "Active";
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Đã kích hoạt lại tài khoản của ${user.full_name}`,
+      data: {
+        userId: user._id,
+        full_name: user.full_name,
+        email: user.email,
+        status: user.status,
+        reactivatedAt: new Date()
+      }
+    });
+  } catch (error) {
+    console.error("❌ Lỗi khi kích hoạt lại tài khoản:", error);
+    res.status(500).json({ 
+      message: "Lỗi server khi kích hoạt lại tài khoản",
+      error: error.message 
+    });
   }
 };

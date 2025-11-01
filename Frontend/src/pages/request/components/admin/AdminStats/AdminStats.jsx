@@ -199,8 +199,6 @@ const AdminStats = () => {
 
       // Xuất file
       XLSX.writeFile(wb, fileName);
-
-      console.log("✅ Đã xuất báo cáo Excel thành công!");
     } catch (error) {
       console.error("❌ Lỗi khi xuất Excel:", error);
       alert("Có lỗi xảy ra khi xuất báo cáo. Vui lòng thử lại!");

@@ -14,6 +14,7 @@ const {
   forceRejectRequest,
   getAdminStats,
   getRequestCounts,
+  getApprovedLeavesByDepartmentAndMonth,
 } = require("../controller/RequestController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
@@ -171,6 +172,14 @@ router.put(
   validateObjectId("requestId"),
   validateComment,  // Validate comment (required)
   overrideRequest
+);
+
+// ✅ LẤY APPROVED LEAVES THEO DEPARTMENT VÀ THÁNG (CHO CALENDAR)
+router.get(
+  "/approved-leaves/calendar",
+  authenticate,
+  authorize("Manager", "Employee"), // Manager và Employee
+  getApprovedLeavesByDepartmentAndMonth
 );
 
 module.exports = router;

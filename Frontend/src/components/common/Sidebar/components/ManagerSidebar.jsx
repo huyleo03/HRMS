@@ -33,6 +33,11 @@ const ManagerSidebar = () => {
       path: '/manager/request',
       label: 'Request',
       icon: '🏖️'
+    },
+    {
+      path: '/manager/holidays',
+      label: 'Holiday Calendar',
+      icon: '🎄'
     }
   ];
 

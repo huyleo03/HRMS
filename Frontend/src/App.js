@@ -10,7 +10,7 @@ import ResetPass from "./pages/authentication/ResetPass.jsx";
 import AdminDashboard from "./pages/dashboard/components/AdminDashboard.jsx";
 import Employees from "./pages/employee/pages/AllEmployeePage.jsx";
 import AddNewEmployee from "./pages/employee/pages/AddNewEmployee.jsx";
-import ViewEmployeeDetailsPage from "./pages/employee/pages/ViewEmployeeDetailsPage.jsx";
+import ViewEmployeeDetails from "./pages/employee/pages/ViewEmployeeDetails.jsx";
 import MyProfile from "./pages/my-profile/MyProfile.jsx";
 import Department from "./pages/department/pages/AllDepartMent.jsx";
 import DepartmentMembers from "./pages/department/pages/ViewDepartMentPage.jsx";
@@ -30,6 +30,8 @@ import Settings from "./pages/settings/Settings.jsx";
 import WorkflowManagement from "./pages/workflow/WorkflowManagement.jsx";
 import WorkflowForm from "./pages/workflow/WorkflowForm.jsx";
 import WorkflowDetailPage from "./pages/workflow/WorkflowDetailPage.jsx";
+import AdminHolidayPage from "./pages/holiday/pages/AdminHolidayPage.jsx";
+import DepartmentCalendarPage from "./pages/holiday/pages/DepartmentCalendarPage.jsx";
 
 function App() {
   return (
@@ -64,7 +66,7 @@ function App() {
             <Route path="/employees/add" element={<AddNewEmployee />} />
             <Route
               path="/employees/:id"
-              element={<ViewEmployeeDetailsPage />}
+              element={<ViewEmployeeDetails />}
             />
             <Route path="/departments" element={<Department />} />
             <Route
@@ -81,6 +83,7 @@ function App() {
               element={<WorkflowDetailPage />}
             />
             <Route path="/admin/workflow/edit/:id" element={<WorkflowForm />} />
+            <Route path="/admin/holidays" element={<AdminHolidayPage />} />
             <Route path="/settings" element={<Settings />} />
           </Route>{" "}
           {/* --- Manager Routes --- */}
@@ -102,6 +105,7 @@ function App() {
               element={<ManagerAttendancePage />}
             />{" "}
             {/* Xem phòng ban */}
+            <Route path="/manager/holidays" element={<DepartmentCalendarPage />} />
           </Route>
           {/* --- Employee Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Employee"]} />}>
@@ -111,6 +115,7 @@ function App() {
               path="/employee/attendance"
               element={<EmployeeAttendance />}
             />
+            <Route path="/employee/holidays" element={<DepartmentCalendarPage />} />
           </Route>
           {/* --- Shared Routes (All roles can access) --- */}
           <Route

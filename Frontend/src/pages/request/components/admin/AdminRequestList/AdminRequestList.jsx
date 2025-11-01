@@ -41,11 +41,11 @@ const AdminRequestList = forwardRef(({ onSelectRequest }, ref) => {
         }
       });
 
-      console.log("🔍 [AdminRequestList] Fetching with params:", params);
+      
 
       const response = await getAdminRequests(params);
       
-      console.log("✅ [AdminRequestList] Response:", response);
+      
       
       setRequests(response.requests);
       setPagination(response.pagination);
@@ -63,7 +63,7 @@ const AdminRequestList = forwardRef(({ onSelectRequest }, ref) => {
   // ✅ EXPOSE refreshList qua ref
   useImperativeHandle(ref, () => ({
     refreshList: () => {
-      console.log("🔄 [AdminRequestList] Refreshing list...");
+      
       fetchAdminRequests();
     },
   }), [fetchAdminRequests]);

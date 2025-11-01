@@ -383,7 +383,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="modal-header">
+        <div className="modal-huyleo">
           <h2>✍️ Tạo đơn yêu cầu mới</h2>
           <button className="modal-close-btn" onClick={handleClose}>
             <X size={24} />
@@ -409,10 +409,10 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
         )}
 
         {/* Content */}
-        <form onSubmit={handleSubmit} className="modal-content">
+        <form onSubmit={handleSubmit} className="modal-content-form">
           {/* Request Type */}
           <div className="form-section">
-            <label className="form-label">
+            <label className="form-huyleo">
               <FileText size={16} />
               Loại đơn <span className="required">*</span>
             </label>
@@ -427,7 +427,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
 
           {/* Subject */}
           <div className="form-group">
-            <label className="form-label">Tiêu đề</label>
+            <label className="form-huyleo">Tiêu đề</label>
             <input
               type="text"
               name="subject"
@@ -444,7 +444,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
 
           {/* Reason */}
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-huyleo">
               Lý do <span className="required">*</span>
             </label>
             <textarea
@@ -463,7 +463,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
           {/* Date Range */}
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">
+              <label className="form-huyleo">
                 <Calendar size={16} />
                 Ngày bắt đầu <span className="required">*</span>
               </label>
@@ -480,7 +480,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">
+              <label className="form-huyleo">
                 <Calendar size={16} />
                 Ngày kết thúc
               </label>
@@ -498,7 +498,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
           {/* Hour (for Overtime) */}
           {formData.type === "Overtime" && (
             <div className="form-group">
-              <label className="form-label">
+              <label className="form-huyleo">
                 <Clock size={16} />
                 Số giờ tăng ca <span className="required">*</span>
               </label>
@@ -518,7 +518,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
 
           {/* Priority */}
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-huyleo">
               <AlertCircle size={16} />
               Độ ưu tiên
             </label>
@@ -551,7 +551,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
 
           {/* Attachments */}
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-huyleo">
               <Paperclip size={16} />
               File đính kèm
             </label>
@@ -599,7 +599,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
           {/* Approvers - ẨN KHI ADMIN */}
           {!isAdmin && (
             <div className="form-group">
-              <label className="form-label">
+              <label className="form-huyleo">
                 <User size={16} />
                 Quy trình phê duyệt <span className="required">*</span>
               </label>
@@ -665,7 +665,7 @@ const CreateRequestModal = ({ onClose, onSubmit }) => {
 
           {/* CC */}
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-huyleo">
               <Users size={16} />
               CC - Người nhận bản sao
             </label>

@@ -26,15 +26,6 @@ export const createDepartment = async (data, token) => {
   return res.data;
 };
 
-// Dùng nếu cần search riêng
-export const searchDepartments = async (keyword, token) => {
-  const res = await axios.get(`${API}/departments/search`, {
-    headers: { Authorization: `Bearer ${token}` },
-    params: { keyword },
-  });
-  return res.data;
-};
-
 // LẤY CHI TIẾT PHÒNG BAN (full members - không phân trang)
 export const getDepartmentById = async (id, token) => {
   const res = await axios.get(`${API}/departments/${id}`, {

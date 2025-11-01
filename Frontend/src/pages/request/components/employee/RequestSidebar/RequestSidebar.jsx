@@ -23,9 +23,7 @@ const RequestSidebar = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Debug: Log counts prop
-  console.log("🔍 [RequestSidebar] Received counts:", counts);
-  console.log("🔍 [RequestSidebar] Sample item.count:", counts.myPending);
+
 
   // ✅ MENU CHO MANAGER VÀ EMPLOYEE - HỘP THƯ
   const sidebarItems = [

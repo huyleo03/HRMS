@@ -180,7 +180,7 @@ exports.updateCompanyConfig = async (req, res) => {
       try {
         const autoMarkAbsentService = require('../services/autoMarkAbsentService');
         await autoMarkAbsentService.setupCronJob();
-        console.log('🔄 Auto mark absent cron job refreshed after config update');
+       
       } catch (error) {
         console.error('⚠️ Error refreshing cron job:', error.message);
       }

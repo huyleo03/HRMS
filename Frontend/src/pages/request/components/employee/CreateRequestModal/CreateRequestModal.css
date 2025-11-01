@@ -29,7 +29,7 @@
 }
 
 /* ===== MODAL HEADER ===== */
-.modal-header {
+.modal-huyleo {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -37,7 +37,7 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
-.modal-header h2 {
+.modal-huyleo h2 {
   font-size: 24px;
   font-weight: 600;
   color: #1f2937;
@@ -128,13 +128,13 @@
 }
 
 /* ===== MODAL CONTENT ===== */
-.modal-content {
-  flex: 1 1 auto !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+.modal-content-form {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 32px;
-  min-height: 0 !important; /* Important for flexbox scrolling */
-  max-height: 100% !important;
+  min-height: 0; /* Important for flexbox scrolling */
+  max-height: 100%;
 }
 
 .modal-content::-webkit-scrollbar {
@@ -169,7 +169,7 @@
   gap: 16px;
 }
 
-.form-label {
+.form-huyleo {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -635,7 +635,7 @@
     border-radius: 0;
   }
 
-  .modal-header {
+  .modal-huyleo {
     padding: 20px;
   }
 

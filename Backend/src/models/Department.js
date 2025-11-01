@@ -41,9 +41,6 @@ departmentSchema.post("save", async function (doc) {
       });
 
       if (employees.length === 0) {
-        console.log(
-          `⚠️ Không có Employee nào trong phòng ban "${doc.department_name}"`
-        );
         return;
       }
 
@@ -81,9 +78,6 @@ departmentSchema.post("findOneAndUpdate", async function (doc) {
       });
 
       if (employees.length === 0) {
-        console.log(
-          `⚠️ Không có Employee nào trong phòng ban "${doc.department_name}"`
-        );
         return;
       }
 

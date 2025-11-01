@@ -150,7 +150,7 @@ workflowSchema.methods.resolveApprovers = async function (user) {
       
       // ✅ KIỂM TRA DUPLICATE: Bỏ qua nếu approver đã tồn tại
       if (seenApproverIds.has(approverIdString)) {
-        console.log(`⚠️ [Workflow] Bỏ qua duplicate approver: ${approver.full_name} (Level ${step.level})`);
+        
         continue; // Skip duplicate
       }
       
