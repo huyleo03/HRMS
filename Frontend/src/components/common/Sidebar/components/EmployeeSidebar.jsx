@@ -23,6 +23,11 @@ const EmployeeSidebar = () => {
       icon: '🏖️'
     },
     {
+      path: '/employee/payroll',
+      label: 'Lương',
+      icon: '💰'
+    },
+    {
       path: '/employee/holidays',
       label: 'Holiday Calendar',
       icon: '🎄'
@@ -37,6 +42,7 @@ const EmployeeSidebar = () => {
     return location.pathname === path || 
            (path === '/employee/requests' && location.pathname.startsWith('/employee/requests')) ||
            (path === '/employee/attendance' && location.pathname.startsWith('/employee/attendance')) ||
+           (path === '/employee/payroll' && location.pathname.startsWith('/employee/payroll')) ||
            (path === '/employee/holidays' && location.pathname.startsWith('/employee/holidays'));
   };
 

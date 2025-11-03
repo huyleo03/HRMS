@@ -8,6 +8,7 @@ const workFlowRoutes = require("./workFlowRoutes");
 const attendanceRoutes = require("./attendanceRoutes");
 const notificationRoutes = require("./notificationRoutes");
 const configRoutes = require("./configRoutes");
+const payrollRoutes = require("./payrollRoutes");
 const holidayRoutes = require("./holidayRoutes");
 
 const routes = (app) => {
@@ -20,6 +21,7 @@ const routes = (app) => {
   app.use("/api/attendance", attendanceRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/config", configRoutes);
+  app.use("/api/payroll", payrollRoutes);
   app.use("/api/holidays", holidayRoutes);
 };
 

@@ -576,6 +576,57 @@ requestSchema.index({
   sparse: true  // Only index cancelled requests
 });
 
+// ===== POST SAVE HOOK: CẬP NHẬT ATTENDANCE KHI OT REQUEST APPROVED =====
+requestSchema.post("save", async function(doc) {
+  try {
+    // Chỉ xử lý khi Request type = Overtime và status = Approved
+    if (doc.type === "Overtime" && doc.status === "Approved") {
+      const Attendance = mongoose.model("Attendance");
+      
+      // Lấy startDate và endDate từ request
+      const startDate = new Date(doc.startDate);
+      const endDate = doc.endDate ? new Date(doc.endDate) : startDate;
+      
+      // Chuẩn hóa về đầu ngày để so sánh chính xác
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      // Tìm tất cả attendance records trong khoảng thời gian và của user này
+      const attendanceRecords = await Attendance.find({
+        userId: doc.submittedBy,
+        date: {
+          $gte: startDate,
+          $lte: endDate
+        }
+      });
+      
+      // Cập nhật overtimeApproved = true cho tất cả records tìm được
+      if (attendanceRecords.length > 0) {
+        await Attendance.updateMany(
+          {
+            userId: doc.submittedBy,
+            date: {
+              $gte: startDate,
+              $lte: endDate
+            }
+          },
+          {
+            $set: {
+              overtimeApproved: true,
+              approvedOvertimeRequestId: doc._id
+            }
+          }
+        );
+        
+        console.log(`✅ Updated ${attendanceRecords.length} attendance record(s) with approved OT for Request ${doc.requestId}`);
+      }
+    }
+  } catch (error) {
+    console.error("❌ Error updating attendance after OT approval:", error);
+    // Không throw error để tránh rollback transaction
+  }
+});
+
 const Request = mongoose.model("Request", requestSchema, "Request");
 
 module.exports = Request;
