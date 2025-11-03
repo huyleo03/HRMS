@@ -84,6 +84,10 @@ const userSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
+    // ===== STATUS - Trạng thái tài khoản =====
+    // Active: Tài khoản hoạt động bình thường, có thể đăng nhập
+    // Inactive: Tài khoản đã bị vô hiệu hóa (nhân viên nghỉ việc), KHÔNG thể đăng nhập
+    // Suspended: Tài khoản bị tạm ngưng (vi phạm), KHÔNG thể đăng nhập
     status: {
       type: String,
       enum: ["Active", "Inactive", "Suspended"],

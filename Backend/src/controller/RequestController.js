@@ -1305,4 +1305,85 @@ exports.getRequestCounts = async (req, res) => {
   }
 };
 
+// ===== LẤY APPROVED LEAVES THEO DEPARTMENT VÀ THÁNG (CHO CALENDAR) =====
+exports.getApprovedLeavesByDepartmentAndMonth = async (req, res) => {
+  try {
+    const { departmentId, year, month } = req.query;
+    const currentUser = await User.findById(req.user.id);
+
+    if (!currentUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Người dùng không tồn tại" 
+      });
+    }
+
+    // Validate parameters
+    if (!departmentId || !year || !month) {
+      return res.status(400).json({
+        success: false,
+        message: "departmentId, year và month là bắt buộc"
+      });
+    }
+
+    // Check permission: User chỉ được xem lịch của department mình
+    if (currentUser.department?.department_id?.toString() !== departmentId) {
+      return res.status(403).json({
+        success: false,
+        message: "Bạn chỉ được xem lịch nghỉ của phòng ban mình"
+      });
+    }
+
+    // Calculate date range
+    const startOfMonth = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endOfMonth = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
+
+    // Query approved Leave and BusinessTrip requests
+    const approvedLeaves = await Request.find({
+      "department.department_id": departmentId,
+      type: { $in: ["Leave", "BusinessTrip"] }, // Nghỉ phép + Công tác
+      status: "Approved",
+      startDate: { $lte: endOfMonth },
+      $or: [
+        { endDate: { $gte: startOfMonth } },
+        { endDate: null } // Single day leave
+      ]
+    })
+    .populate('submittedBy', 'role') // Populate role để phân biệt Manager/Employee
+    .select('submittedBy submittedByName submittedByAvatar startDate endDate reason subject type')
+    .sort({ startDate: 1 })
+    .lean();
+
+    // Format response
+    const formattedLeaves = approvedLeaves.map(leave => ({
+      _id: leave._id,
+      employeeId: leave.submittedBy?._id || leave.submittedBy,
+      employeeName: leave.submittedByName,
+      employeeAvatar: leave.submittedByAvatar,
+      employeeRole: leave.submittedBy?.role || 'Employee', // Manager or Employee
+      startDate: leave.startDate,
+      endDate: leave.endDate || leave.startDate, // Single day if endDate null
+      reason: leave.reason,
+      subject: leave.subject || (leave.type === 'BusinessTrip' ? 'Công tác' : 'Nghỉ phép'),
+      requestType: leave.type, // 'Leave' or 'BusinessTrip'
+      type: 'employee_leave' // Để phân biệt với company holiday
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formattedLeaves,
+      count: formattedLeaves.length
+    });
+
+  } catch (error) {
+    console.error("❌ [getApprovedLeavesByDepartmentAndMonth] Lỗi:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy lịch nghỉ phép",
+      error: error.message
+    });
+  }
+};
+
+
 

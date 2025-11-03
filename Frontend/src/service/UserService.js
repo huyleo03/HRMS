@@ -129,3 +129,26 @@ export const searchUsersForCc = async (query) => {
     throw error;
   }
 };
+
+// ===== DEACTIVATE/REACTIVATE USER =====
+export const deactivateUser = async (userId) => {
+  try {
+    return await apiCall(`${API_CONFIG.ENDPOINTS.GET_USERS}/${userId}/deactivate`, {
+      method: "PUT",
+    });
+  } catch (error) {
+    console.error("deactivateUser service error:", error);
+    throw error;
+  }
+};
+
+export const reactivateUser = async (userId) => {
+  try {
+    return await apiCall(`${API_CONFIG.ENDPOINTS.GET_USERS}/${userId}/reactivate`, {
+      method: "PUT",
+    });
+  } catch (error) {
+    console.error("reactivateUser service error:", error);
+    throw error;
+  }
+};

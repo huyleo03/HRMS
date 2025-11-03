@@ -162,6 +162,18 @@ async resetPassword(req, res) {
           .status(400)
           .json({ message: "Email hoặc mật khẩu không đúng" });
 
+      // ✅ Kiểm tra trạng thái tài khoản
+      if (user.status !== "Active") {
+        let message = "Tài khoản của bạn đã bị vô hiệu hóa";
+        if (user.status === "Suspended") {
+          message = "Tài khoản của bạn đã bị tạm ngưng";
+        }
+        return res.status(403).json({ 
+          message,
+          status: user.status 
+        });
+      }
+
       const payload = {
         sub: user._id,
         aud: "app:login",

@@ -1,0 +1,141 @@
+/* AdminHolidayCalendar.css */
+
+.holiday-calendar-page {
+  padding: 24px;
+  background: #f7f6fb;
+  min-height: 100vh;
+}
+
+/* ===== HEADER ===== */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.calendar-header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #1e293b;
+}
+
+.calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.calendar-controls .btn--secondary {
+  background: #f1f5f9;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.calendar-controls .btn--secondary:hover {
+  background: #e2e8f0;
+  transform: scale(1.05);
+}
+
+.current-month {
+  margin: 0;
+  font-size: 20px;
+  color: #475569;
+  min-width: 200px;
+  text-align: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn--primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn--primary:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn--secondary {
+  background: #f1f5f9;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn--secondary:hover {
+  background: #e2e8f0;
+}
+
+/* Dropdown button specific styles */
+.header-actions .btn--secondary:has(.anticon) {
+  min-width: 40px;
+  padding: 10px 12px;
+}
+
+.btn--danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn--danger:hover {
+  background: #dc2626;
+}
+
+.calendar-loading {
+  text-align: center;
+  padding: 60px;
+  font-size: 18px;
+  color: #94a3b8;
+}
+
+.error-message {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .calendar-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .calendar-header h1 {
+    font-size: 20px;
+  }
+  
+  .current-month {
+    font-size: 18px;
+  }
+}

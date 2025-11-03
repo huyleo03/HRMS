@@ -173,6 +173,18 @@
   padding: 6px 10px;
   border-radius: 10px;
 }
+.badge--active {
+  color: #16a34a;
+  background: #dcfce7;
+}
+.badge--inactive {
+  color: #dc2626;
+  background: #fee2e2;
+}
+.badge--suspended {
+  color: #f59e0b;
+  background: #fef3c7;
+}
 
 /* Row actions */
 .emp-actions {
@@ -192,6 +204,12 @@
 }
 .emp-actions .danger:hover {
   color: #ef4444;
+}
+.emp-actions .warning:hover {
+  color: #f59e0b;
+}
+.emp-actions .success:hover {
+  color: #16a34a;
 }
 
 /* Footer v2 */
@@ -339,6 +357,66 @@
   padding-top: 12px;
   border-top: 1px solid #f1f5f9;
   margin-top: 8px;
+}
+
+/* ===== CONFIRM MODAL ===== */
+.modal--confirm {
+  max-width: 420px;
+}
+
+.modal__message {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 16px 0 24px;
+}
+
+.modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn--secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+.btn--secondary:hover {
+  background: #e5e7eb;
+}
+
+.btn--warning {
+  background: #f59e0b !important;
+  color: white !important;
+}
+.btn--warning:hover {
+  background: #d97706;
+}
+
+.btn--success {
+  background: #16a34a !important;
+  color: white !important;
+}
+.btn--success:hover {
+  background: #15803d;
+}
+
+.btn--danger {
+  background: #ef4444;
+  color: white;
+}
+.btn--danger:hover {
+  background: #dc2626;
 }
 
 /* Responsive */

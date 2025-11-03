@@ -45,9 +45,9 @@ const Sidebar = () => {
       icon: "🏖️",
     },
     {
-      path: "/holidays",
+      path: "/admin/holidays",
       label: "Holidays",
-      icon: "🎉",
+      icon: "�",
     },
     {
       path: "/settings",
@@ -73,7 +73,8 @@ const Sidebar = () => {
       location.pathname === path ||
       (path === "/employees" && location.pathname.startsWith("/employees")) ||
       (path === "/departments" && location.pathname.startsWith("/view-department")) ||
-      (path === "/admin/workflow" && location.pathname.startsWith("/admin/workflow"))
+      (path === "/admin/workflow" && location.pathname.startsWith("/admin/workflow")) ||
+      (path === "/admin/holidays" && location.pathname.startsWith("/admin/holidays"))
     );
   };
 

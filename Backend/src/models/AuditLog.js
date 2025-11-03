@@ -194,10 +194,6 @@ auditLogSchema.statics.log = async function ({
       timestamp: new Date(),
     });
 
-    console.log(
-      `✅ Audit Log: [${action}] by ${userName} (${userEmail}) - ${description}`
-    );
-
     return auditLog;
   } catch (error) {
     // Don't throw - audit logging should not break main flow
@@ -317,9 +313,6 @@ auditLogSchema.statics.archiveOldLogs = async function (months = 6) {
     timestamp: { $lt: cutoffDate },
   });
 
-  console.log(
-    `✅ Archived ${result.deletedCount} audit logs older than ${months} months`
-  );
 
   return result;
 };

@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/Employees.css";
 import { Empty } from "antd";
-import { getUsers } from "../../../service/UserService";
+import { getUsers, deactivateUser, reactivateUser } from "../../../service/UserService";
 import { useAuth } from "../../../contexts/AuthContext";
 
 /** ----------------- Icon ----------------- */
@@ -16,6 +16,8 @@ function Icon({ name }) {
     plus: "M12 5v14M5 12h14",
     chevL: "M15 18l-6-6 6-6",
     chevR: "M9 6l6 6-6 6",
+    power: "M18.36 6.64a9 9 0 11-12.73 0M12 2v10",
+    refresh: "M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36M20.49 15a9 9 0 01-14.85 3.36",
   };
   return (
     <svg
@@ -115,6 +117,15 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
               <input
                 type="radio"
                 name="status"
+                checked={status === "Inactive"}
+                onChange={() => setStatus("Inactive")}
+              />
+              <span>Inactive</span>
+            </label>
+            <label className="radio">
+              <input
+                type="radio"
+                name="status"
                 checked={status === "Suspended"}
                 onChange={() => setStatus("Suspended")}
               />
@@ -173,6 +184,42 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
   );
 }
 
+/** --------------- Confirm Modal (REUSABLE) ---------------- */
+function ConfirmModal({ 
+  open, 
+  onClose, 
+  onConfirm, 
+  title, 
+  message, 
+  confirmText = "Xác nhận", 
+  type = "warning" 
+}) {
+  if (!open) return null;
+  
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal modal--confirm" onClick={(e) => e.stopPropagation()}>
+        <h3 className="modal__title">{title}</h3>
+        <p className="modal__message">{message}</p>
+        <div className="modal__actions">
+          <button className="btn btn--secondary" onClick={onClose}>
+            Hủy
+          </button>
+          <button 
+            className={`btn btn--${type}`} 
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** ---------------------- Helpers ---------------------- */
 function getInitials(name) {
   if (!name) return "U";
@@ -197,8 +244,8 @@ export default function Employees() {
   // Paging & sort
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState("created_at");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const sortBy = "created_at";
+  const sortOrder = "asc";
 
   // Filters gửi lên BE
   const [filters, setFilters] = useState({
@@ -207,6 +254,12 @@ export default function Employees() {
     role: "",
   });
   const [isFilterOpen, setFilterOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ 
+    open: false, 
+    type: null, 
+    userId: null, 
+    userName: null 
+  });
 
   // Data
   const [users, setUsers] = useState([]);
@@ -289,6 +342,57 @@ export default function Employees() {
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const current = Math.min(page, totalPages);
+
+  // ===== HANDLERS FOR DEACTIVATE/REACTIVATE =====
+  async function handleDeactivate() {
+    try {
+      await deactivateUser(confirmModal.userId);
+      // Refresh table
+      const data = await getUsers(
+        {
+          page,
+          limit: pageSize,
+          sortBy,
+          sortOrder,
+          name: debouncedQ || undefined,
+          department: filters.department || undefined,
+          status: filters.status || undefined,
+          role: filters.role || undefined,
+        },
+        token
+      );
+      setUsers(Array.isArray(data.users) ? data.users : []);
+      setTotal(typeof data.total === "number" ? data.total : 0);
+    } catch (error) {
+      console.error("Deactivate failed:", error);
+      alert("Lỗi khi vô hiệu hóa tài khoản: " + (error.message || "Unknown error"));
+    }
+  }
+
+  async function handleReactivate() {
+    try {
+      await reactivateUser(confirmModal.userId);
+      // Refresh table
+      const data = await getUsers(
+        {
+          page,
+          limit: pageSize,
+          sortBy,
+          sortOrder,
+          name: debouncedQ || undefined,
+          department: filters.department || undefined,
+          status: filters.status || undefined,
+          role: filters.role || undefined,
+        },
+        token
+      );
+      setUsers(Array.isArray(data.users) ? data.users : []);
+      setTotal(typeof data.total === "number" ? data.total : 0);
+    } catch (error) {
+      console.error("Reactivate failed:", error);
+      alert("Lỗi khi kích hoạt lại tài khoản: " + (error.message || "Unknown error"));
+    }
+  }
 
   function renderAvatar(u) {
     const url = u?.avatar;
@@ -403,7 +507,9 @@ export default function Employees() {
                       <td>{dept}</td>
                       <td>{title}</td>
                       <td>
-                        <span className="badge">{status}</span>
+                        <span className={`badge badge--${status.toLowerCase()}`}>
+                          {status}
+                        </span>
                       </td>
                       <td>
                         <div className="emp-actions">
@@ -413,6 +519,36 @@ export default function Employees() {
                           >
                             <Icon name="eye" />
                           </button>
+                          
+                          {status === "Active" && (
+                            <button 
+                              title="Vô hiệu hóa" 
+                              className="warning"
+                              onClick={() => setConfirmModal({ 
+                                open: true, 
+                                type: 'deactivate', 
+                                userId: u._id, 
+                                userName: name 
+                              })}
+                            >
+                              <Icon name="power" />
+                            </button>
+                          )}
+                          
+                          {status === "Inactive" && (
+                            <button 
+                              title="Kích hoạt lại" 
+                              className="success"
+                              onClick={() => setConfirmModal({ 
+                                open: true, 
+                                type: 'reactivate', 
+                                userId: u._id, 
+                                userName: name 
+                              })}
+                            >
+                              <Icon name="refresh" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -507,6 +643,21 @@ export default function Employees() {
           setFilterOpen(false);
           setPage(1);
         }}
+      />
+
+      {/* Modal Confirm Deactivate/Reactivate */}
+      <ConfirmModal
+        open={confirmModal.open}
+        onClose={() => setConfirmModal({ open: false, type: null, userId: null, userName: null })}
+        onConfirm={confirmModal.type === 'deactivate' ? handleDeactivate : handleReactivate}
+        title={confirmModal.type === 'deactivate' ? 'Vô hiệu hóa tài khoản?' : 'Kích hoạt lại tài khoản?'}
+        message={
+          confirmModal.type === 'deactivate' 
+            ? `Bạn có chắc muốn vô hiệu hóa tài khoản của "${confirmModal.userName}"? Họ sẽ không thể đăng nhập vào hệ thống.`
+            : `Bạn có chắc muốn kích hoạt lại tài khoản của "${confirmModal.userName}"? Họ sẽ có thể đăng nhập trở lại.`
+        }
+        confirmText={confirmModal.type === 'deactivate' ? 'Vô hiệu hóa' : 'Kích hoạt lại'}
+        type={confirmModal.type === 'deactivate' ? 'warning' : 'success'}
       />
     </div>
   );

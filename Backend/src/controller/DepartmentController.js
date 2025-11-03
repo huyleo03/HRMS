@@ -381,34 +381,3 @@ exports.checkDepartmentManager = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-// 8. Kiểm tra department đã có manager chưa
-exports.checkDepartmentManager = async (req, res) => {
-  try {
-    const { departmentId } = req.params;
-    const department = await Department.findById(departmentId);
-    if (!department) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Không tìm thấy phòng ban" });
-    }
-    if (department.managerId) {
-      return res
-        .status(200)
-        .json({
-          success: true,
-          hasManager: true,
-          message: "Phòng ban đã có quản lý",
-        });
-    }
-    res
-      .status(200)
-      .json({
-        success: true,
-        hasManager: false,
-        message: "Phòng ban chưa có quản lý",
-      });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};

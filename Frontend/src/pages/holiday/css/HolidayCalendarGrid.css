@@ -1,0 +1,215 @@
+/* HolidayCalendarGrid.css */
+
+.holiday-calendar-grid {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* ===== WEEKDAY HEADER ===== */
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.weekday-header {
+  text-align: center;
+  font-weight: 600;
+  color: #64748b;
+  padding: 12px;
+  font-size: 14px;
+}
+
+/* ===== CALENDAR BODY ===== */
+.calendar-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+/* ===== DAY CELL ===== */
+.calendar-day {
+  min-height: 120px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.calendar-day:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  transform: scale(1.02);
+}
+
+.calendar-day.other-month {
+  background: #f8fafc;
+  opacity: 0.5;
+}
+
+.calendar-day.other-month:hover {
+  background: #f1f5f9;
+}
+
+.calendar-day.today {
+  background: #eff6ff;
+  border: 2px solid #3b82f6;
+}
+
+.calendar-day.today .day-number {
+  background: #3b82f6;
+  color: white;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.day-number {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+/* ===== HOLIDAYS IN DAY ===== */
+.day-holidays {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.holiday-item {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 3px solid #4f46e5;
+}
+
+.holiday-item:hover {
+  background: #c7d2fe;
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ===== HOLIDAY TYPE COLORS ===== */
+.holiday--national {
+  background: #fee2e2;
+  color: #991b1b;
+  border-left-color: #dc2626;
+}
+
+.holiday--national:hover {
+  background: #fecaca;
+}
+
+.holiday--company {
+  background: #dbeafe;
+  color: #1e40af;
+  border-left-color: #2563eb;
+}
+
+.holiday--company:hover {
+  background: #bfdbfe;
+}
+
+.holiday--optional {
+  background: #fef3c7;
+  color: #92400e;
+  border-left-color: #f59e0b;
+}
+
+.holiday--optional:hover {
+  background: #fde68a;
+}
+
+.holiday--regional {
+  background: #d1fae5;
+  color: #065f46;
+  border-left-color: #10b981;
+}
+
+.holiday--regional:hover {
+  background: #a7f3d0;
+}
+
+/* ===== LEAVE ITEMS ===== */
+.holiday--leave {
+  background: #ede9fe;
+  color: #5b21b6;
+  border-left-color: #8b5cf6;
+}
+
+.holiday--leave:hover {
+  background: #ddd6fe;
+}
+
+/* ===== MORE EVENTS BUTTON ===== */
+.more-events-btn {
+  width: 100%;
+  padding: 6px 8px;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.more-events-btn:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #1e293b;
+  transform: scale(1.02);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .calendar-day {
+    min-height: 80px;
+    padding: 4px;
+  }
+  
+  .day-number {
+    font-size: 12px;
+  }
+  
+  .holiday-item {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+  
+  .weekday-header {
+    font-size: 12px;
+    padding: 8px;
+  }
+}

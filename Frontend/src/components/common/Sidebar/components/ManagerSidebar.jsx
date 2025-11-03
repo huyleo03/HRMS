@@ -38,6 +38,11 @@ const ManagerSidebar = () => {
       path: '/manager/payroll',
       label: 'Payroll',
       icon: '💰'
+    },
+    {
+      path: '/manager/holidays',
+      label: 'Holiday Calendar',
+      icon: '🎄'
     }
   ];
 

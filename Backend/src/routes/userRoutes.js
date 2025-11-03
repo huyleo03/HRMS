@@ -48,4 +48,19 @@ router.put(
   userController.updateOwnProfile
 );
 
+// ===== DEACTIVATE/REACTIVATE USER (Admin only) =====
+router.put(
+  "/:id/deactivate",
+  authenticate,
+  authorize("Admin"),
+  userController.deactivateUser
+);
+
+router.put(
+  "/:id/reactivate",
+  authenticate,
+  authorize("Admin"),
+  userController.reactivateUser
+);
+
 module.exports = router;
