@@ -30,6 +30,9 @@ import Settings from "./pages/settings/Settings.jsx";
 import WorkflowManagement from "./pages/workflow/WorkflowManagement.jsx";
 import WorkflowForm from "./pages/workflow/WorkflowForm.jsx";
 import WorkflowDetailPage from "./pages/workflow/WorkflowDetailPage.jsx";
+import AdminPayroll from "./pages/admin/AdminPayroll.jsx";
+import EmployeePayroll from "./pages/employee/EmployeePayroll.jsx";
+import ManagerPayroll from "./pages/manager/ManagerPayroll.jsx";
 
 function App() {
   return (
@@ -73,6 +76,7 @@ function App() {
             />
             <Route path="/request" element={<Request />} />
             <Route path="/attendance" element={<AdminAttendancePage />} />
+            <Route path="/payroll" element={<AdminPayroll />} />
             {/* Workflow Routes */}
             <Route path="/admin/workflow" element={<WorkflowManagement />} />
             <Route path="/admin/workflow/create" element={<WorkflowForm />} />
@@ -102,6 +106,7 @@ function App() {
               element={<ManagerAttendancePage />}
             />{" "}
             {/* Xem phòng ban */}
+            <Route path="/manager/payroll" element={<ManagerPayroll />} />
           </Route>
           {/* --- Employee Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Employee"]} />}>
@@ -111,6 +116,7 @@ function App() {
               path="/employee/attendance"
               element={<EmployeeAttendance />}
             />
+            <Route path="/employee/payroll" element={<EmployeePayroll />} />
           </Route>
           {/* --- Shared Routes (All roles can access) --- */}
           <Route

@@ -67,6 +67,15 @@ const attendanceSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    overtimeApproved: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    approvedOvertimeRequestId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Request",
+    },
     
     // ===== MANUAL ADJUSTMENTS =====
     isManuallyAdjusted: {

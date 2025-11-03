@@ -33,6 +33,11 @@ const ManagerSidebar = () => {
       path: '/manager/request',
       label: 'Request',
       icon: '🏖️'
+    },
+    {
+      path: '/manager/payroll',
+      label: 'Payroll',
+      icon: '💰'
     }
   ];
 
@@ -56,7 +61,9 @@ const ManagerSidebar = () => {
       (path === "/manager/attendance" &&
         location.pathname === "/manager/attendance") ||
       (path === "/manager/my-attendance" &&
-        location.pathname === "/manager/my-attendance")
+        location.pathname === "/manager/my-attendance") ||
+      (path === "/manager/payroll" &&
+        location.pathname === "/manager/payroll")
     );
   };
 

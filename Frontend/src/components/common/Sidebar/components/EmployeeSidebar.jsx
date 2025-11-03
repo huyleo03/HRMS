@@ -21,6 +21,11 @@ const EmployeeSidebar = () => {
       path: '/employee/requests',
       label: 'Request',
       icon: '🏖️'
+    },
+    {
+      path: '/employee/payroll',
+      label: 'Lương',
+      icon: '💰'
     }
   ];
 
@@ -31,7 +36,8 @@ const EmployeeSidebar = () => {
   const isActiveRoute = (path) => {
     return location.pathname === path || 
            (path === '/employee/requests' && location.pathname.startsWith('/employee/requests')) ||
-           (path === '/employee/attendance' && location.pathname.startsWith('/employee/attendance'));
+           (path === '/employee/attendance' && location.pathname.startsWith('/employee/attendance')) ||
+           (path === '/employee/payroll' && location.pathname.startsWith('/employee/payroll'));
   };
 
   return (
