@@ -8,6 +8,7 @@ import ForgotPass from "./pages/authentication/ForgotPass.jsx";
 import OtpPage from "./pages/authentication/OtpPage.jsx";
 import ResetPass from "./pages/authentication/ResetPass.jsx";
 import AdminDashboard from "./pages/dashboard/components/AdminDashboard.jsx";
+import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.jsx";
 import Employees from "./pages/employee/pages/AllEmployeePage.jsx";
 import AddNewEmployee from "./pages/employee/pages/AddNewEmployee.jsx";
 import ViewEmployeeDetails from "./pages/employee/pages/ViewEmployeeDetails.jsx";
@@ -21,7 +22,6 @@ import { AuthProvider } from "./contexts/AuthContext.js";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ChangePass from "./pages/authentication/ChangePass.jsx";
 import Request from "./pages/request/pages/Request.jsx";
-import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.jsx";
 import EmployeeAttendance from "./pages/attendance/EmployeeAttendance.jsx";
 import ManagerAttendance from "./pages/attendance/ManagerAttendance.jsx"; // Manager chấm công cá nhân
 import ManagerAttendancePage from "./pages/attendance/ManagerAttendancePage.jsx"; // Xem phòng ban
@@ -114,8 +114,8 @@ function App() {
           </Route>
           {/* --- Employee Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Employee"]} />}>
-            <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
             <Route path="/employee/requests" element={<Request />} />
+            <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
             <Route
               path="/employee/attendance"
               element={<EmployeeAttendance />}

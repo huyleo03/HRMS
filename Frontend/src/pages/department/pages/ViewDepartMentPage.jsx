@@ -83,15 +83,6 @@ function FilterModal({ open, onClose, initial, onApply }) {
               />
               <span>Inactive</span>
             </label>
-            <label className="dm-radio">
-              <input
-                type="radio"
-                name="status"
-                checked={status === "Suspended"}
-                onChange={() => setStatus("Suspended")}
-              />
-              <span>Suspended</span>
-            </label>
           </div>
         </div>
 

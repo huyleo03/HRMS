@@ -10,6 +10,7 @@ const notificationRoutes = require("./notificationRoutes");
 const configRoutes = require("./configRoutes");
 const payrollRoutes = require("./payrollRoutes");
 const holidayRoutes = require("./holidayRoutes");
+const dashboardRoutes = require("./dashboardRoutes");
 const faceIdRoutes = require("./faceIdRoutes");
 
 const routes = (app) => {
@@ -24,6 +25,7 @@ const routes = (app) => {
   app.use("/api/config", configRoutes);
   app.use("/api/payroll", payrollRoutes);
   app.use("/api/holidays", holidayRoutes);
+  app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/face-id", faceIdRoutes);
 };
 

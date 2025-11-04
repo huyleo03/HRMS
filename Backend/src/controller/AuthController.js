@@ -164,12 +164,8 @@ async resetPassword(req, res) {
 
       // ✅ Kiểm tra trạng thái tài khoản
       if (user.status !== "Active") {
-        let message = "Tài khoản của bạn đã bị vô hiệu hóa";
-        if (user.status === "Suspended") {
-          message = "Tài khoản của bạn đã bị tạm ngưng";
-        }
         return res.status(403).json({ 
-          message,
+          message: "Tài khoản của bạn đã bị vô hiệu hóa",
           status: user.status 
         });
       }
@@ -180,7 +176,6 @@ async resetPassword(req, res) {
         role: user.role,
         name: user.full_name,
         email: user.email,
-        profileCompleted: user.profileCompleted,
       };
       
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -196,7 +191,6 @@ async resetPassword(req, res) {
           email: user.email,
           role: user.role,
           avatar: user.avatar,
-          profileCompleted: user.profileCompleted,
           department: user.department || null, // Thêm department info
         }
       });

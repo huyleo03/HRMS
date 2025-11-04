@@ -11,47 +11,47 @@ const Sidebar = () => {
   const menuItems = [
     {
       path: "/dashboard",
-      label: "Dashboard",
+      label: "Trang Chủ",
       icon: "📊",
     },
     {
       path: "/employees",
-      label: "All Employees",
+      label: "Nhân Viên",
       icon: "👥",
     },
     {
       path: "/departments",
-      label: "All Departments",
+      label: "Phòng Ban",
       icon: "🏢",
     },
     {
       path: "/attendance",
-      label: "Attendance",
+      label: "Chấm Công",
       icon: "📅",
     },
     {
       path: "/admin/workflow",
-      label: "Workflow",
+      label: "Quy Trình",
       icon: "🔄",
     },
     {
       path: "/payroll",
-      label: "Payroll",
+      label: "Lương",
       icon: "💰",
     },
     {
       path: "/request",
-      label: "Request",
+      label: "Đơn Từ",
       icon: "🏖️",
     },
     {
       path: "/admin/holidays",
-      label: "Holidays",
+      label: "Ngày Nghỉ",
       icon: "�",
     },
     {
       path: "/settings",
-      label: "Settings",
+      label: "Cài Đặt",
       icon: "⚙️",
     },
   ];
@@ -158,12 +158,12 @@ const Sidebar = () => {
         <button 
           className="quick-action-btn send-notification-quick-btn"
           onClick={openSendNotificationModal}
-          title="Send Notification"
+          title="Gửi Thông Báo"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span>Send Notification</span>
+          <span>Gửi Thông Báo</span>
         </button>
       </div>
 

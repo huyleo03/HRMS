@@ -9,17 +9,17 @@ const EmployeeSidebar = () => {
   const menuItems = [
     {
       path: '/employee/dashboard',
-      label: 'Dashboard',
+      label: 'Trang Chủ',
       icon: '📊'
     },
     {
       path: '/employee/attendance',
-      label: 'Chấm công',
+      label: 'Chấm Công',
       icon: '⏰'
     },
     {
       path: '/employee/requests',
-      label: 'Request',
+      label: 'Đơn Từ',
       icon: '🏖️'
     },
     {
@@ -29,7 +29,7 @@ const EmployeeSidebar = () => {
     },
     {
       path: '/employee/holidays',
-      label: 'Holiday Calendar',
+      label: 'Lịch Nghỉ',
       icon: '🎄'
     }
   ];

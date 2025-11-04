@@ -1,184 +1,288 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import DashboardService from '../../../service/DashboardService';
+import RequestsAnalysis from './RequestsAnalysis';
+import AttendanceTrendChart from './AttendanceTrendChart';
+import DepartmentComparison from './DepartmentComparison';
+import LateEmployeesTable from './LateEmployeesTable';
+import RecentRequestsTable from './RecentRequestsTable';
+import '../css/AdminDashboard.css';
 
 const AdminDashboard = () => {
+    const [stats, setStats] = useState(null);
+    const [requestsDetails, setRequestsDetails] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchDashboardStats = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // Fetch both overview and requests details in parallel
+            const [overviewData, requestsData] = await Promise.all([
+                DashboardService.getOverviewStats(),
+                DashboardService.getRequestsDetails()
+            ]);
+            
+            setStats(overviewData);
+            setRequestsDetails(requestsData);
+        } catch (err) {
+            console.error('Error fetching dashboard stats:', err);
+            setError(err.response?.data?.message || 'Không thể tải dữ liệu thống kê');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDashboardStats();
+        
+        // Auto-refresh every 5 minutes
+        const interval = setInterval(fetchDashboardStats, 5 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="admin-dashboard">
+                <div className="dashboard-loading">
+                    <div className="loading-spinner"></div>
+                    <p>Đang tải dữ liệu...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="admin-dashboard">
+                <div className="dashboard-error">
+                    <p className="error-message">{error}</p>
+                    <button className="retry-button" onClick={fetchDashboardStats}>
+                        Thử lại
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const { employees, attendance, requests, payroll, roles } = stats || {};
+
     return (
-        <div className="content-wrapper">
-            <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-                gap: '24px',
-                marginBottom: '24px'
-                }}>
-                    {/* Stats Cards */}
-                    <div style={{
-                        background: '#ffffff',
-                        padding: '24px',
-                        borderRadius: '12px',
-                        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-                        border: '1px solid #e2e8f0'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '12px',
-                                background: '#f0f4ff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 12.25C13.748 12.25 15.3677 12.6028 16.5781 13.208C17.7436 13.7908 18.75 14.7345 18.75 16C18.75 17.2655 17.7436 18.2092 16.5781 18.792C15.3677 19.3972 13.748 19.75 12 19.75C10.252 19.75 8.63225 19.3972 7.42188 18.792C6.25641 18.2092 5.25 17.2655 5.25 16C5.25 14.7345 6.25641 13.7908 7.42188 13.208C8.63225 12.6028 10.252 12.25 12 12.25Z" fill="#7152F3"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '600', color: '#1e293b' }}>
-                                    142
-                                </h3>
-                                <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
-                                    Tổng nhân viên
-                                </p>
-                            </div>
+        <div className="admin-dashboard">
+            {/* Header */}
+            <div className="dashboard-header">
+                <h1>Dashboard Quản Trị</h1>
+                <p>Tổng quan hệ thống quản lý nhân sự</p>
+            </div>
+
+            {/* Main Stats Cards */}
+            <div className="stats-grid">
+                {/* Total Employees */}
+                <div className="stat-card">
+                    <div className="stat-card-header">
+                        <span className="stat-card-title">Tổng Nhân Viên</span>
+                        <div className="stat-card-icon blue">
+                            👥
                         </div>
                     </div>
-
-                    <div style={{
-                        background: '#ffffff',
-                        padding: '24px',
-                        borderRadius: '12px',
-                        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-                        border: '1px solid #e2e8f0'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '12px',
-                                background: '#f0fdf4',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M9 15L10.7528 16.4023C11.1707 16.7366 11.7777 16.6826 12.1301 16.2799L15 13" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '600', color: '#1e293b' }}>
-                                    98%
-                                </h3>
-                                <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
-                                    Tỷ lệ có mặt
-                                </p>
-                            </div>
+                    <div className="stat-card-value">{employees?.total || 0}</div>
+                    <div className="stat-card-details">
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Đang làm việc</span>
+                            <span className="stat-detail-value positive">{employees?.active || 0}</span>
                         </div>
-                    </div>
-
-                    <div style={{
-                        background: '#ffffff',
-                        padding: '24px',
-                        borderRadius: '12px',
-                        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-                        border: '1px solid #e2e8f0'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '12px',
-                                background: '#fefce8',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <circle cx="12" cy="12" r="10" stroke="#eab308" strokeWidth="1.5"/>
-                                    <path d="M12 6.5V8" stroke="#eab308" strokeWidth="1.5"/>
-                                    <path d="M12 16V17.5" stroke="#eab308" strokeWidth="1.5"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '600', color: '#1e293b' }}>
-                                    12
-                                </h3>
-                                <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
-                                    Đơn xin nghỉ
-                                </p>
-                            </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Không hoạt động</span>
+                            <span className="stat-detail-value">{employees?.inactive || 0}</span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Mới tháng này</span>
+                            <span className="stat-detail-value positive">+{employees?.newThisMonth || 0}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Welcome Message */}
-                <div style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    padding: '32px',
-                    borderRadius: '16px',
-                    color: 'white',
-                    marginBottom: '24px'
-                }}>
-                    <h2 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '600' }}>
-                        Chào mừng đến với HRMS!
-                    </h2>
-                    <p style={{ margin: 0, fontSize: '16px', opacity: 0.9 }}>
-                        Hệ thống quản lý nhân sự hiện đại và toàn diện cho doanh nghiệp của bạn.
-                    </p>
+                {/* Attendance Today */}
+                <div className="stat-card">
+                    <div className="stat-card-header">
+                        <span className="stat-card-title">Chấm Công Hôm Nay</span>
+                        <div className="stat-card-icon green">
+                            ✓
+                        </div>
+                    </div>
+                    <div className="stat-card-value">{attendance?.todayPresent || 0}</div>
+                    <div className="stat-card-details">
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Đi muộn</span>
+                            <span className="stat-detail-value">{attendance?.todayLate || 0}</span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Vắng mặt</span>
+                            <span className="stat-detail-value negative">{attendance?.todayAbsent || 0}</span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Nghỉ phép</span>
+                            <span className="stat-detail-value">{attendance?.todayOnLeave || 0}</span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Tỷ lệ đúng giờ</span>
+                            <span className="stat-detail-value positive">{attendance?.punctualityRate || 0}%</span>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div style={{
-                    background: '#ffffff',
-                    padding: '24px',
-                    borderRadius: '12px',
-                    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-                    border: '1px solid #e2e8f0'
-                }}>
-                    <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-                        Thao tác nhanh
-                    </h3>
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <button style={{
-                            background: '#7152f3',
-                            color: 'white',
-                            border: 'none',
-                            padding: '12px 24px',
-                            borderRadius: '8px',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.2s ease'
-                        }}>
-                            Thêm nhân viên mới
-                        </button>
-                        <button style={{
-                            background: '#ffffff',
-                            color: '#7152f3',
-                            border: '1px solid #7152f3',
-                            padding: '12px 24px',
-                            borderRadius: '8px',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        }}>
-                            Xem báo cáo
-                        </button>
-                        <button style={{
-                            background: '#ffffff',
-                            color: '#7152f3',
-                            border: '1px solid #7152f3',
-                            padding: '12px 24px',
-                            borderRadius: '8px',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        }}>
-                            Quản lý chấm công
-                        </button>
+                {/* Pending Requests */}
+                <div className="stat-card">
+                    <div className="stat-card-header">
+                        <span className="stat-card-title">Đơn Từ Chờ Duyệt</span>
+                        <div className="stat-card-icon yellow">
+                            ⏱
+                        </div>
+                    </div>
+                    <div className="stat-card-value">{requests?.totalPending || 0}</div>
+                    <div className="stat-card-details">
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Đã duyệt</span>
+                            <span className="stat-detail-value positive">{requests?.totalApproved || 0}</span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Từ chối</span>
+                            <span className="stat-detail-value negative">{requests?.totalRejected || 0}</span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Tỷ lệ duyệt</span>
+                            <span className="stat-detail-value">{requests?.approvalRate || 0}%</span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Thời gian xử lý TB</span>
+                            <span className="stat-detail-value">{requests?.avgProcessingTime || 0}h</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Payroll This Month */}
+                <div className="stat-card">
+                    <div className="stat-card-header">
+                        <span className="stat-card-title">Lương Tháng Này</span>
+                        <div className="stat-card-icon purple">
+                            💰
+                        </div>
+                    </div>
+                    <div className="stat-card-value">
+                        {payroll?.totalThisMonth?.toLocaleString('vi-VN') || 0} đ
+                    </div>
+                    <div className="stat-card-details">
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Chi phí OT</span>
+                            <span className="stat-detail-value">
+                                {payroll?.overtimeCost?.toLocaleString('vi-VN') || 0} đ
+                            </span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">So với tháng trước</span>
+                            <span className={`stat-detail-value ${payroll?.comparedToLastMonth >= 0 ? 'positive' : 'negative'}`}>
+                                {payroll?.comparedToLastMonth >= 0 ? '+' : ''}{payroll?.comparedToLastMonth || 0}%
+                            </span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Chờ thanh toán</span>
+                            <span className="stat-detail-value">{payroll?.pendingPayrolls || 0}</span>
+                        </div>
+                        <div className="stat-detail-row">
+                            <span className="stat-detail-label">Đã thanh toán</span>
+                            <span className="stat-detail-value positive">{payroll?.paidPayrolls || 0}</span>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Secondary Stats Sections */}
+            <div className="dashboard-sections">
+                {/* Attendance Details */}
+                <div className="section-card">
+                    <h3 className="section-card-title">
+                        📊 Thống Kê Chấm Công
+                    </h3>
+                    <div className="section-stats">
+                        <div className="section-stat-item">
+                            <div className="section-stat-label">Trung bình giờ làm/nhân viên</div>
+                            <div className="section-stat-value">
+                                {attendance?.avgWorkHoursPerEmployee || 0}h
+                            </div>
+                        </div>
+                        <div className="section-stat-item">
+                            <div className="section-stat-label">Tỷ lệ đúng giờ</div>
+                            <div className="section-stat-value">
+                                {attendance?.punctualityRate || 0}%
+                            </div>
+                        </div>
+                        <div className="section-stat-item">
+                            <div className="section-stat-label">Có mặt hôm nay</div>
+                            <div className="section-stat-value">
+                                {attendance?.todayPresent || 0}
+                            </div>
+                        </div>
+                        <div className="section-stat-item">
+                            <div className="section-stat-label">Vắng mặt hôm nay</div>
+                            <div className="section-stat-value">
+                                {attendance?.todayAbsent || 0}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Roles Distribution */}
+                <div className="section-card">
+                    <h3 className="section-card-title">
+                        👔 Phân Bổ Vai Trò
+                    </h3>
+                    <div className="section-stats">
+                        <div className="section-stat-item">
+                            <div className="section-stat-label">Quản trị viên</div>
+                            <div className="section-stat-value">
+                                {roles?.admin || 0}
+                            </div>
+                        </div>
+                        <div className="section-stat-item">
+                            <div className="section-stat-label">Quản lý</div>
+                            <div className="section-stat-value">
+                                {roles?.manager || 0}
+                            </div>
+                        </div>
+                        <div className="section-stat-item">
+                            <div className="section-stat-label">Nhân viên</div>
+                            <div className="section-stat-value">
+                                {roles?.employee || 0}
+                            </div>
+                        </div>
+                        <div className="section-stat-item">
+                            <div className="section-stat-label">Tổng cộng</div>
+                            <div className="section-stat-value">
+                                {(roles?.admin || 0) + (roles?.manager || 0) + (roles?.employee || 0)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Requests Analysis Section */}
+            {requestsDetails && <RequestsAnalysis data={requestsDetails} />}
+
+            {/* Attendance Trend Chart */}
+            <AttendanceTrendChart />
+
+            {/* Department Comparison & Late Employees */}
+            <div className="dashboard-sections">
+                <DepartmentComparison />
+                <LateEmployeesTable />
+            </div>
+
+            {/* Recent Requests */}
+            {requestsDetails?.recentRequests && (
+                <RecentRequestsTable requests={requestsDetails.recentRequests} />
+            )}
+        </div>
     );
 };
 

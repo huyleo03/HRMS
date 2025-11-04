@@ -55,7 +55,6 @@ function Login() {
           name: data.user?.name,
           avatar: data.user?.avatar,
           email: data.user?.email,
-          profileCompleted: data.user?.profileCompleted,
           department: data.user?.department || null, // ✅ Add department field
         };
 

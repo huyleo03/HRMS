@@ -53,11 +53,11 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3 className="modal__title">Filter</h3>
+        <h3 className="modal__title">Bộ Lọc</h3>
 
         {/* Department (giữ như cũ: trải ngang, có All) */}
         <div className="modal__group">
-          <div className="group__title">Department</div>
+          <div className="group__title">Phòng Ban</div>
           <div className="group__row group__row--wrap">
             <label className="radio">
               <input
@@ -66,7 +66,7 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
                 checked={dept === ""}
                 onChange={() => setDept("")}
               />
-              <span>All</span>
+              <span>Tất Cả</span>
             </label>
             {allDepartments.map((d) => (
               <label key={d || "unknown"} className="radio">
@@ -84,7 +84,7 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
 
         {/* Status: lưới 2x2 */}
         <div className="modal__group">
-          <div className="group__title">Status</div>
+          <div className="group__title">Trạng Thái</div>
           <div className="group__grid group__grid--2">
             <label className="radio">
               <input
@@ -93,7 +93,7 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
                 checked={status === ""}
                 onChange={() => setStatus("")}
               />
-              <span>All</span>
+              <span>Tất Cả</span>
             </label>
             <label className="radio">
               <input
@@ -102,7 +102,16 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
                 checked={status === "Active"}
                 onChange={() => setStatus("Active")}
               />
-              <span>Active</span>
+              <span>Đang Làm Việc</span>
+            </label>
+            <label className="radio">
+              <input
+                type="radio"
+                name="status"
+                checked={status === "Inactive"}
+                onChange={() => setStatus("Inactive")}
+              />
+              <span>Nghỉ Việc</span>
             </label>
             <label className="radio">
               <input
@@ -112,31 +121,13 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
                 onChange={() => setStatus("Inactive")}
               />
               <span>Inactive</span>
-            </label>
-            <label className="radio">
-              <input
-                type="radio"
-                name="status"
-                checked={status === "Inactive"}
-                onChange={() => setStatus("Inactive")}
-              />
-              <span>Inactive</span>
-            </label>
-            <label className="radio">
-              <input
-                type="radio"
-                name="status"
-                checked={status === "Suspended"}
-                onChange={() => setStatus("Suspended")}
-              />
-              <span>Suspended</span>
             </label>
           </div>
         </div>
 
         {/* Role: dọc */}
         <div className="modal__group">
-          <div className="group__title">Role</div>
+          <div className="group__title">Vai Trò</div>
           <div className="group__col">
             <label className="radio">
               <input
@@ -145,7 +136,7 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
                 checked={role === ""}
                 onChange={() => setRole("")}
               />
-              <span>All</span>
+              <span>Tất Cả</span>
             </label>
             <label className="radio">
               <input
@@ -154,7 +145,7 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
                 checked={role === "Employee"}
                 onChange={() => setRole("Employee")}
               />
-              <span>Employee</span>
+              <span>Nhân Viên</span>
             </label>
             <label className="radio">
               <input
@@ -163,20 +154,20 @@ function FilterModal({ open, onClose, initial, allDepartments, onApply }) {
                 checked={role === "Manager"}
                 onChange={() => setRole("Manager")}
               />
-              <span>Manager</span>
+              <span>Quản Lý</span>
             </label>
           </div>
         </div>
 
         <div className="modal__footer">
           <button className="btn" onClick={onClose}>
-            Cancel
+            Hủy
           </button>
           <button
             className="btn btn--primary"
             onClick={() => onApply({ department: dept, status, role })}
           >
-            Apply
+            Áp Dụng
           </button>
         </div>
       </div>
@@ -431,7 +422,7 @@ export default function Employees() {
             </span>
             <input
               className="emp-search__input emp-search__input--compact"
-              placeholder="Search"
+              placeholder="Tìm kiếm"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -445,13 +436,13 @@ export default function Employees() {
               <span className="btn__icon">
                 <Icon name="plus" />
               </span>
-              Add New Employee
+              Thêm Nhân Viên
             </button>
             <button className="btn" onClick={() => setFilterOpen(true)}>
               <span className="btn__icon">
                 <Icon name="filter" />
               </span>
-              Filter
+              Bộ Lọc
             </button>
           </div>
         </div>
@@ -461,12 +452,12 @@ export default function Employees() {
           <table className="emp-table">
             <thead>
               <tr>
-                <th>Employee ID</th>
-                <th>Employee Name</th>
-                <th>Department</th>
-                <th>Job Title</th>
-                <th>Status</th>
-                <th style={{ width: 120 }}>Action</th>
+                <th>Mã NV</th>
+                <th>Tên Nhân Viên</th>
+                <th>Phòng Ban</th>
+                <th>Chức Vụ</th>
+                <th>Trạng Thái</th>
+                <th style={{ width: 120 }}>Thao Tác</th>
               </tr>
             </thead>
             <tbody>
@@ -508,13 +499,13 @@ export default function Employees() {
                       <td>{title}</td>
                       <td>
                         <span className={`badge badge--${status.toLowerCase()}`}>
-                          {status}
+                          {status === "Active" ? "Đang Làm" : "Nghỉ Việc"}
                         </span>
                       </td>
                       <td>
                         <div className="emp-actions">
                           <button
-                            title="View"
+                            title="Xem Chi Tiết"
                             onClick={() => navigate(`/employees/${u._id}`)}
                           >
                             <Icon name="eye" />
@@ -578,7 +569,7 @@ export default function Employees() {
         {/* Footer v2 */}
         <div className="emp-foot emp-foot--v2">
           <div className="emp-foot__left">
-            <label>Showing</label>
+            <label>Hiển thị</label>
             <select
               value={pageSize}
               onChange={(e) => {
@@ -593,8 +584,8 @@ export default function Employees() {
           </div>
 
           <div className="emp-foot__center">
-            Showing {users.length ? (current - 1) * pageSize + 1 : 0} to{" "}
-            {Math.min(current * pageSize, total)} out of {total} records
+            Hiển thị {users.length ? (current - 1) * pageSize + 1 : 0} đến{" "}
+            {Math.min(current * pageSize, total)} trong tổng số {total} bản ghi
           </div>
 
           <div className="emp-foot__right emp-foot__pager">

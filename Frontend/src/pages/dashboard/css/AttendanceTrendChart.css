@@ -1,0 +1,158 @@
+.attendance-trend-container {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  margin: 32px 0;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.chart-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.period-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.period-btn {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.period-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.period-btn.active {
+  background: #7152f3;
+  color: white;
+  border-color: #7152f3;
+}
+
+.chart-content {
+  margin: 24px 0;
+}
+
+.chart-loading,
+.chart-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+}
+
+.chart-loading p,
+.chart-error p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.chart-error button {
+  background: #7152f3;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chart-error button:hover {
+  background: #5b3fd1;
+}
+
+.no-chart-data {
+  text-align: center;
+  padding: 64px 0;
+  color: #94a3b8;
+}
+
+/* Trend Summary */
+.trend-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.summary-value.present {
+  color: #10b981;
+}
+
+.summary-value.late {
+  color: #f59e0b;
+}
+
+.summary-value.absent {
+  color: #ef4444;
+}
+
+.summary-value.rate {
+  color: #7152f3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .period-selector {
+    width: 100%;
+  }
+  
+  .period-btn {
+    flex: 1;
+  }
+  
+  .trend-summary {
+    grid-template-columns: 1fr;
+  }
+}
