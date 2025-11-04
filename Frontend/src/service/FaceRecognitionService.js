@@ -35,46 +35,66 @@ class FaceRecognitionService {
     try {
       console.log('📥 Loading Face-API models from:', this.MODEL_URL);
       
-      // Load models từ subfolders
+      // Load models trực tiếp từ /models (không có subfolders)
       await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(`${this.MODEL_URL}/tiny_face_detector`),
-        faceapi.nets.faceLandmark68Net.loadFromUri(`${this.MODEL_URL}/face_landmark_68`),
-        faceapi.nets.faceRecognitionNet.loadFromUri(`${this.MODEL_URL}/face_recognition`),
+        faceapi.nets.tinyFaceDetector.loadFromUri(this.MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(this.MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(this.MODEL_URL),
       ]);
       
       this.isModelsLoaded = true;
       console.log('✅ Face-API models loaded successfully');
     } catch (error) {
       console.error('❌ Error loading Face-API models:', error);
-      console.error('📍 Attempted to load from:', {
-        tinyFaceDetector: `${this.MODEL_URL}/tiny_face_detector`,
-        faceLandmark68Net: `${this.MODEL_URL}/face_landmark_68`,
-        faceRecognitionNet: `${this.MODEL_URL}/face_recognition`,
-      });
+      console.error('📍 Attempted to load from:', this.MODEL_URL);
       throw new Error('Không thể tải models AI. Vui lòng kiểm tra thư mục /public/models/');
     }
   }
 
   /**
-   * Detect face từ base64 image
+   * Detect face từ base64 image VÀ KIỂM TRA LIVENESS (chống ảnh giả)
+   * @param {string} base64Image - Base64 or URL
+   * @param {boolean} singleFace - Return single face (default) hoặc array
+   * @param {boolean} checkLiveness - Bật kiểm tra liveness (texture analysis)
+   * @returns {Object|Array} Detection(s) with liveness score
    */
-  async detectFace(base64Image) {
+  async detectFace(base64Image, singleFace = true, checkLiveness = false) {
     await this.loadModels();
 
     try {
       // Convert base64 to Image element
       const img = await this.base64ToImage(base64Image);
 
-      // Detect face với descriptor
-      const detection = await faceapi
-        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({
-          inputSize: 320,
-          scoreThreshold: 0.5
-        }))
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+      if (singleFace) {
+        // Detect single face với descriptor
+        const detection = await faceapi
+          .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({
+            inputSize: 320,
+            scoreThreshold: 0.5
+          }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
 
-      return detection;
+        // Nếu bật liveness check, phân tích texture để phát hiện ảnh giả
+        if (detection && checkLiveness) {
+          const livenessScore = await this.analyzeLiveness(img, detection);
+          detection.livenessScore = livenessScore;
+          detection.isLive = livenessScore > 0.6; // Threshold: 60%
+        }
+
+        return detection;
+      } else {
+        // Detect multiple faces với descriptor
+        const detections = await faceapi
+          .detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({
+            inputSize: 320,
+            scoreThreshold: 0.5
+          }))
+          .withFaceLandmarks()
+          .withFaceDescriptors();
+
+        return detections;
+      }
     } catch (error) {
       console.error('❌ Face detection error:', error);
       throw error;
