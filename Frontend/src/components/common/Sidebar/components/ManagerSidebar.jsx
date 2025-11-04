@@ -11,37 +11,37 @@ const ManagerSidebar = () => {
   const menuItems = [
     {
       path: "/manager/dashboard",
-      label: "Dashboard",
+      label: "Trang Chủ",
       icon: "📊",
     },
     {
       path: "/manager/employees",
-      label: "All Employees",
+      label: "Nhân Viên",
       icon: "👥",
     },
     {
       path: "/manager/my-attendance",
-      label: "My Attendance",
+      label: "Chấm Công Của Tôi",
       icon: "⏰",
     },
     {
       path: "/manager/attendance",
-      label: "Team Attendance",
+      label: "Chấm Công Nhóm",
       icon: "📋",
     },
     {
       path: '/manager/request',
-      label: 'Request',
+      label: 'Đơn Từ',
       icon: '🏖️'
     },
     {
       path: '/manager/payroll',
-      label: 'Payroll',
+      label: 'Lương',
       icon: '💰'
     },
     {
       path: '/manager/holidays',
-      label: 'Holiday Calendar',
+      label: 'Lịch Nghỉ',
       icon: '🎄'
     }
   ];
@@ -147,12 +147,12 @@ const ManagerSidebar = () => {
         <button 
           className="quick-action-btn send-notification-quick-btn"
           onClick={openSendNotificationModal}
-          title="Send Notification"
+          title="Gửi Thông Báo"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span>Send Notification</span>
+          <span>Gửi Thông Báo</span>
         </button>
       </div>
 

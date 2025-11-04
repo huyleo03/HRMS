@@ -385,7 +385,6 @@ exports.updateOwnProfile = async (req, res) => {
     if (gender) user.gender = gender;
     if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
 
-    user.profileCompleted = true;
     const updatedUser = await user.save();
     const userResponse = updatedUser.toObject();
     delete userResponse.passwordHash;

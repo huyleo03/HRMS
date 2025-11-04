@@ -8,6 +8,7 @@ import ForgotPass from "./pages/authentication/ForgotPass.jsx";
 import OtpPage from "./pages/authentication/OtpPage.jsx";
 import ResetPass from "./pages/authentication/ResetPass.jsx";
 import AdminDashboard from "./pages/dashboard/components/AdminDashboard.jsx";
+import EmployeeDashboard from "./pages/dashboard/components/EmployeeDashboard.jsx";
 import Employees from "./pages/employee/pages/AllEmployeePage.jsx";
 import AddNewEmployee from "./pages/employee/pages/AddNewEmployee.jsx";
 import ViewEmployeeDetails from "./pages/employee/pages/ViewEmployeeDetails.jsx";
@@ -114,6 +115,7 @@ function App() {
           {/* --- Employee Routes --- */}
           <Route element={<ProtectedRoute allowedRoles={["Employee"]} />}>
             <Route path="/employee/requests" element={<Request />} />
+            <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
             <Route
               path="/employee/attendance"
               element={<EmployeeAttendance />}
