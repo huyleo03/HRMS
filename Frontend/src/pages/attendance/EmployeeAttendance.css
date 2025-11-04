@@ -107,6 +107,96 @@
   animation: spin 1s linear infinite;
 }
 
+/* Face ID Status Banner */
+.face-id-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: slideDown 0.5s ease 0.1s both;
+  border: 2px solid transparent;
+  margin-top: 12px;
+}
+
+.face-id-banner.enrolled {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+}
+
+.face-id-banner.not-enrolled {
+  background: #fff7ed;
+  color: #ea580c;
+  border-color: #fb923c;
+}
+
+.face-id-banner .banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.face-id-banner .enrolled-info,
+.face-id-banner .not-enrolled-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.face-id-banner .status-text {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.face-id-banner .enrollment-date {
+  font-size: 12px;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.face-id-banner .btn-reenroll,
+.face-id-banner .btn-enroll-now {
+  margin-left: auto;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.face-id-banner .btn-reenroll {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.face-id-banner .btn-reenroll:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.face-id-banner .btn-enroll-now {
+  background: #ea580c;
+  color: white;
+}
+
+.face-id-banner .btn-enroll-now:hover {
+  background: #c2410c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+}
+
 /* Current Time Display */
 .time-display {
   background: white;
@@ -116,6 +206,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid #e5e7eb;
   animation: slideUp 0.5s ease;
+  margin-top: 16px;
 }
 
 .current-time {
@@ -952,3 +1043,68 @@
 .attendance-content::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ===== FACE ID ENROLLMENT MODAL ===== */
+.enrollment-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Face Guide Overlay in Camera */
+.face-guide-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.face-oval {
+  width: 280px;
+  height: 360px;
+  border: 3px solid rgba(113, 82, 243, 0.8);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 0 9999px rgba(0, 0, 0, 0.4),
+    inset 0 0 40px rgba(113, 82, 243, 0.2),
+    0 0 30px rgba(113, 82, 243, 0.5);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.guide-text {
+  margin-top: 24px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+}
+

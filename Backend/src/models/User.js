@@ -97,6 +97,220 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+
+    // ===== EMAIL SETTINGS =====
+    emailSettings: {
+      signature: {
+        type: String,
+        default: "",
+        maxlength: [500, "Chữ ký không được vượt quá 500 ký tự"],
+        trim: true,
+      },
+      autoReply: {
+        enabled: {
+          type: Boolean,
+          default: false,
+        },
+        subject: {
+          type: String,
+          default: "Tôi hiện không có mặt",
+          trim: true,
+        },
+        message: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+        startDate: {
+          type: Date,
+        },
+        endDate: {
+          type: Date,
+        },
+      },
+      notifications: {
+        newMail: {
+          type: Boolean,
+          default: true,
+        },
+        mentions: {
+          type: Boolean,
+          default: true,
+        },
+        important: {
+          type: Boolean,
+          default: true,
+        },
+        sound: {
+          type: Boolean,
+          default: true,
+        },
+        newRequest: {
+          type: Boolean,
+          default: true,
+        },
+        requestApproved: {
+          type: Boolean,
+          default: true,
+        },
+        requestRejected: {
+          type: Boolean,
+          default: true,
+        },
+        requestComment: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      displaySettings: {
+        emailsPerPage: {
+          type: Number,
+          default: 25,
+          enum: [10, 25, 50, 100],
+        },
+        showAvatars: {
+          type: Boolean,
+          default: true,
+        },
+        conversationView: {
+          type: Boolean,
+          default: true,
+        },
+        showPreview: {
+          type: Boolean,
+          default: true,
+        },
+      },
+      sendSettings: {
+        confirmBeforeSend: {
+          type: Boolean,
+          default: false,
+        },
+        sendDelay: {
+          type: Number,
+          default: 0,
+          min: 0,
+          max: 30,
+        },
+        alwaysCcMyself: {
+          type: Boolean,
+          default: false,
+        },
+        defaultReplyAll: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      vacationResponder: {
+        enabled: {
+          type: Boolean,
+          default: false,
+        },
+        subject: {
+          type: String,
+          default: "Tôi đang trong kỳ nghỉ",
+          trim: true,
+        },
+        message: {
+          type: String,
+          trim: true,
+        },
+        startDate: {
+          type: Date,
+        },
+        endDate: {
+          type: Date,
+        },
+        contactsOnly: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    },
+
+    // ===== MAIL STATISTICS =====
+    mailStats: {
+      totalSent: {
+        type: Number,
+        default: 0,
+      },
+      totalReceived: {
+        type: Number,
+        default: 0,
+      },
+      storageUsed: {
+        type: Number,
+        default: 0,
+      },
+      lastActivityAt: {
+        type: Date,
+      },
+    },
+
+    // ===== REQUEST STATISTICS =====
+    requestStats: {
+      totalSubmitted: {
+        type: Number,
+        default: 0,
+      },
+      totalApproved: {
+        type: Number,
+        default: 0,
+      },
+      totalRejected: {
+        type: Number,
+        default: 0,
+      },
+      totalPending: {
+        type: Number,
+        default: 0,
+      },
+      totalApprovalRequired: {
+        type: Number,
+        default: 0,
+      },
+      totalApprovalCompleted: {
+        type: Number,
+        default: 0,
+      },
+      lastRequestAt: {
+        type: Date,
+      },
+      lastApprovalAt: {
+        type: Date,
+      },
+    },
+
+    // ===== FACE ID - Giống iPhone Face ID =====
+    faceId: {
+      // Có đăng ký Face ID chưa
+      enrolled: {
+        type: Boolean,
+        default: false,
+      },
+      // Lưu nhiều face descriptors (từ nhiều góc)
+      descriptors: [{
+        type: [Number], // Array of 128 hoặc 512 numbers
+      }],
+      // Thời gian đăng ký lần cuối
+      enrolledAt: {
+        type: Date,
+      },
+      // Thời gian có thể đăng ký lại (1 tháng sau)
+      nextEnrollmentDate: {
+        type: Date,
+      },
+      // Số lần đăng ký (để tracking)
+      enrollmentCount: {
+        type: Number,
+        default: 0,
+      },
+      // Lưu ảnh mẫu (optional - để admin check)
+      samplePhotos: [{
+        url: String,
+        capturedAt: Date,
+      }],
+    },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
