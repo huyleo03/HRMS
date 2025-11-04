@@ -13,9 +13,6 @@ const PAYROLL_ENDPOINTS = {
   MARK_PAID: (id) => `/api/payroll/${id}/mark-paid`,
   DELETE: (id) => `/api/payroll/${id}`,
   MY_PAYROLLS: "/api/payroll/my-payrolls",
-  DEPARTMENT_PAYROLLS: "/api/payroll/department",
-  MANAGER_APPROVE: (id) => `/api/payroll/${id}/manager-approve`,
-  MANAGER_REJECT: (id) => `/api/payroll/${id}/manager-reject`,
 };
 
 const PayrollService = {
@@ -96,35 +93,11 @@ const PayrollService = {
     });
   },
 
-  // Get my payrolls (for employee)
+  // Get my payrolls (for employee/manager)
   getMyPayrolls: async (params = {}) => {
     return apiCall(PAYROLL_ENDPOINTS.MY_PAYROLLS, {
       method: "GET",
       params,
-    });
-  },
-
-  // Get department payrolls (for manager)
-  getDepartmentPayrolls: async (params = {}) => {
-    return apiCall(PAYROLL_ENDPOINTS.DEPARTMENT_PAYROLLS, {
-      method: "GET",
-      params,
-    });
-  },
-
-  // Manager approve payroll
-  managerApprovePayroll: async (id, notes = "") => {
-    return apiCall(PAYROLL_ENDPOINTS.MANAGER_APPROVE(id), {
-      method: "POST",
-      body: JSON.stringify({ notes }),
-    });
-  },
-
-  // Manager reject payroll
-  managerRejectPayroll: async (id, reason) => {
-    return apiCall(PAYROLL_ENDPOINTS.MANAGER_REJECT(id), {
-      method: "POST",
-      body: JSON.stringify({ reason }),
     });
   },
 };

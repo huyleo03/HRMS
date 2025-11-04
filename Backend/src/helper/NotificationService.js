@@ -14,6 +14,8 @@ const createNotificationForUser = async ({
   metadata = {},
 }) => {
   try {
+    console.log(`📧 Tạo notification: type=${type}, userId=${userId}, message=${message.substring(0, 50)}...`);
+    
     const notification = await Notification.create({
       targetAudience: "Individual",
       userId,
@@ -27,6 +29,7 @@ const createNotificationForUser = async ({
       isRead: false,
     });
     
+    console.log(`✅ Notification đã tạo thành công: ID=${notification._id}`);
     
     return notification;
   } catch (error) {

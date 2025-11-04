@@ -1,6 +1,5 @@
 const app = require('./app');
 const connectDB = require('./src/config/database');
-const autoMarkAbsentService = require('./src/services/autoMarkAbsentService');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 5000;
@@ -21,7 +20,6 @@ const server = app.listen(PORT, () => {
   console.log(`\n🚀 Server is running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 API URL: http://localhost:${PORT}`);
-  autoMarkAbsentService.startAutoMarkAbsentService();
   console.log('');
 });
 
@@ -47,7 +45,10 @@ process.on('unhandledRejection', (err) => {
 // Handle SIGTERM
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM received. Shutting down gracefully...');
-  autoMarkAbsentService.stopAutoMarkAbsentService();
+  
+  // Stop background services
+  slaService.stopSLAMonitoring();
+  archivingService.stopArchivingJob();
   
   server.close(() => {
     console.log('Process terminated!');
@@ -57,7 +58,10 @@ process.on('SIGTERM', () => {
 // Handle SIGINT (Ctrl+C)
 process.on('SIGINT', () => {
   console.log('\n👋 SIGINT received. Shutting down gracefully...');
-  autoMarkAbsentService.stopAutoMarkAbsentService();
+  
+  // Stop background services
+  slaService.stopSLAMonitoring();
+  archivingService.stopArchivingJob();
   
   server.close(() => {
     console.log('Process terminated!');

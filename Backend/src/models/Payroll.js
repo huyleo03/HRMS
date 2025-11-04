@@ -288,6 +288,76 @@ const payrollSchema = new mongoose.Schema(
       },
     ],
     
+    // ===== DAILY BREAKDOWN =====
+    dailyBreakdown: [
+      {
+        date: {
+          type: Number, // Day of month (1-31)
+          required: true,
+        },
+        fullDate: {
+          type: Date,
+          required: true,
+        },
+        isWorkingDay: {
+          type: Boolean,
+          default: false,
+        },
+        isHoliday: {
+          type: Boolean,
+          default: false,
+        },
+        holidayName: {
+          type: String,
+        },
+        checkIn: {
+          type: String, // HH:mm format
+        },
+        checkOut: {
+          type: String, // HH:mm format
+        },
+        status: {
+          type: String, // Present, Late, Absent, On Leave, etc.
+        },
+        lateMinutes: {
+          type: Number,
+          default: 0,
+        },
+        workHours: {
+          type: Number,
+          default: 0,
+        },
+        otHours: {
+          type: Number,
+          default: 0,
+        },
+        otApproved: {
+          type: Boolean,
+          default: false,
+        },
+        otMultiplier: {
+          type: Number,
+          default: 0, // 1.5, 2.0, 3.0
+        },
+        dailySalary: {
+          type: Number,
+          default: 0,
+        },
+        otSalary: {
+          type: Number,
+          default: 0,
+        },
+        lateDeduction: {
+          type: Number,
+          default: 0,
+        },
+        dayTotal: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
+    
     // ===== NOTES & ATTACHMENTS =====
     notes: {
       type: String,
@@ -299,6 +369,12 @@ const payrollSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    
+    // ===== METADATA (flexible field for payment info, etc.) =====
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },

@@ -1,36 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import {
-  Users,
+  DollarSign,
   Calendar,
   Eye,
-  CheckCircle,
-  XCircle,
   ChevronLeft,
   ChevronRight,
-  Filter,
 } from "lucide-react";
 import PayrollService from "../../service/PayrollService";
 import "./ManagerPayroll.css";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 6;
 
 const ManagerPayroll = () => {
   const [payrolls, setPayrolls] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPayroll, setSelectedPayroll] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showApproveModal, setShowApproveModal] = useState(false);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
-  const [approveNotes, setApproveNotes] = useState("");
+  const [showBreakdownModal, setShowBreakdownModal] = useState(false);
   const [pagination, setPagination] = useState({});
 
   // Filters
   const [filters, setFilters] = useState({
     month: "",
     year: new Date().getFullYear(),
-    status: "",
     page: 1,
     limit: ITEMS_PER_PAGE,
   });
@@ -43,8 +36,8 @@ const ManagerPayroll = () => {
   const fetchPayrolls = async () => {
     setIsLoading(true);
     try {
-      const response = await PayrollService.getDepartmentPayrolls(filters);
-      console.log("Department Payrolls:", response);
+      const response = await PayrollService.getMyPayrolls(filters);
+      console.log("Payrolls Response:", response);
       setPayrolls(response.data || []);
       setPagination(response.pagination || {});
     } catch (error) {
@@ -60,47 +53,9 @@ const ManagerPayroll = () => {
     setShowDetailModal(true);
   };
 
-  const handleApproveClick = (payroll) => {
+  const handleViewBreakdown = (payroll) => {
     setSelectedPayroll(payroll);
-    setApproveNotes("");
-    setShowApproveModal(true);
-  };
-
-  const handleRejectClick = (payroll) => {
-    setSelectedPayroll(payroll);
-    setRejectReason("");
-    setShowRejectModal(true);
-  };
-
-  const handleApprove = async () => {
-    if (!selectedPayroll) return;
-
-    try {
-      await PayrollService.managerApprovePayroll(selectedPayroll._id, approveNotes);
-      toast.success("Đã duyệt phiếu lương");
-      setShowApproveModal(false);
-      fetchPayrolls();
-    } catch (error) {
-      toast.error(error.message || "Không thể duyệt phiếu lương");
-    }
-  };
-
-  const handleReject = async () => {
-    if (!selectedPayroll) return;
-
-    if (!rejectReason.trim()) {
-      toast.error("Vui lòng nhập lý do từ chối");
-      return;
-    }
-
-    try {
-      await PayrollService.managerRejectPayroll(selectedPayroll._id, rejectReason);
-      toast.success("Đã từ chối phiếu lương");
-      setShowRejectModal(false);
-      fetchPayrolls();
-    } catch (error) {
-      toast.error(error.message || "Không thể từ chối phiếu lương");
-    }
+    setShowBreakdownModal(true);
   };
 
   const handlePageChange = (newPage) => {
@@ -116,49 +71,37 @@ const ManagerPayroll = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      Draft: { label: "Nháp", className: "mgr-status-draft" },
-      Pending: { label: "Chờ duyệt", className: "mgr-status-pending" },
-      Approved: { label: "Đã duyệt", className: "mgr-status-approved" },
-      Paid: { label: "Đã trả", className: "mgr-status-paid" },
-      Rejected: { label: "Từ chối", className: "mgr-status-rejected" },
+      Draft: { label: "Nháp", className: "status-draft" },
+      Pending: { label: "Chờ duyệt", className: "status-pending" },
+      Approved: { label: "Đã duyệt", className: "status-approved" },
+      Paid: { label: "Đã trả", className: "status-paid" },
+      Rejected: { label: "Từ chối", className: "status-rejected" },
     };
 
     const s = statusMap[status] || { label: status, className: "" };
-    return <span className={`mgr-status-badge ${s.className}`}>{s.label}</span>;
+    return <span className={`status-badge ${s.className}`}>{s.label}</span>;
   };
 
-  const getInitials = (fullName) => {
-    if (!fullName) return "??";
-    const parts = fullName.trim().split(" ");
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return fullName.substring(0, 2).toUpperCase();
-  };
-
-  const hasValidAvatar = (avatar) => {
-    return (
-      avatar &&
-      avatar.trim() !== "" &&
-      !avatar.includes("placeholder") &&
-      !avatar.includes("pravatar")
-    );
+  const getDayOfWeek = (dateString) => {
+    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+    const date = new Date(dateString);
+    return days[date.getDay()];
   };
 
   return (
     <div className="manager-payroll-wrapper">
-      <div className="mgr-payroll-header">
-        <div className="mgr-header-content">
+      <div className="payroll-header">
+        <div className="header-content">
           <div>
-            <h1>Quản lý lương phòng ban</h1>
-            <p>Xem và duyệt phiếu lương của nhân viên trong phòng ban</p>
+            <h1>💼 Lương của tôi</h1>
+            <p>Xem lịch sử lương và chi tiết phiếu lương</p>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="mgr-payroll-filters">
-        <div className="mgr-filter-group">
+      <div className="filters-section">
+        <div className="filter-group">
           <label>
             <Calendar size={16} />
             Tháng
@@ -176,16 +119,14 @@ const ManagerPayroll = () => {
           </select>
         </div>
 
-        <div className="mgr-filter-group">
+        <div className="filter-group">
           <label>
             <Calendar size={16} />
             Năm
           </label>
           <select
             value={filters.year}
-            onChange={(e) =>
-              setFilters({ ...filters, year: parseInt(e.target.value), page: 1 })
-            }
+            onChange={(e) => setFilters({ ...filters, year: parseInt(e.target.value), page: 1 })}
           >
             {[2023, 2024, 2025, 2026].map((year) => (
               <option key={year} value={year}>
@@ -194,147 +135,107 @@ const ManagerPayroll = () => {
             ))}
           </select>
         </div>
-
-        <div className="mgr-filter-group">
-          <label>
-            <Filter size={16} />
-            Trạng thái
-          </label>
-          <select
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
-          >
-            <option value="">Tất cả</option>
-            <option value="Draft">Nháp</option>
-            <option value="Pending">Chờ duyệt</option>
-            <option value="Approved">Đã duyệt</option>
-            <option value="Paid">Đã trả</option>
-            <option value="Rejected">Từ chối</option>
-          </select>
-        </div>
       </div>
 
-      {/* Table */}
+      {/* Payroll Cards */}
       {isLoading ? (
-        <div className="mgr-loading-state">
-          <div className="mgr-spinner"></div>
+        <div className="loading-container">
+          <div className="spinner"></div>
           <p>Đang tải...</p>
         </div>
       ) : payrolls.length === 0 ? (
-        <div className="mgr-empty-state">
-          <Users size={64} />
+        <div className="empty-state">
+          <DollarSign size={64} />
           <h3>Chưa có dữ liệu lương</h3>
-          <p>Không có phiếu lương nào trong phòng ban</p>
+          <p>Bạn chưa có phiếu lương nào cho tháng này</p>
         </div>
       ) : (
         <>
-          <div className="mgr-table-container">
-            <table className="mgr-payroll-table">
-              <thead>
-                <tr>
-                  <th>Nhân viên</th>
-                  <th>Kỳ lương</th>
-                  <th>Lương cơ bản</th>
-                  <th>Thực lĩnh</th>
-                  <th>Trạng thái</th>
-                  <th>Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payrolls.map((payroll) => (
-                  <tr key={payroll._id}>
-                    <td>
-                      <div className="mgr-employee-cell">
-                        {hasValidAvatar(payroll.employeeId?.avatar) ? (
-                          <img
-                            src={payroll.employeeId.avatar}
-                            alt={payroll.employeeId?.full_name}
-                            className="mgr-avatar-img"
-                          />
-                        ) : (
-                          <div className="mgr-avatar-initials">
-                            {getInitials(payroll.employeeId?.full_name)}
-                          </div>
-                        )}
-                        <div>
-                          <div className="mgr-employee-name">
-                            {payroll.employeeId?.full_name || "N/A"}
-                          </div>
-                          <div className="mgr-employee-id">
-                            {payroll.employeeId?.employeeId || "N/A"}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      Tháng {payroll.month}/{payroll.year}
-                    </td>
-                    <td>{formatCurrency(payroll.baseSalary)}</td>
-                    <td className={`mgr-net-salary ${payroll.netSalary < 0 ? 'negative' : ''}`}>
+          <div className="payroll-cards-grid">
+            {payrolls.map((payroll) => (
+              <div key={payroll._id} className="payroll-card">
+                <div className="card-header">
+                  <div className="card-period">
+                    <Calendar size={20} />
+                    <span>Tháng {payroll.month}/{payroll.year}</span>
+                  </div>
+                  {getStatusBadge(payroll.status)}
+                </div>
+
+                <div className="card-body">
+                  <div className="salary-main">
+                    <span className="label">Thực lĩnh</span>
+                    <span className={`amount ${payroll.netSalary < 0 ? 'negative' : ''}`}>
                       {formatCurrency(payroll.netSalary)}
-                      {payroll.netSalary < 0 && <span className="negative-badge">⚠️</span>}
-                    </td>
-                    <td>{getStatusBadge(payroll.status)}</td>
-                    <td>
-                      <div className="mgr-action-buttons">
-                        <button
-                          className="mgr-btn-icon mgr-btn-view"
-                          onClick={() => handleViewDetail(payroll)}
-                          title="Xem chi tiết"
-                        >
-                          <Eye size={18} />
-                        </button>
-                        {payroll.status === "Draft" && !payroll.rejectedByManager && (
-                          <>
-                            <button
-                              className="mgr-btn-icon mgr-btn-approve"
-                              onClick={() => handleApproveClick(payroll)}
-                              title="Duyệt (chuyển sang Pending)"
-                            >
-                              <CheckCircle size={18} />
-                            </button>
-                            <button
-                              className="mgr-btn-icon mgr-btn-reject"
-                              onClick={() => handleRejectClick(payroll)}
-                              title="Từ chối"
-                            >
-                              <XCircle size={18} />
-                            </button>
-                          </>
+                    </span>
+                  </div>
+
+                  {payroll.netSalary < 0 && (
+                    <div className="warning-box negative-salary-warning">
+                      <span>⚠️</span>
+                      <p>
+                        <strong>Lưu ý:</strong> Bạn đang nợ công ty {formatCurrency(Math.abs(payroll.netSalary))} 
+                        do khấu trừ lớn hơn thu nhập. Vui lòng liên hệ HR để thanh toán.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="card-details">
+                    <div className="detail-row">
+                      <span>Tổng thu nhập:</span>
+                      <span className="positive">
+                        {formatCurrency(payroll.actualBaseSalary + payroll.overtimeAmount)}
+                      </span>
+                    </div>
+
+                    <div className="detail-row">
+                      <span>Tổng khấu trừ:</span>
+                      <span className="negative">
+                        -{formatCurrency(
+                          payroll.deductions.reduce((sum, d) => sum + d.amount, 0)
                         )}
-                        {payroll.status === "Draft" && payroll.rejectedByManager && (
-                          <span className="mgr-rejected-badge" title="Đã từ chối - Admin đang xử lý">
-                            ⚠️ Đã từ chối
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-actions">
+                  <button className="btn-action view" onClick={() => handleViewDetail(payroll)}>
+                    <Eye size={18} />
+                    Xem chi tiết
+                  </button>
+                  <button className="btn-action breakdown" onClick={() => handleViewBreakdown(payroll)}>
+                    <Calendar size={18} />
+                    Chi tiết từng ngày
+                  </button>
+
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="mgr-pagination">
+            <div className="pagination">
               <button
-                className="mgr-page-btn"
+                className="btn-page"
                 disabled={pagination.page === 1}
                 onClick={() => handlePageChange(pagination.page - 1)}
               >
                 <ChevronLeft size={18} />
+                Trước
               </button>
 
-              <span className="mgr-page-info">
+              <span className="page-info">
                 Trang {pagination.page} / {pagination.totalPages}
               </span>
 
               <button
-                className="mgr-page-btn"
+                className="btn-page"
                 disabled={pagination.page === pagination.totalPages}
                 onClick={() => handlePageChange(pagination.page + 1)}
               >
+                Sau
                 <ChevronRight size={18} />
               </button>
             </div>
@@ -342,146 +243,121 @@ const ManagerPayroll = () => {
         </>
       )}
 
-      {/* Detail Modal */}
+      {/* Detail Modal - Summary */}
       {showDetailModal && selectedPayroll && (
-        <div className="mgr-modal-overlay" onClick={() => setShowDetailModal(false)}>
-          <div className="mgr-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="mgr-modal-header">
+        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
               <h2>Chi tiết phiếu lương</h2>
               <button
-                className="mgr-btn-close"
+                className="btn-close"
                 onClick={() => setShowDetailModal(false)}
               >
                 ×
               </button>
             </div>
 
-            <div className="mgr-modal-body">
-              <div className="mgr-detail-section">
-                <h3>Thông tin nhân viên</h3>
-                <div className="mgr-detail-row">
-                  <span>Họ tên:</span>
-                  <strong>{selectedPayroll.employeeId?.full_name || "N/A"}</strong>
-                </div>
-                <div className="mgr-detail-row">
-                  <span>Mã NV:</span>
-                  <strong>{selectedPayroll.employeeId?.employeeId || "N/A"}</strong>
-                </div>
-                <div className="mgr-detail-row">
-                  <span>Kỳ lương:</span>
-                  <strong>
-                    Tháng {selectedPayroll.month}/{selectedPayroll.year}
-                  </strong>
-                </div>
-                <div className="mgr-detail-row">
-                  <span>Trạng thái:</span>
-                  {getStatusBadge(selectedPayroll.status)}
+            <div className="modal-body">
+              <div className="detail-section">
+                <h3>Thông tin chung</h3>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="label">Kỳ lương:</span>
+                    <span className="value">Tháng {selectedPayroll.month}/{selectedPayroll.year}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Trạng thái:</span>
+                    <span className="value">{getStatusBadge(selectedPayroll.status)}</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="mgr-detail-section">
+              <div className="detail-section">
                 <h3>Thu nhập</h3>
-                <div className="mgr-detail-row">
-                  <span>Lương cơ bản:</span>
-                  <strong>{formatCurrency(selectedPayroll.baseSalary)}</strong>
-                </div>
-                <div className="mgr-detail-row">
-                  <span>Số ngày làm việc:</span>
-                  <strong>
-                    {selectedPayroll.workingDays}/{selectedPayroll.standardWorkingDays} ngày
-                  </strong>
-                </div>
-                <div className="mgr-detail-row">
-                  <span>Lương thực tế:</span>
-                  <strong className="mgr-text-success">
-                    {formatCurrency(selectedPayroll.actualBaseSalary)}
-                  </strong>
-                </div>
-                <div className="mgr-detail-row">
-                  <span>Tăng ca:</span>
-                  <strong className="mgr-text-success">
-                    {formatCurrency(selectedPayroll.overtimeAmount)}
-                  </strong>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="label">Lương cơ bản:</span>
+                    <span className="value">{formatCurrency(selectedPayroll.baseSalary)}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Số ngày làm việc:</span>
+                    <span className="value">{selectedPayroll.workingDays}/{selectedPayroll.standardWorkingDays} ngày</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Lương thực tế:</span>
+                    <span className="value positive">{formatCurrency(selectedPayroll.actualBaseSalary)}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Tăng ca:</span>
+                    <span className="value positive">{formatCurrency(selectedPayroll.overtimeAmount)}</span>
+                  </div>
                 </div>
                 
-                {/* OT Pending Warning */}
                 {selectedPayroll.overtimePending && 
                  (selectedPayroll.overtimePending.weekday > 0 || 
                   selectedPayroll.overtimePending.weekend > 0 || 
                   selectedPayroll.overtimePending.holiday > 0) && (
-                  <div className="mgr-detail-row mgr-warning-message" style={{
-                    backgroundColor: '#fff3cd',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    marginTop: '10px',
-                    border: '1px solid #ffc107'
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <strong style={{ color: '#856404', fontSize: '14px' }}>
-                        ⚠️ Nhân viên có {' '}
-                        {(selectedPayroll.overtimePending.weekday + 
-                          selectedPayroll.overtimePending.weekend + 
-                          selectedPayroll.overtimePending.holiday).toFixed(1)} giờ OT chưa được duyệt
-                      </strong>
-                      <span style={{ color: '#856404', fontSize: '12px' }}>
-                        Nhân viên cần tạo đơn "Tăng ca" để OT được tính vào lương.
-                      </span>
-                    </div>
+                  <div className="warning-box">
+                    <span>⚠️</span>
+                    <p>
+                      <strong>Bạn có {(selectedPayroll.overtimePending.weekday + selectedPayroll.overtimePending.weekend + selectedPayroll.overtimePending.holiday).toFixed(1)} giờ OT chưa được duyệt</strong>
+                      <br/>Vui lòng tạo đơn "Tăng ca" trong phần Request để được duyệt và tính lương OT.
+                    </p>
                   </div>
                 )}
               </div>
 
-              <div className="mgr-detail-section">
+              <div className="detail-section">
                 <h3>Khấu trừ</h3>
                 {selectedPayroll.deductions.length > 0 ? (
-                  selectedPayroll.deductions.map((ded, idx) => (
-                    <div key={idx} className="mgr-detail-row">
-                      <span>{ded.description}:</span>
-                      <strong className="mgr-text-danger">
-                        -{formatCurrency(ded.amount)}
-                      </strong>
-                    </div>
-                  ))
+                  <div className="deductions-list">
+                    {selectedPayroll.deductions.map((ded, idx) => (
+                      <div key={idx} className="deduction-item">
+                        <div className="deduction-info">
+                          <div className="deduction-type">{ded.type}</div>
+                          <div className="deduction-desc">{ded.description}</div>
+                        </div>
+                        <div className="deduction-amount negative">
+                          -{formatCurrency(ded.amount)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <p className="mgr-text-muted">Không có khấu trừ</p>
+                  <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>Không có khấu trừ</p>
                 )}
               </div>
 
-              <div className="mgr-detail-section mgr-highlight">
-                <div className="mgr-detail-row mgr-large">
-                  <span>THỰC LĨNH:</span>
-                  <strong className={`mgr-text-primary ${selectedPayroll.netSalary < 0 ? 'negative' : ''}`}>
-                    {formatCurrency(selectedPayroll.netSalary)}
-                  </strong>
+              <div className="total-section">
+                <div className="total-breakdown">
+                  <div className="total-row">
+                    <span>Tổng thu nhập:</span>
+                    <span className="positive">{formatCurrency(selectedPayroll.actualBaseSalary + selectedPayroll.overtimeAmount)}</span>
+                  </div>
+                  <div className="total-row">
+                    <span>Tổng khấu trừ:</span>
+                    <span className="negative">-{formatCurrency(selectedPayroll.deductions.reduce((sum, d) => sum + d.amount, 0))}</span>
+                  </div>
+                  <div className="total-row final">
+                    <span>THỰC LĨNH:</span>
+                    <span className={`text-primary ${selectedPayroll.netSalary < 0 ? 'negative' : ''}`}>
+                      {formatCurrency(selectedPayroll.netSalary)}
+                    </span>
+                  </div>
                 </div>
                 {selectedPayroll.netSalary < 0 && (
-                  <div style={{
-                    backgroundColor: '#fee2e2',
-                    border: '1px solid #ef4444',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    marginTop: '12px',
-                    fontSize: '13px',
-                    color: '#991b1b'
-                  }}>
-                    ⚠️ <strong>Lương âm:</strong> Nhân viên nợ công ty {formatCurrency(Math.abs(selectedPayroll.netSalary))}.
+                  <div className="warning-box negative-salary-warning" style={{ marginTop: '1rem' }}>
+                    <span>⚠️</span>
+                    <p>
+                      <strong>Lưu ý:</strong> Bạn đang nợ công ty {formatCurrency(Math.abs(selectedPayroll.netSalary))}.
+                    </p>
                   </div>
                 )}
               </div>
-
-              {selectedPayroll.notes && (
-                <div className="mgr-detail-section">
-                  <h3>Ghi chú</h3>
-                  <p>{selectedPayroll.notes}</p>
-                </div>
-              )}
             </div>
 
-            <div className="mgr-modal-footer">
-              <button
-                className="mgr-btn-secondary"
-                onClick={() => setShowDetailModal(false)}
-              >
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowDetailModal(false)}>
                 Đóng
               </button>
             </div>
@@ -489,110 +365,100 @@ const ManagerPayroll = () => {
         </div>
       )}
 
-      {/* Approve Modal */}
-      {showApproveModal && selectedPayroll && (
-        <div className="mgr-modal-overlay" onClick={() => setShowApproveModal(false)}>
-          <div
-            className="mgr-modal-content mgr-modal-small"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mgr-modal-header">
-              <h2>Xác nhận duyệt</h2>
-              <button
-                className="mgr-btn-close"
-                onClick={() => setShowApproveModal(false)}
-              >
-                ×
-              </button>
+      {/* Daily Breakdown Modal */}
+      {showBreakdownModal && selectedPayroll && (
+        <div className="modal-overlay" onClick={() => setShowBreakdownModal(false)}>
+          <div className="modal-content breakdown-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📅 Chi tiết từng ngày - Tháng {selectedPayroll.month}/{selectedPayroll.year}</h2>
+              <button className="btn-close" onClick={() => setShowBreakdownModal(false)}>×</button>
             </div>
 
-            <div className="mgr-modal-body">
-              <p>
-                Bạn có chắc muốn duyệt phiếu lương của{" "}
-                <strong>{selectedPayroll.employeeId?.full_name}</strong> cho tháng{" "}
-                {selectedPayroll.month}/{selectedPayroll.year}?
-              </p>
-              <p className="mgr-note-text">
-                <strong>Lưu ý:</strong> Phiếu lương sẽ chuyển sang trạng thái <strong>Pending</strong> và cần Admin phê duyệt cuối cùng.
-              </p>
-
-              <div className="mgr-form-group">
-                <label>Ghi chú (tùy chọn)</label>
-                <textarea
-                  className="mgr-textarea"
-                  rows="3"
-                  placeholder="Nhập ghi chú nếu có..."
-                  value={approveNotes}
-                  onChange={(e) => setApproveNotes(e.target.value)}
-                />
+            <div className="modal-body">
+              <div className="daily-breakdown-table-wrapper">
+                <table className="daily-breakdown-table">
+                  <thead>
+                    <tr>
+                      <th>Ngày</th>
+                      <th>Thứ</th>
+                      <th>Trạng thái</th>
+                      <th>Giờ vào</th>
+                      <th>Giờ ra</th>
+                      <th>Đi muộn (phút)</th>
+                      <th>Giờ làm</th>
+                      <th>OT (giờ)</th>
+                      <th>Lương ngày</th>
+                      <th>Lương OT</th>
+                      <th>Khấu trừ muộn</th>
+                      <th>Tổng ngày</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedPayroll.dailyBreakdown && selectedPayroll.dailyBreakdown.length > 0 ? (
+                      selectedPayroll.dailyBreakdown.map((day, idx) => (
+                        <tr key={idx} className={!day.isWorkingDay ? 'non-working-day' : ''}>
+                          <td>{day.date}</td>
+                          <td>{getDayOfWeek(day.fullDate)}</td>
+                          <td>
+                            <span className={`status-badge ${day.isWorkingDay ? 'working' : 'not-working'}`}>
+                              {day.isWorkingDay ? 'Làm việc' : 'Nghỉ'}
+                            </span>
+                            {day.isHoliday && <span className="ot-badge approved">Lễ</span>}
+                          </td>
+                          <td>{day.checkIn || '-'}</td>
+                          <td>{day.checkOut || '-'}</td>
+                          <td className={day.lateMinutes > 0 ? 'negative' : ''}>{day.lateMinutes || 0}</td>
+                          <td>{day.workHours ? day.workHours.toFixed(1) : '-'}</td>
+                          <td>
+                            {day.otHours > 0 ? (
+                              <>
+                                {day.otHours.toFixed(1)}
+                                {day.otApproved && <span className="ot-badge approved">✓</span>}
+                                {!day.otApproved && day.otHours > 0 && <span className="ot-badge pending">?</span>}
+                              </>
+                            ) : '-'}
+                          </td>
+                          <td className={day.dailySalary > 0 ? 'positive' : ''}>
+                            {day.dailySalary > 0 ? formatCurrency(day.dailySalary) : '-'}
+                          </td>
+                          <td className={day.otSalary > 0 ? 'positive' : ''}>
+                            {day.otSalary > 0 ? formatCurrency(day.otSalary) : '-'}
+                          </td>
+                          <td className={day.lateDeduction > 0 ? 'negative' : ''}>
+                            {day.lateDeduction > 0 ? `-${formatCurrency(day.lateDeduction)}` : '-'}
+                          </td>
+                          <td className="day-total">
+                            {formatCurrency(day.dayTotal || 0)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="12" style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
+                          Không có dữ liệu chi tiết từng ngày
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr className="summary-row">
+                      <td colSpan="5"><strong>TỔNG CỘNG</strong></td>
+                      <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.lateMinutes || 0), 0) || 0} phút</strong></td>
+                      <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.workHours || 0), 0).toFixed(1) || 0} giờ</strong></td>
+                      <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.otHours || 0), 0).toFixed(1) || 0} giờ</strong></td>
+                      <td><strong>{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.dailySalary || 0), 0) || 0)}</strong></td>
+                      <td><strong>{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.otSalary || 0), 0) || 0)}</strong></td>
+                      <td><strong>-{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.lateDeduction || 0), 0) || 0)}</strong></td>
+                      <td><strong>{formatCurrency(selectedPayroll.netSalary)}</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             </div>
 
-            <div className="mgr-modal-footer">
-              <button
-                className="mgr-btn-secondary"
-                onClick={() => setShowApproveModal(false)}
-              >
-                Hủy
-              </button>
-              <button className="mgr-btn-success" onClick={handleApprove}>
-                <CheckCircle size={18} />
-                Xác nhận duyệt
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reject Modal */}
-      {showRejectModal && selectedPayroll && (
-        <div className="mgr-modal-overlay" onClick={() => setShowRejectModal(false)}>
-          <div
-            className="mgr-modal-content mgr-modal-small"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mgr-modal-header">
-              <h2>Xác nhận từ chối</h2>
-              <button
-                className="mgr-btn-close"
-                onClick={() => setShowRejectModal(false)}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="mgr-modal-body">
-              <p>
-                Bạn có chắc muốn từ chối phiếu lương của{" "}
-                <strong>{selectedPayroll.employeeId?.full_name}</strong> cho tháng{" "}
-                {selectedPayroll.month}/{selectedPayroll.year}?
-              </p>
-
-              <div className="mgr-form-group">
-                <label>
-                  Lý do từ chối <span className="mgr-required">*</span>
-                </label>
-                <textarea
-                  className="mgr-textarea"
-                  rows="4"
-                  placeholder="Nhập lý do từ chối..."
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="mgr-modal-footer">
-              <button
-                className="mgr-btn-secondary"
-                onClick={() => setShowRejectModal(false)}
-              >
-                Hủy
-              </button>
-              <button className="mgr-btn-danger" onClick={handleReject}>
-                <XCircle size={18} />
-                Xác nhận từ chối
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowBreakdownModal(false)}>
+                Đóng
               </button>
             </div>
           </div>

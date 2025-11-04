@@ -196,6 +196,9 @@ export const getApprovedLeaves = async ({ departmentId, year, month }) => {
   }
 };
 
+// Alias for getUserRequests (for Employee Dashboard)
+export const getMyRequests = getUserRequests;
+
 
 
 

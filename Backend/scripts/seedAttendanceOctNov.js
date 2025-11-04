@@ -1,0 +1,305 @@
+/**
+ * Script để tạo dữ liệu attendance cho tháng 10 và 11/2025
+ * Chạy: node scripts/seedAttendanceOctNov.js
+ */
+
+const mongoose = require("mongoose");
+const Attendance = require("../src/models/Attendance");
+const User = require("../src/models/User");
+const Holiday = require("../src/models/Holiday");
+require("dotenv").config();
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/HRMS", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+// Helper: Random time generator
+function randomTime(start, end) {
+  const startMinutes = start.split(":").reduce((h, m) => parseInt(h) * 60 + parseInt(m));
+  const endMinutes = end.split(":").reduce((h, m) => parseInt(h) * 60 + parseInt(m));
+  const randomMinutes = Math.floor(Math.random() * (endMinutes - startMinutes)) + startMinutes;
+  const hours = Math.floor(randomMinutes / 60);
+  const minutes = randomMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+// Helper: Calculate work hours (trừ 1 giờ nghỉ trưa)
+function calculateWorkHours(clockIn, clockOut) {
+  const [inH, inM] = clockIn.split(":").map(Number);
+  const [outH, outM] = clockOut.split(":").map(Number);
+  const inMinutes = inH * 60 + inM;
+  const outMinutes = outH * 60 + outM;
+  const totalMinutes = outMinutes - inMinutes;
+  
+  // Trừ 60 phút nghỉ trưa nếu làm việc >= 6 tiếng
+  const lunchBreak = totalMinutes >= 360 ? 60 : 0;
+  const workMinutes = totalMinutes - lunchBreak;
+  
+  return Math.round((workMinutes / 60) * 10) / 10;
+}
+
+// Helper: Calculate overtime hours (tính từ giờ tan ca 17:00)
+function calculateOvertimeHours(clockIn, clockOut, hasOT = false) {
+  if (!hasOT) return 0;
+  
+  const [inH, inM] = clockIn.split(":").map(Number);
+  const [outH, outM] = clockOut.split(":").map(Number);
+  const inMinutes = inH * 60 + inM;
+  const outMinutes = outH * 60 + outM;
+  
+  // Giờ tan ca chuẩn: 17:00 (1020 phút từ 0:00)
+  const standardEndTime = 17 * 60; // 17:00
+  
+  // Chỉ tính OT nếu ra sau 17:00
+  if (outMinutes <= standardEndTime) return 0;
+  
+  // OT = thời gian từ 17:00 đến giờ ra
+  let otMinutes = outMinutes - standardEndTime;
+  
+  // Nếu vào trước 8:00, có thể trừ bớt thời gian vào sớm (tùy chọn)
+  const standardStartTime = 8 * 60; // 08:00
+  const earlyMinutes = Math.max(0, standardStartTime - inMinutes);
+  
+  // Trừ thời gian vào sớm khỏi OT (nếu có)
+  otMinutes = Math.max(0, otMinutes - earlyMinutes);
+  
+  // Chuyển sang giờ, làm tròn 1 chữ số
+  const otHours = Math.round((otMinutes / 60) * 10) / 10;
+  
+  // Giới hạn OT từ 0.5 đến 4 giờ
+  if (otHours < 0.5) return 0;
+  return Math.min(4, otHours);
+}
+
+// Helper: Calculate late minutes
+function calculateLateMinutes(clockIn, expectedIn = "08:00") {
+  const [inH, inM] = clockIn.split(":").map(Number);
+  const [expH, expM] = expectedIn.split(":").map(Number);
+  const inMinutes = inH * 60 + inM;
+  const expMinutes = expH * 60 + expM;
+  return Math.max(0, inMinutes - expMinutes);
+}
+
+async function seedAttendance() {
+  try {
+    console.log("🌱 Starting attendance seeding for Oct & Nov 2025...");
+
+    // 1. Get all employees
+    const employees = await User.find({ role: { $in: ["Employee", "Manager"] } });
+    if (employees.length === 0) {
+      console.log("❌ No employees found! Please seed users first.");
+      process.exit(1);
+    }
+    console.log(`✅ Found ${employees.length} employees`);
+
+    // 2. Get holidays
+    const holidays = await Holiday.find({
+      date: {
+        $gte: new Date("2025-10-01"),
+        $lte: new Date("2025-11-30"),
+      },
+    });
+    const holidayDates = holidays.map((h) => h.date.toISOString().split("T")[0]);
+    console.log(`✅ Found ${holidays.length} holidays:`, holidayDates);
+
+    // 3. Delete existing attendance for Oct & Nov 2025
+    await Attendance.deleteMany({
+      date: {
+        $gte: new Date("2025-10-01"),
+        $lte: new Date("2025-11-30"),
+      },
+    });
+    console.log("🗑️  Cleared existing Oct & Nov 2025 attendance");
+
+    // 4. Generate attendance for each employee
+    let totalRecords = 0;
+    const months = [
+      { month: 10, year: 2025, days: 31 },
+      { month: 11, year: 2025, days: 30 },
+    ];
+
+    for (const employee of employees) {
+      console.log(`\n📝 Creating attendance for ${employee.full_name} (${employee.employeeId})`);
+
+      for (const { month, year, days } of months) {
+        for (let day = 1; day <= days; day++) {
+          const date = new Date(year, month - 1, day);
+          const dayOfWeek = date.getDay(); // 0=Sunday, 6=Saturday
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          const dateStr = date.toISOString().split("T")[0];
+          const isHoliday = holidayDates.includes(dateStr);
+
+          // Skip weekends (không tạo attendance)
+          if (isWeekend) continue;
+
+          // Random patterns for realistic data
+          const random = Math.random();
+          let attendanceData = null;
+
+          if (isHoliday) {
+            // HOLIDAY: 70% không đi, 30% đi làm
+            if (random < 0.7) {
+              // Không đi làm holiday (không tạo attendance record, nhưng vẫn được lương)
+              continue;
+            } else {
+              // Đi làm holiday (x3 lương)
+              let clockIn, clockOut, workHours, overtimeHours;
+              
+              // 50% làm đủ giờ (không OT)
+              if (random < 0.85) {
+                clockIn = randomTime("07:45", "08:30");
+                clockOut = randomTime("17:00", "17:30");
+                workHours = calculateWorkHours(clockIn, clockOut);
+                overtimeHours = 0; // Không OT
+              } 
+              // 50% làm thêm giờ trong ngày holiday
+              else {
+                clockIn = randomTime("07:45", "08:30");
+                clockOut = randomTime("18:30", "20:00");
+                workHours = calculateWorkHours(clockIn, clockOut);
+                overtimeHours = calculateOvertimeHours(clockIn, clockOut, true);
+              }
+              
+              // Tạo Date object - giữ nguyên timezone local (VN)
+              const [inH, inM] = clockIn.split(":").map(Number);
+              const [outH, outM] = clockOut.split(":").map(Number);
+              const clockInDate = new Date(year, month - 1, day, inH, inM, 0, 0);
+              const clockOutDate = new Date(year, month - 1, day, outH, outM, 0, 0);
+              
+              attendanceData = {
+                userId: employee._id,
+                date: date,
+                clockIn: clockInDate,
+                clockOut: clockOutDate,
+                status: "Present",
+                lateMinutes: calculateLateMinutes(clockIn),
+                workHours: workHours,
+                location: {
+                  latitude: 21.028511 + (Math.random() - 0.5) * 0.01,
+                  longitude: 105.804817 + (Math.random() - 0.5) * 0.01,
+                },
+                overtimeHours: overtimeHours,
+                overtimeApproved: overtimeHours > 0 ? true : false,
+              };
+            }
+          } else {
+            // NORMAL WORKING DAY
+            if (random < 0.85) {
+              // 85% Present/Late
+              let clockIn, clockOut, workHours, overtimeHours;
+              
+              // 60% làm đúng giờ (7:45-8:15 vào, 17:00-17:30 ra) - không OT
+              if (random < 0.51) {
+                clockIn = randomTime("07:45", "08:15");
+                clockOut = randomTime("17:00", "17:30");
+                workHours = calculateWorkHours(clockIn, clockOut);
+                overtimeHours = 0; // Không OT vì ra trước/đúng 17:30
+              } 
+              // 25% làm thêm giờ (ra muộn hơn 17:30 để có OT)
+              else if (random < 0.76) {
+                clockIn = randomTime("07:45", "08:15");
+                // Ra từ 18:00-19:00 → OT từ 17:00 = khoảng 1-2h
+                clockOut = randomTime("18:00", "19:00");
+                workHours = calculateWorkHours(clockIn, clockOut);
+                overtimeHours = calculateOvertimeHours(clockIn, clockOut, true);
+              }
+              // 10% làm thêm nhiều (ra rất muộn)
+              else {
+                clockIn = randomTime("07:45", "08:15");
+                // Ra từ 19:00-20:30 → OT từ 17:00 = khoảng 2-3.5h
+                clockOut = randomTime("19:00", "20:30");
+                workHours = calculateWorkHours(clockIn, clockOut);
+                overtimeHours = calculateOvertimeHours(clockIn, clockOut, true);
+              }
+              
+              const late = calculateLateMinutes(clockIn);
+              
+              // Tạo Date object - giữ nguyên timezone local (VN)
+              const [inH, inM] = clockIn.split(":").map(Number);
+              const [outH, outM] = clockOut.split(":").map(Number);
+              const clockInDate = new Date(year, month - 1, day, inH, inM, 0, 0);
+              const clockOutDate = new Date(year, month - 1, day, outH, outM, 0, 0);
+              
+              attendanceData = {
+                userId: employee._id,
+                date: date,
+                clockIn: clockInDate,
+                clockOut: clockOutDate,
+                status: late > 0 ? "Late" : "Present",
+                lateMinutes: late,
+                workHours: workHours,
+                location: {
+                  latitude: 21.028511 + (Math.random() - 0.5) * 0.01,
+                  longitude: 105.804817 + (Math.random() - 0.5) * 0.01,
+                },
+                overtimeHours: overtimeHours,
+                overtimeApproved: overtimeHours > 0 ? (random < 0.8) : false, // 80% approved nếu có OT
+              };
+            } else if (random < 0.95) {
+              // 10% Early Leave
+              const clockIn = randomTime("07:45", "08:15");
+              const clockOut = randomTime("15:00", "16:30");
+              
+              // Tạo Date object - giữ nguyên timezone local (VN)
+              const [inH, inM] = clockIn.split(":").map(Number);
+              const [outH, outM] = clockOut.split(":").map(Number);
+              const clockInDate = new Date(year, month - 1, day, inH, inM, 0, 0);
+              const clockOutDate = new Date(year, month - 1, day, outH, outM, 0, 0);
+              
+              attendanceData = {
+                userId: employee._id,
+                date: date,
+                clockIn: clockInDate,
+                clockOut: clockOutDate,
+                status: "Early Leave",
+                lateMinutes: calculateLateMinutes(clockIn),
+                workHours: calculateWorkHours(clockIn, clockOut),
+                location: {
+                  latitude: 21.028511 + (Math.random() - 0.5) * 0.01,
+                  longitude: 105.804817 + (Math.random() - 0.5) * 0.01,
+                },
+                overtimeHours: 0,
+                overtimeApproved: false,
+              };
+            } else {
+              // 5% Absent
+              attendanceData = {
+                userId: employee._id,
+                date: date,
+                status: "Absent",
+                lateMinutes: 0,
+                workHours: 0,
+                overtimeHours: 0,
+                overtimeApproved: false,
+              };
+            }
+          }
+
+          if (attendanceData) {
+            await Attendance.create(attendanceData);
+            totalRecords++;
+          }
+        }
+      }
+    }
+
+    console.log(`\n✅ Successfully created ${totalRecords} attendance records!`);
+    console.log("\n📊 Summary:");
+    console.log(`   - Employees: ${employees.length}`);
+    console.log(`   - Months: October & November 2025`);
+    console.log(`   - Total records: ${totalRecords}`);
+    console.log(`   - Holidays: ${holidays.length}`);
+    console.log("\n💡 Tip: Now you can run payroll calculation for Oct & Nov 2025!");
+
+  } catch (error) {
+    console.error("❌ Error seeding attendance:", error);
+  } finally {
+    await mongoose.disconnect();
+    console.log("\n🔌 Disconnected from MongoDB");
+  }
+}
+
+// Run the seed function
+seedAttendance();

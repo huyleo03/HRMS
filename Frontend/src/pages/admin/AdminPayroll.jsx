@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import PayrollService from "../../service/PayrollService";
 import { getUsers } from "../../service/UserService";
+import { getDepartmentOptions } from "../../service/DepartmentService";
 import "./AdminPayroll.css";
 
 const ITEMS_PER_PAGE = 10;
@@ -31,6 +32,7 @@ const AdminPayroll = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPayroll, setSelectedPayroll] = useState(null);
   const [employees, setEmployees] = useState([]);
+  const [departments, setDepartments] = useState([]);
   
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -52,6 +54,7 @@ const AdminPayroll = () => {
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
     status: "",
+    departmentId: "",
     search: "",
     page: 1,
     limit: ITEMS_PER_PAGE,
@@ -81,6 +84,7 @@ const AdminPayroll = () => {
   useEffect(() => {
     // Fetch employees once on mount
     fetchEmployees();
+    fetchDepartments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -137,6 +141,15 @@ const AdminPayroll = () => {
     } catch (error) {
       console.error("Error fetching employees:", error);
       setEmployees([]);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await getDepartmentOptions();
+      setDepartments(response.data || []);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
     }
   };
 
@@ -469,6 +482,24 @@ const AdminPayroll = () => {
               </select>
             </div>
 
+            <div className="filter-group">
+              <label>
+                <Users size={16} />
+                Phòng ban
+              </label>
+              <select
+                value={filters.departmentId}
+                onChange={(e) => setFilters({ ...filters, departmentId: e.target.value, page: 1 })}
+              >
+                <option value="">Tất cả</option>
+                {departments.map((dept) => (
+                  <option key={dept._id} value={dept._id}>
+                    {dept.department_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="filter-group search-group">
               <label>
                 <Search size={16} />
@@ -517,6 +548,7 @@ const AdminPayroll = () => {
                       />
                     </th>
                     <th>Nhân viên</th>
+                    <th>Phòng ban</th>
                     <th>Tháng/Năm</th>
                     <th>Lương cơ bản</th>
                     <th>Thực lĩnh</th>
@@ -572,6 +604,11 @@ const AdminPayroll = () => {
                             </p>
                           </div>
                         </div>
+                      </td>
+                      <td>
+                        <span className="department-badge">
+                          {payroll.employeeId?.department?.department_id?.department_name || "N/A"}
+                        </span>
                       </td>
                       <td>
                         {payroll.month}/{payroll.year}

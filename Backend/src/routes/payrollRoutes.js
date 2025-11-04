@@ -3,19 +3,9 @@ const router = express.Router();
 const PayrollController = require("../controller/PayrollController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
-// ============ EMPLOYEE ROUTES ============
-// Get my payrolls (for logged-in employee) - MUST BE BEFORE /:id route
+// ============ EMPLOYEE & MANAGER ROUTES ============
+// Get my payrolls (for logged-in employee/manager) - MUST BE BEFORE /:id route
 router.get("/my-payrolls", authenticate, PayrollController.getMyPayrolls);
-
-// ============ MANAGER ROUTES ============
-// Get department payrolls (for manager)
-router.get("/department", authenticate, authorize("Manager"), PayrollController.getDepartmentPayrolls);
-
-// Approve payroll (for manager)
-router.post("/:id/manager-approve", authenticate, authorize("Manager"), PayrollController.managerApprovePayroll);
-
-// Reject payroll (for manager)
-router.post("/:id/manager-reject", authenticate, authorize("Manager"), PayrollController.managerRejectPayroll);
 
 // ============ ADMIN ROUTES ============
 // All routes require Admin authentication

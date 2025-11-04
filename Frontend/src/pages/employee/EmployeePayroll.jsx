@@ -3,10 +3,7 @@ import { toast } from "react-toastify";
 import {
   DollarSign,
   Calendar,
-  TrendingUp,
-  TrendingDown,
   Eye,
-  Download,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -20,6 +17,7 @@ const EmployeePayroll = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPayroll, setSelectedPayroll] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showBreakdownModal, setShowBreakdownModal] = useState(false);
   const [pagination, setPagination] = useState({});
 
   // Filters
@@ -55,55 +53,9 @@ const EmployeePayroll = () => {
     setShowDetailModal(true);
   };
 
-  const handleDownloadPDF = async (payroll) => {
-    try {
-      // Tạo nội dung phiếu lương
-      const content = `
-===========================================
-        PHIẾU LƯƠNG NHÂN VIÊN
-===========================================
-
-Kỳ lương: Tháng ${payroll.month}/${payroll.year}
-Nhân viên: ${payroll.employeeId?.full_name || "N/A"}
-Mã NV: ${payroll.employeeId?.employeeId || "N/A"}
-Trạng thái: ${payroll.status}
-
--------------------------------------------
-             THU NHẬP
--------------------------------------------
-Lương cơ bản:           ${formatCurrency(payroll.baseSalary)}
-Số ngày làm việc:       ${payroll.workingDays}/${payroll.standardWorkingDays}
-Lương thực tế:          ${formatCurrency(payroll.actualBaseSalary)}
-Tăng ca:                ${formatCurrency(payroll.overtimeAmount)}
-
--------------------------------------------
-             KHẤU TRỪ
--------------------------------------------
-${payroll.deductions.map(d => `${d.description}:  -${formatCurrency(d.amount)}`).join('\n')}
-
--------------------------------------------
-             TỔNG KẾT
--------------------------------------------
-THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
-
-===========================================
-      `;
-
-      // Tạo blob và download
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `phieu-luong-${payroll.month}-${payroll.year}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast.success("Đã tải phiếu lương");
-    } catch (error) {
-      toast.error("Không thể tải phiếu lương");
-    }
+  const handleViewBreakdown = (payroll) => {
+    setSelectedPayroll(payroll);
+    setShowBreakdownModal(true);
   };
 
   const handlePageChange = (newPage) => {
@@ -130,8 +82,14 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
     return <span className={`status-badge ${s.className}`}>{s.label}</span>;
   };
 
+  const getDayOfWeek = (dateString) => {
+    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+    const date = new Date(dateString);
+    return days[date.getDay()];
+  };
+
   return (
-    <div className="employee-payroll">
+    <div className="employee-payroll-wrapper">
       <div className="payroll-header">
         <div className="header-content">
           <div>
@@ -142,8 +100,8 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
       </div>
 
       {/* Filters */}
-      <div className="emp-payroll-filters">
-        <div className="emp-filter-group">
+      <div className="filters-section">
+        <div className="filter-group">
           <label>
             <Calendar size={16} />
             Tháng
@@ -161,7 +119,7 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
           </select>
         </div>
 
-        <div className="emp-filter-group">
+        <div className="filter-group">
           <label>
             <Calendar size={16} />
             Năm
@@ -181,7 +139,7 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
 
       {/* Payroll Cards */}
       {isLoading ? (
-        <div className="loading-state">
+        <div className="loading-container">
           <div className="spinner"></div>
           <p>Đang tải...</p>
         </div>
@@ -193,11 +151,11 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
         </div>
       ) : (
         <>
-          <div className="payroll-grid">
+          <div className="payroll-cards-grid">
             {payrolls.map((payroll) => (
               <div key={payroll._id} className="payroll-card">
                 <div className="card-header">
-                  <div className="period">
+                  <div className="card-period">
                     <Calendar size={20} />
                     <span>Tháng {payroll.month}/{payroll.year}</span>
                   </div>
@@ -205,7 +163,7 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
                 </div>
 
                 <div className="card-body">
-                  <div className="salary-amount">
+                  <div className="salary-main">
                     <span className="label">Thực lĩnh</span>
                     <span className={`amount ${payroll.netSalary < 0 ? 'negative' : ''}`}>
                       {formatCurrency(payroll.netSalary)}
@@ -213,33 +171,26 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
                   </div>
 
                   {payroll.netSalary < 0 && (
-                    <div style={{
-                      backgroundColor: '#fee2e2',
-                      border: '1px solid #ef4444',
-                      borderRadius: '8px',
-                      padding: '10px',
-                      margin: '12px 0',
-                      fontSize: '12px',
-                      color: '#991b1b'
-                    }}>
-                      ⚠️ <strong>Lưu ý:</strong> Bạn đang nợ công ty {formatCurrency(Math.abs(payroll.netSalary))} 
-                      do khấu trừ lớn hơn thu nhập. Vui lòng liên hệ HR để thanh toán.
+                    <div className="warning-box negative-salary-warning">
+                      <span>⚠️</span>
+                      <p>
+                        <strong>Lưu ý:</strong> Bạn đang nợ công ty {formatCurrency(Math.abs(payroll.netSalary))} 
+                        do khấu trừ lớn hơn thu nhập. Vui lòng liên hệ HR để thanh toán.
+                      </p>
                     </div>
                   )}
 
-                  <div className="salary-breakdown">
-                    <div className="breakdown-item">
-                      <TrendingUp size={16} className="icon-up" />
-                      <span className="label">Tổng thu nhập</span>
-                      <span className="value positive">
+                  <div className="card-details">
+                    <div className="detail-row">
+                      <span>Tổng thu nhập:</span>
+                      <span className="positive">
                         {formatCurrency(payroll.actualBaseSalary + payroll.overtimeAmount)}
                       </span>
                     </div>
 
-                    <div className="breakdown-item">
-                      <TrendingDown size={16} className="icon-down" />
-                      <span className="label">Tổng khấu trừ</span>
-                      <span className="value negative">
+                    <div className="detail-row">
+                      <span>Tổng khấu trừ:</span>
+                      <span className="negative">
                         -{formatCurrency(
                           payroll.deductions.reduce((sum, d) => sum + d.amount, 0)
                         )}
@@ -248,14 +199,14 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
                   </div>
                 </div>
 
-                <div className="card-footer">
-                  <button className="btn-view" onClick={() => handleViewDetail(payroll)}>
+                <div className="card-actions">
+                  <button className="btn-action view" onClick={() => handleViewDetail(payroll)}>
                     <Eye size={18} />
                     Xem chi tiết
                   </button>
-                  <button className="btn-download" onClick={() => handleDownloadPDF(payroll)}>
-                    <Download size={18} />
-                    Tải PDF
+                  <button className="btn-action breakdown" onClick={() => handleViewBreakdown(payroll)}>
+                    <Calendar size={18} />
+                    Chi tiết từng ngày
                   </button>
                 </div>
               </div>
@@ -266,7 +217,7 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
           {pagination.totalPages > 1 && (
             <div className="pagination">
               <button
-                className="page-btn"
+                className="btn-page"
                 disabled={pagination.page === 1}
                 onClick={() => handlePageChange(pagination.page - 1)}
               >
@@ -278,7 +229,7 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
               </span>
 
               <button
-                className="page-btn"
+                className="btn-page"
                 disabled={pagination.page === pagination.totalPages}
                 onClick={() => handlePageChange(pagination.page + 1)}
               >
@@ -325,11 +276,11 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
                 </div>
                 <div className="detail-row">
                   <span>Lương thực tế:</span>
-                  <strong className="text-success">{formatCurrency(selectedPayroll.actualBaseSalary)}</strong>
+                  <strong className="positive">{formatCurrency(selectedPayroll.actualBaseSalary)}</strong>
                 </div>
                 <div className="detail-row">
                   <span>Tăng ca:</span>
-                  <strong className="text-success">{formatCurrency(selectedPayroll.overtimeAmount)}</strong>
+                  <strong className="positive">{formatCurrency(selectedPayroll.overtimeAmount)}</strong>
                 </div>
                 
                 {/* OT Pending Warning */}
@@ -337,24 +288,18 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
                  (selectedPayroll.overtimePending.weekday > 0 || 
                   selectedPayroll.overtimePending.weekend > 0 || 
                   selectedPayroll.overtimePending.holiday > 0) && (
-                  <div className="detail-row warning-message" style={{
-                    backgroundColor: '#fff3cd',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    marginTop: '10px',
-                    border: '1px solid #ffc107'
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <strong style={{ color: '#856404', fontSize: '14px' }}>
-                        ⚠️ Bạn có {' '}
+                  <div className="warning-box">
+                    <span>⚠️</span>
+                    <p>
+                      <strong>
+                        Bạn có {' '}
                         {(selectedPayroll.overtimePending.weekday + 
                           selectedPayroll.overtimePending.weekend + 
                           selectedPayroll.overtimePending.holiday).toFixed(1)} giờ OT chưa được duyệt
                       </strong>
-                      <span style={{ color: '#856404', fontSize: '12px' }}>
-                        Vui lòng tạo đơn "Tăng ca" trong phần Request để được duyệt và tính lương OT.
-                      </span>
-                    </div>
+                      <br/>
+                      Vui lòng tạo đơn "Tăng ca" trong phần Request để được duyệt và tính lương OT.
+                    </p>
                   </div>
                 )}
               </div>
@@ -365,7 +310,7 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
                   selectedPayroll.deductions.map((ded, idx) => (
                     <div key={idx} className="detail-row">
                       <span>{ded.description}:</span>
-                      <strong className="text-danger">-{formatCurrency(ded.amount)}</strong>
+                      <strong className="negative">-{formatCurrency(ded.amount)}</strong>
                     </div>
                   ))
                 ) : (
@@ -373,24 +318,29 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
                 )}
               </div>
 
-              <div className="detail-section highlight">
-                <div className="detail-row large">
-                  <span>THỰC LĨNH:</span>
-                  <strong className={`text-primary ${selectedPayroll.netSalary < 0 ? 'negative' : ''}`}>
-                    {formatCurrency(selectedPayroll.netSalary)}
-                  </strong>
+              <div className="total-section">
+                <div className="total-breakdown">
+                  <div className="total-row">
+                    <span>Tổng thu nhập:</span>
+                    <span className="positive">{formatCurrency(selectedPayroll.actualBaseSalary + selectedPayroll.overtimeAmount)}</span>
+                  </div>
+                  <div className="total-row">
+                    <span>Tổng khấu trừ:</span>
+                    <span className="negative">-{formatCurrency(selectedPayroll.deductions.reduce((sum, d) => sum + d.amount, 0))}</span>
+                  </div>
+                  <div className="total-row final">
+                    <span>THỰC LĨNH:</span>
+                    <span className={`text-primary ${selectedPayroll.netSalary < 0 ? 'negative' : ''}`}>
+                      {formatCurrency(selectedPayroll.netSalary)}
+                    </span>
+                  </div>
                 </div>
                 {selectedPayroll.netSalary < 0 && (
-                  <div style={{
-                    backgroundColor: '#fee2e2',
-                    border: '1px solid #ef4444',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    marginTop: '12px',
-                    fontSize: '13px',
-                    color: '#991b1b'
-                  }}>
-                    ⚠️ <strong>Lưu ý:</strong> Bạn đang nợ công ty {formatCurrency(Math.abs(selectedPayroll.netSalary))}.
+                  <div className="warning-box negative-salary-warning" style={{ marginTop: '1rem' }}>
+                    <span>⚠️</span>
+                    <p>
+                      <strong>Lưu ý:</strong> Bạn đang nợ công ty {formatCurrency(Math.abs(selectedPayroll.netSalary))}.
+                    </p>
                   </div>
                 )}
               </div>
@@ -398,6 +348,106 @@ THỰC LĨNH:              ${formatCurrency(payroll.netSalary)}
 
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowDetailModal(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Daily Breakdown Modal */}
+      {showBreakdownModal && selectedPayroll && (
+        <div className="modal-overlay" onClick={() => setShowBreakdownModal(false)}>
+          <div className="modal-content breakdown-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📅 Chi tiết từng ngày - Tháng {selectedPayroll.month}/{selectedPayroll.year}</h2>
+              <button className="modal-close" onClick={() => setShowBreakdownModal(false)}>×</button>
+            </div>
+
+            <div className="modal-body">
+              <div className="daily-breakdown-table-wrapper">
+                <table className="daily-breakdown-table">
+                  <thead>
+                    <tr>
+                      <th>Ngày</th>
+                      <th>Thứ</th>
+                      <th>Trạng thái</th>
+                      <th>Giờ vào</th>
+                      <th>Giờ ra</th>
+                      <th>Đi muộn (phút)</th>
+                      <th>Giờ làm</th>
+                      <th>OT (giờ)</th>
+                      <th>Lương ngày</th>
+                      <th>Lương OT</th>
+                      <th>Khấu trừ muộn</th>
+                      <th>Tổng ngày</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedPayroll.dailyBreakdown && selectedPayroll.dailyBreakdown.length > 0 ? (
+                      selectedPayroll.dailyBreakdown.map((day, idx) => (
+                        <tr key={idx} className={!day.isWorkingDay ? 'non-working-day' : ''}>
+                          <td>{day.date}</td>
+                          <td>{getDayOfWeek(day.fullDate)}</td>
+                          <td>
+                            <span className={`status-badge ${day.isWorkingDay ? 'working' : 'not-working'}`}>
+                              {day.isHoliday ? day.holidayName || 'Lễ' : (day.isWorkingDay ? day.status || 'Làm việc' : 'Nghỉ')}
+                            </span>
+                          </td>
+                          <td>{day.checkIn || '-'}</td>
+                          <td>{day.checkOut || '-'}</td>
+                          <td className={day.lateMinutes > 0 ? 'negative' : ''}>{day.lateMinutes || 0}</td>
+                          <td>{day.workHours ? day.workHours.toFixed(1) : '-'}</td>
+                          <td>
+                            {day.otHours > 0 ? (
+                              <>
+                                {day.otHours.toFixed(1)}
+                                {day.otApproved && <span className="ot-badge approved">✓</span>}
+                                {!day.otApproved && day.otHours > 0 && <span className="ot-badge pending">?</span>}
+                                {day.otMultiplier > 1 && <span className="ot-badge multiplier">x{day.otMultiplier}</span>}
+                              </>
+                            ) : '-'}
+                          </td>
+                          <td className={day.dailySalary > 0 ? 'positive' : ''}>
+                            {day.dailySalary > 0 ? formatCurrency(day.dailySalary) : '-'}
+                          </td>
+                          <td className={day.otSalary > 0 ? 'positive' : ''}>
+                            {day.otSalary > 0 ? formatCurrency(day.otSalary) : '-'}
+                          </td>
+                          <td className={day.lateDeduction > 0 ? 'negative' : ''}>
+                            {day.lateDeduction > 0 ? `-${formatCurrency(day.lateDeduction)}` : '-'}
+                          </td>
+                          <td className="day-total">
+                            {formatCurrency(day.dayTotal || 0)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="12" style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
+                          Không có dữ liệu chi tiết từng ngày
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr className="summary-row">
+                      <td colSpan="5"><strong>TỔNG CỘNG</strong></td>
+                      <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.lateMinutes || 0), 0) || 0} phút</strong></td>
+                      <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.workHours || 0), 0).toFixed(1) || 0} giờ</strong></td>
+                      <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.otHours || 0), 0).toFixed(1) || 0} giờ</strong></td>
+                      <td><strong>{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.dailySalary || 0), 0) || 0)}</strong></td>
+                      <td><strong>{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.otSalary || 0), 0) || 0)}</strong></td>
+                      <td><strong>-{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.lateDeduction || 0), 0) || 0)}</strong></td>
+                      <td><strong>{formatCurrency(selectedPayroll.netSalary)}</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowBreakdownModal(false)}>
                 Đóng
               </button>
             </div>

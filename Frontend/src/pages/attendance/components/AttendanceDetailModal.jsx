@@ -50,8 +50,9 @@ const AttendanceDetailModal = ({ record, onClose }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="attendance-detail-modal-wrapper">
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">
           <h2 className="modal-title">Chi tiết chấm công</h2>
@@ -367,6 +368,7 @@ const AttendanceDetailModal = ({ record, onClose }) => {
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 };

@@ -24,11 +24,11 @@
   }
 }
 
-.modal-content {
+.attendance-detail-modal-wrapper .modal-content {
   background: white;
   border-radius: 16px;
-  max-width: 800px;
-  width: 100%;
+  max-width: 95vw;
+  width: 1600px; /* Increased from 1200px to 1600px */
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -49,7 +49,7 @@
 }
 
 /* Header */
-.modal-header {
+.attendance-detail-modal-wrapper .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -61,14 +61,14 @@
   flex-shrink: 0;
 }
 
-.modal-title {
+.attendance-detail-modal-wrapper .modal-title {
   font-size: 24px;
   font-weight: 600;
   color: #16151C;
   margin: 0;
 }
 
-.modal-close-btn {
+.attendance-detail-modal-wrapper .modal-close-btn {
   background: transparent;
   border: none;
   padding: 8px;
@@ -80,30 +80,30 @@
   transition: all 0.2s ease;
 }
 
-.modal-close-btn:hover {
+.attendance-detail-modal-wrapper .modal-close-btn:hover {
   background: rgba(239, 68, 68, 0.1);
 }
 
-.modal-close-btn:hover svg path {
+.attendance-detail-modal-wrapper .modal-close-btn:hover svg path {
   stroke: #EF4444;
 }
 
 /* Body */
-.modal-body {
+.attendance-detail-modal-wrapper .modal-body {
   padding: 30px;
   overflow-y: auto;
   flex: 1;
 }
 
-.detail-section {
+.attendance-detail-modal-wrapper .detail-section {
   margin-bottom: 30px;
 }
 
-.detail-section:last-child {
+.attendance-detail-modal-wrapper .detail-section:last-child {
   margin-bottom: 0;
 }
 
-.section-title {
+.attendance-detail-modal-wrapper .section-title {
   font-size: 16px;
   font-weight: 600;
   color: #16151C;
@@ -113,7 +113,7 @@
   gap: 8px;
 }
 
-.section-title::before {
+.attendance-detail-modal-wrapper .section-title::before {
   content: "";
   width: 4px;
   height: 16px;
@@ -122,7 +122,7 @@
 }
 
 /* Employee Detail */
-.employee-detail {
+.attendance-detail-modal-wrapper .employee-detail {
   display: flex;
   gap: 20px;
   padding: 20px;
@@ -130,7 +130,7 @@
   border-radius: 12px;
 }
 
-.employee-avatar-large {
+.attendance-detail-modal-wrapper .employee-avatar-large {
   width: 80px;
   height: 80px;
   border-radius: 12px;
@@ -138,13 +138,13 @@
   flex-shrink: 0;
 }
 
-.employee-avatar-large img {
+.attendance-detail-modal-wrapper .employee-avatar-large img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.avatar-fallback-large {
+.attendance-detail-modal-wrapper .avatar-fallback-large {
   width: 80px;
   height: 80px;
   border-radius: 12px;
@@ -449,26 +449,26 @@
 }
 
 /* Scrollbar */
-.modal-content::-webkit-scrollbar {
+.attendance-detail-modal-wrapper .modal-content::-webkit-scrollbar {
   width: 8px;
 }
 
-.modal-content::-webkit-scrollbar-track {
+.attendance-detail-modal-wrapper .modal-content::-webkit-scrollbar-track {
   background: #F8F9FA;
 }
 
-.modal-content::-webkit-scrollbar-thumb {
+.attendance-detail-modal-wrapper .modal-content::-webkit-scrollbar-thumb {
   background: rgba(113, 82, 243, 0.3);
   border-radius: 4px;
 }
 
-.modal-content::-webkit-scrollbar-thumb:hover {
+.attendance-detail-modal-wrapper .modal-content::-webkit-scrollbar-thumb:hover {
   background: rgba(113, 82, 243, 0.5);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .modal-content {
+  .attendance-detail-modal-wrapper .modal-content {
     max-width: 100%;
     max-height: 100vh;
     border-radius: 0;

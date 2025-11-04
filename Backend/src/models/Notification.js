@@ -19,6 +19,7 @@ const notificationSchema = new mongoose.Schema(
         "RequestOverride",
         "NewRequest",
         "AttendanceUpdate",
+        "Payroll",
         "General",
         "RequestUpdate",
       ],
@@ -65,6 +66,11 @@ const notificationSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    // Metadata for additional information
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
   {
     timestamps: { createdAt: "createdAt", updatedAt: "updatedAt" },

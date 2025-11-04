@@ -50,6 +50,14 @@ const NotificationDropdown = () => {
   // Initial fetch
   useEffect(() => {
     fetchUnreadCount();
+    
+    // ✅ Auto refresh unread count every 30 seconds
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch when dropdown opens or filter changes
@@ -135,6 +143,8 @@ const NotificationDropdown = () => {
         return "🚫";
       case "TaskAssigned":
         return "📋";
+      case "Payroll":
+        return "💰";
       case "AttendanceUpdate":
         return "⏰";
       default:

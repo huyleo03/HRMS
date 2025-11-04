@@ -382,15 +382,15 @@ const AdminAttendancePage = () => {
           </div>
 
           <div className="stat-card-admin">
-            <div className="stat-icon stat-icon-success">
+            <div className="stat-icon stat-icon-warning">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M10.75 2.45001C11.44 1.86001 12.57 1.86001 13.27 2.45001L14.85 3.81001C15.15 4.07001 15.71 4.28001 16.11 4.28001H17.81C18.87 4.28001 19.74 5.15001 19.74 6.21001V7.91001C19.74 8.30001 19.95 8.87001 20.21 9.17001L21.57 10.75C22.16 11.44 22.16 12.57 21.57 13.27L20.21 14.85C19.95 15.15 19.74 15.71 19.74 16.11V17.81C19.74 18.87 18.87 19.74 17.81 19.74H16.11C15.72 19.74 15.15 19.95 14.85 20.21L13.27 21.57C12.58 22.16 11.45 22.16 10.75 21.57L9.17001 20.21C8.87001 19.95 8.31001 19.74 7.91001 19.74H6.18001C5.12001 19.74 4.25001 18.87 4.25001 17.81V16.1C4.25001 15.71 4.04001 15.15 3.79001 14.85L2.44001 13.26C1.86001 12.57 1.86001 11.45 2.44001 10.76L3.79001 9.17001C4.04001 8.87001 4.25001 8.31001 4.25001 7.92001V6.20001C4.25001 5.14001 5.12001 4.27001 6.18001 4.27001H7.91001C8.30001 4.27001 8.87001 4.06001 9.17001 3.80001L10.75 2.45001Z" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M8.38 12L10.79 14.42L15.62 9.57999" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 12C22 17.52 17.52 22 12 22C6.48 22 2 17.52 2 12C2 6.48 6.48 2 12 2C17.52 2 22 6.48 22 12Z" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15.71 15.18L12.61 13.33C12.07 13.01 11.63 12.24 11.63 11.61V7.51001" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <div className="stat-content-admin">
-              <div className="stat-label-admin">Tỷ lệ đúng giờ</div>
-              <div className="stat-value stat-value-success">{stats.onTimeRate}%</div>
+              <div className="stat-label-admin">Tổng phút muộn</div>
+              <div className="stat-value stat-value-warning">{stats.totalLateMinutes || 0} phút</div>
             </div>
           </div>
         </div>

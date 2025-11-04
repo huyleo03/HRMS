@@ -1,10 +1,9 @@
 const Payroll = require("../models/Payroll");
-const PayrollTemplate = require("../models/PayrollTemplate");
-const PaymentHistory = require("../models/PaymentHistory");
-const SalaryAdjustment = require("../models/SalaryAdjustment");
 const User = require("../models/User");
 const Attendance = require("../models/Attendance");
+const Holiday = require("../models/Holiday");
 const { getSystemConfig } = require("../helper/systemConfigHelper");
+const { createNotificationForUser } = require("../helper/NotificationService");
 
 // ===== HELPER FUNCTIONS =====
 
@@ -32,7 +31,11 @@ async function calculateWorkingStats(employeeId, startDate, endDate) {
   let lateMinutes = 0;
   let absentDays = 0;
 
-  attendances.forEach((att) => {
+  // Get employee info for holiday checking
+  const employee = await User.findById(employeeId).populate("department.department_id");
+  const userDeptId = employee?.department?.department_id?._id;
+
+  for (const att of attendances) {
     // Count working days (exclude Absent and On Leave)
     if (["Present", "Late", "Early Leave", "Late & Early Leave"].includes(att.status)) {
       workingDays++;
@@ -44,20 +47,29 @@ async function calculateWorkingStats(employeeId, startDate, endDate) {
     }
 
     // Sum overtime hours - PHÂN BIỆT APPROVED VS PENDING
+    // CHỈ TÍNH OT ĐÃ ĐƯỢC DUYỆT (overtimeApproved = true)
     if (att.overtimeHours > 0) {
       const day = new Date(att.date).getDay();
       const isWeekend = day === 0 || day === 6;
       
+      // Kiểm tra có phải holiday không
+      const holidayInfo = await Holiday.isHoliday(att.date, employeeId, userDeptId);
+      const isHoliday = !!holidayInfo;
+      
       if (att.overtimeApproved === true) {
         // OT đã được duyệt - TÍNH LƯƠNG
-        if (isWeekend) {
+        if (isHoliday) {
+          overtimeHoliday += att.overtimeHours;
+        } else if (isWeekend) {
           overtimeWeekend += att.overtimeHours;
         } else {
           overtimeWeekday += att.overtimeHours;
         }
       } else {
         // OT chưa được duyệt - CHỈ TRACKING
-        if (isWeekend) {
+        if (isHoliday) {
+          overtimePendingHoliday += att.overtimeHours;
+        } else if (isWeekend) {
           overtimePendingWeekend += att.overtimeHours;
         } else {
           overtimePendingWeekday += att.overtimeHours;
@@ -69,7 +81,7 @@ async function calculateWorkingStats(employeeId, startDate, endDate) {
     if (att.lateMinutes > 0) {
       lateMinutes += att.lateMinutes;
     }
-  });
+  }
 
   return {
     workingDays,
@@ -102,6 +114,12 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
     throw new Error(`Employee ${employee.full_name} chưa có lương cơ bản`);
   }
 
+  // Get all attendances for the month
+  const attendances = await Attendance.find({
+    userId: employeeId,
+    date: { $gte: startDate, $lte: endDate },
+  });
+
   // Get working stats from attendance
   const stats = await calculateWorkingStats(employeeId, startDate, endDate);
 
@@ -113,18 +131,130 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
     holiday: systemConfig.overtime.otRateHoliday || 3.0,
   };
 
-  // Calculate base salary (actual working days)
-  const standardWorkingDays = 22; // Default
+  // ===== TÍNH LƯƠNG THEO 22 NGÀY CÔNG CỐ ĐỊNH =====
+  // Sử dụng 22 ngày công chuẩn thay vì đếm ngày thực tế
+  const standardWorkingDays = 22;
+  
+  // Calculate daily rate and hourly rate
   const dailySalary = Math.round((employee.salary / standardWorkingDays) * 100) / 100;
+  const hourlyRate = Math.round((employee.salary / (standardWorkingDays * 8)) * 100) / 100;
+
+  // Calculate actual base salary (only count working days)
   const actualBaseSalary = Math.round(dailySalary * stats.workingDays * 100) / 100;
 
-  // Calculate overtime
-  const hourlyRate = Math.round((employee.salary / 176) * 100) / 100; // 22 days * 8 hours
+  // Calculate overtime amount
   const overtimeAmount = Math.round(
     (hourlyRate * stats.overtime.weekday * otRates.weekday +
       hourlyRate * stats.overtime.weekend * otRates.weekend +
       hourlyRate * stats.overtime.holiday * otRates.holiday) * 100
   ) / 100;
+
+  // ===== BUILD DAILY BREAKDOWN =====
+  const dailyBreakdown = [];
+  const lateDeductionRate = 10000; // 10,000 VND per minute
+  const daysInMonth = new Date(year, month, 0).getDate(); // Get total days in month
+  
+  for (let day = 1; day <= daysInMonth; day++) {
+    const currentDate = new Date(year, month - 1, day);
+    const dayOfWeek = currentDate.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Check holiday
+    const userDeptId = employee?.department?.department_id?._id;
+    const holidayInfo = await Holiday.isHoliday(currentDate, employeeId, userDeptId);
+    const isHoliday = !!holidayInfo;
+    const holidayName = holidayInfo?.name || null;
+    
+    // Find attendance for this day
+    const attendance = attendances.find(att => {
+      const attDate = new Date(att.date);
+      return attDate.getDate() === day && 
+             attDate.getMonth() === month - 1 && 
+             attDate.getFullYear() === year;
+    });
+    
+    // Determine if this is a working day
+    // T2-T6 hoặc Holiday đều là ngày có thể đi làm
+    const isWorkingDay = !isWeekend;
+    
+    // Format check-in/out time
+    const formatTime = (date) => {
+      if (!date) return null;
+      const d = new Date(date);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    };
+    
+    // Calculate daily amounts
+    let dailySalaryAmount = 0;
+    let otSalary = 0;
+    let lateDeduction = 0;
+    let otMultiplier = 0;
+    
+    if (attendance) {
+      // 1. Daily Salary
+      if (["Present", "Late", "Early Leave", "Late & Early Leave"].includes(attendance.status)) {
+        if (isHoliday) {
+          // HOLIDAY: Đi làm được x3 lương
+          dailySalaryAmount = dailySalary * 3;
+        } else if (isWorkingDay) {
+          // Ngày thường: 1x lương
+          dailySalaryAmount = dailySalary;
+        }
+      }
+      
+      // 2. OT Salary (CHỈ TÍNH KHI overtimeApproved = true)
+      if (attendance.overtimeHours > 0 && attendance.overtimeApproved) {
+        if (isHoliday) {
+          otMultiplier = otRates.holiday;
+          otSalary = hourlyRate * attendance.overtimeHours * otRates.holiday;
+        } else if (isWeekend) {
+          otMultiplier = otRates.weekend;
+          otSalary = hourlyRate * attendance.overtimeHours * otRates.weekend;
+        } else {
+          otMultiplier = otRates.weekday;
+          otSalary = hourlyRate * attendance.overtimeHours * otRates.weekday;
+        }
+      }
+      
+      // 3. Late Deduction
+      if (attendance.lateMinutes > 0) {
+        lateDeduction = attendance.lateMinutes * lateDeductionRate;
+      }
+    } else if (isWorkingDay && !isHoliday) {
+      // Không có attendance và là ngày làm việc thường → Vắng mặt (đã tính trong absentDays)
+      dailySalaryAmount = 0;
+    } else if (isHoliday) {
+      // Holiday nhưng không đi làm → Vẫn được hưởng lương cơ bản
+      dailySalaryAmount = dailySalary;
+    }
+    
+    // Round all amounts
+    dailySalaryAmount = Math.round(dailySalaryAmount * 100) / 100;
+    otSalary = Math.round(otSalary * 100) / 100;
+    lateDeduction = Math.round(lateDeduction * 100) / 100;
+    
+    const dayTotal = dailySalaryAmount + otSalary - lateDeduction;
+    
+    dailyBreakdown.push({
+      date: day,
+      fullDate: currentDate,
+      isWorkingDay,
+      isHoliday,
+      holidayName,
+      checkIn: formatTime(attendance?.clockIn),
+      checkOut: formatTime(attendance?.clockOut),
+      status: attendance?.status || (isWeekend ? 'Weekend' : (isHoliday ? 'Holiday' : 'Absent')),
+      lateMinutes: attendance?.lateMinutes || 0,
+      workHours: attendance?.workHours || 0,
+      otHours: (attendance?.overtimeHours && attendance?.overtimeApproved) ? attendance.overtimeHours : 0,
+      otApproved: attendance?.overtimeApproved || false,
+      otMultiplier,
+      dailySalary: dailySalaryAmount,
+      otSalary,
+      lateDeduction,
+      dayTotal: Math.round(dayTotal * 100) / 100,
+    });
+  }
 
   // Calculate deductions (late + absent)
   let deductions = [];
@@ -132,7 +262,7 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
 
   // Late deduction: 10,000 VND per minute
   if (stats.lateMinutes > 0) {
-    const lateDeduction = Math.round(stats.lateMinutes * 10000 * 100) / 100;
+    const lateDeduction = Math.round(stats.lateMinutes * lateDeductionRate * 100) / 100;
     deductions.push({
       type: "Late",
       amount: lateDeduction,
@@ -154,6 +284,7 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
 
   // Create or update payroll
   let payroll = await Payroll.findOne({ employeeId, month, year });
+  let isNewPayroll = false;
 
   if (payroll) {
     // Update existing
@@ -168,10 +299,12 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
     payroll.allowances = []; // No allowances
     payroll.bonuses = []; // No bonuses
     payroll.deductions = deductions;
+    payroll.dailyBreakdown = dailyBreakdown;
     payroll.calculatedAt = new Date();
     payroll.calculatedBy = calculatedBy;
   } else {
     // Create new
+    isNewPayroll = true;
     payroll = new Payroll({
       employeeId,
       month,
@@ -188,12 +321,16 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
       allowances: [], // No allowances
       bonuses: [], // No bonuses
       deductions,
+      dailyBreakdown,
       calculatedAt: new Date(),
       calculatedBy,
     });
   }
 
   await payroll.save();
+  
+  // Return payroll with flag indicating if it's new
+  payroll.isNewPayroll = isNewPayroll;
   return payroll;
 }
 
@@ -229,6 +366,9 @@ const calculateAllPayroll = async (req, res) => {
     const results = [];
     const errors = [];
 
+    // ✅ Lấy thông tin Admin 1 lần (thay vì query trong vòng lặp)
+    const admin = await User.findById(calculatedBy).select("full_name avatar");
+
     // Calculate for each employee
     for (const employee of employees) {
       try {
@@ -239,7 +379,31 @@ const calculateAllPayroll = async (req, res) => {
           payrollId: payroll._id,
           netSalary: payroll.netSalary,
           status: "success",
+          isNew: payroll.isNewPayroll,
         });
+        
+        // ✅ LUÔN gửi notification (cả khi tạo mới và update)
+        try {
+          const actionText = payroll.isNewPayroll ? "đã được tính toán" : "đã được cập nhật";
+          await createNotificationForUser({
+            userId: employee._id,
+            senderId: calculatedBy,
+            senderName: admin?.full_name || "Admin",
+            senderAvatar: admin?.avatar || null,
+            type: "Payroll",
+            message: `Phiếu lương tháng ${month}/${year} của bạn ${actionText}. Thực lĩnh: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(payroll.netSalary)}`,
+            relatedId: payroll._id,
+            metadata: {
+              action: payroll.isNewPayroll ? "calculate" : "recalculate",
+              month,
+              year,
+              netSalary: payroll.netSalary,
+            },
+          });
+          console.log(`✅ Đã gửi notification ${payroll.isNewPayroll ? 'tính' : 'cập nhật'} lương cho ${employee.full_name}`);
+        } catch (notifError) {
+          console.error(`❌ Lỗi gửi notification cho ${employee.full_name}:`, notifError);
+        }
       } catch (error) {
         errors.push({
           employeeId: employee._id,
@@ -285,6 +449,31 @@ const calculatePayroll = async (req, res) => {
 
     await payroll.populate("employeeId", "full_name email employeeId department jobTitle");
 
+    // ✅ Gửi notification cho nhân viên cụ thể
+    try {
+      const admin = await User.findById(calculatedBy).select("full_name avatar").lean();
+      const actionText = payroll.isNewPayroll ? "đã được tính toán" : "đã được cập nhật";
+      
+      await createNotificationForUser({
+        userId: employeeId,
+        senderId: calculatedBy,
+        senderName: admin?.full_name || "Admin",
+        senderAvatar: admin?.avatar || null,
+        type: "Payroll",
+        message: `Phiếu lương tháng ${month}/${year} của bạn ${actionText}. Thực lĩnh: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(payroll.netSalary)}`,
+        relatedId: payroll._id,
+        metadata: {
+          action: payroll.isNewPayroll ? "calculate" : "recalculate",
+          month,
+          year,
+          netSalary: payroll.netSalary,
+        },
+      });
+      console.log(`✅ Đã gửi notification ${payroll.isNewPayroll ? 'tính' : 'cập nhật'} lương cho nhân viên ${payroll.employeeId?.full_name}`);
+    } catch (notifError) {
+      console.error(`❌ Lỗi gửi notification:`, notifError);
+    }
+
     res.status(200).json({
       success: true,
       message: "Tính lương thành công",
@@ -309,19 +498,25 @@ const getAllPayrolls = async (req, res) => {
     // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    // Populate employee with department
     let payrolls = await Payroll.find(query)
-      .populate("employeeId", "full_name email employeeId department jobTitle avatar")
+      .populate({
+        path: "employeeId",
+        select: "full_name email employeeId department jobTitle avatar",
+        populate: {
+          path: "department.department_id",
+          select: "department_name"
+        }
+      })
       .populate("calculatedBy", "full_name email")
       .populate("approvedBy", "full_name email")
       .populate("paidBy", "full_name email")
-      .sort({ created_at: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+      .sort({ created_at: -1 });
 
-    // Filter by department
+    // Filter by department (after populate to access department data)
     if (departmentId) {
       payrolls = payrolls.filter(
-        (p) => p.employeeId?.department?.department_id?.toString() === departmentId
+        (p) => p.employeeId?.department?.department_id?._id?.toString() === departmentId
       );
     }
 
@@ -333,30 +528,30 @@ const getAllPayrolls = async (req, res) => {
       );
     }
 
-    const total = await Payroll.countDocuments(query);
+    // Apply pagination after filters
+    const totalFiltered = payrolls.length;
+    const paginatedPayrolls = payrolls.slice(skip, skip + parseInt(limit));
 
-    // Calculate summary for ALL payrolls matching the filter (not just current page)
-    const allPayrollsForSummary = await Payroll.find(query).select("netSalary status");
-    
+    // Calculate summary for filtered payrolls
     const summary = {
-      totalPayrolls: total,
-      totalCost: allPayrollsForSummary.reduce((sum, p) => sum + (p.netSalary || 0), 0),
+      totalPayrolls: totalFiltered,
+      totalCost: payrolls.reduce((sum, p) => sum + (p.netSalary || 0), 0),
       byStatus: {
-        Draft: allPayrollsForSummary.filter((p) => p.status === "Draft").length,
-        Pending: allPayrollsForSummary.filter((p) => p.status === "Pending").length,
-        Approved: allPayrollsForSummary.filter((p) => p.status === "Approved").length,
-        Paid: allPayrollsForSummary.filter((p) => p.status === "Paid").length,
+        Draft: payrolls.filter((p) => p.status === "Draft").length,
+        Pending: payrolls.filter((p) => p.status === "Pending").length,
+        Approved: payrolls.filter((p) => p.status === "Approved").length,
+        Paid: payrolls.filter((p) => p.status === "Paid").length,
       },
     };
 
     res.status(200).json({
       success: true,
-      data: payrolls,
+      data: paginatedPayrolls,
       summary,
       pagination: {
         currentPage: parseInt(page),
-        totalPages: Math.ceil(total / parseInt(limit)),
-        totalItems: total,
+        totalPages: Math.ceil(totalFiltered / parseInt(limit)),
+        totalItems: totalFiltered,
         itemsPerPage: parseInt(limit),
       },
     });
@@ -500,6 +695,29 @@ const approvePayroll = async (req, res) => {
 
     await payroll.populate("employeeId", "full_name email");
 
+    // ✅ Gửi notification cho nhân viên
+    try {
+      const admin = await User.findById(approvedBy).select("full_name avatar");
+      await createNotificationForUser({
+        userId: payroll.employeeId._id,
+        senderId: approvedBy,
+        senderName: admin?.full_name || "Admin",
+        senderAvatar: admin?.avatar || null,
+        type: "Payroll",
+        message: `Phiếu lương tháng ${payroll.month}/${payroll.year} của bạn đã được duyệt. Thực lĩnh: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(payroll.netSalary)}`,
+        relatedId: payroll._id,
+        metadata: {
+          action: "approve",
+          month: payroll.month,
+          year: payroll.year,
+          netSalary: payroll.netSalary,
+        },
+      });
+      console.log(`✅ Đã gửi notification approve lương cho ${payroll.employeeId.full_name}`);
+    } catch (notifError) {
+      console.error("❌ Lỗi gửi notification approve:", notifError);
+    }
+
     res.status(200).json({
       success: true,
       message: `Đã duyệt lương cho ${payroll.employeeId.full_name}`,
@@ -584,25 +802,44 @@ const markAsPaid = async (req, res) => {
     payroll.status = "Paid";
     payroll.paidBy = paidBy;
     payroll.paidAt = new Date();
-    await payroll.save();
-
-    // Create payment history
-    const payment = new PaymentHistory({
-      payrollId: payroll._id,
-      employeeId: payroll.employeeId,
-      amount: payroll.netSalary,
-      paymentMethod: paymentMethod || "BankTransfer",
-      paymentDate: new Date(),
+    
+    // Store payment details in payroll metadata (không cần tạo collection riêng)
+    if (!payroll.metadata) payroll.metadata = {};
+    payroll.metadata.payment = {
+      method: paymentMethod || "BankTransfer",
       transactionId,
       bankDetails,
-      status: "Success",
-      paidBy,
       notes,
-    });
-
-    await payment.save();
+      paidAt: new Date(),
+    };
+    
+    await payroll.save();
 
     await payroll.populate("employeeId", "full_name email");
+
+    // ✅ Gửi notification cho nhân viên
+    try {
+      const admin = await User.findById(paidBy).select("full_name avatar");
+      await createNotificationForUser({
+        userId: payroll.employeeId._id,
+        senderId: paidBy,
+        senderName: admin?.full_name || "Admin",
+        senderAvatar: admin?.avatar || null,
+        type: "Payroll",
+        message: `Lương tháng ${payroll.month}/${payroll.year} đã được chuyển khoản. Số tiền: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(payroll.netSalary)}`,
+        relatedId: payroll._id,
+        metadata: {
+          action: "paid",
+          month: payroll.month,
+          year: payroll.year,
+          netSalary: payroll.netSalary,
+          transactionId,
+        },
+      });
+      console.log(`✅ Đã gửi notification paid lương cho ${payroll.employeeId.full_name}`);
+    } catch (notifError) {
+      console.error("❌ Lỗi gửi notification paid:", notifError);
+    }
 
     res.status(200).json({
       success: true,

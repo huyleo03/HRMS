@@ -81,9 +81,15 @@ function calculateWorkHours(clockIn, clockOut, config) {
   if (!clockIn || !clockOut) return { workHours: 0, overtimeHours: 0 };
   
   const workMs = new Date(clockOut) - new Date(clockIn);
-  const workMinutes = Math.floor(workMs / 60000);
+  const totalMinutes = Math.floor(workMs / 60000);
+  
+  // Trừ giờ nghỉ trưa (lunchBreakMinutes) nếu làm việc >= 6 giờ
+  const lunchBreak = totalMinutes >= 360 ? (config.lunchBreakMinutes || 60) : 0;
+  const workMinutes = totalMinutes - lunchBreak;
+  
   const workHours = +(workMinutes / 60).toFixed(2);
   
+  // OT = (workMinutes - standardWorkHours*60) nếu > otMinimumMinutes
   const overtimeMinutes = Math.max(0, workMinutes - (config.standardWorkHours * 60));
   const overtimeHours = overtimeMinutes >= config.otMinimumMinutes 
     ? +(overtimeMinutes / 60).toFixed(2) 
@@ -504,15 +510,16 @@ exports.getCompanyReport = async (req, res) => {
     const stats = {
       totalRecords: records.length,
       present: records.filter(r => r.status === "Present").length,
-      late: records.filter(r => r.status === "Late").length,
+      late: records.filter(r => r.status === "Late" || r.status === "Late & Early Leave").length,
       absent: records.filter(r => r.status === "Absent").length,
       onLeave: records.filter(r => r.status === "On Leave").length,
       avgWorkHours: records.length > 0 
         ? +(records.reduce((sum, r) => sum + (r.workHours || 0), 0) / records.length).toFixed(2)
         : 0,
       totalOT: +records.reduce((sum, r) => sum + (r.overtimeHours || 0), 0).toFixed(2),
-      onTimeRate: records.length > 0 
-        ? +((records.filter(r => !r.isLate).length / records.length) * 100).toFixed(1)
+      totalLateMinutes: +records.reduce((sum, r) => sum + (r.lateMinutes || 0), 0),
+      avgLateMinutes: records.filter(r => r.lateMinutes > 0).length > 0
+        ? +(records.reduce((sum, r) => sum + (r.lateMinutes || 0), 0) / records.filter(r => r.lateMinutes > 0).length).toFixed(1)
         : 0,
     };
     
