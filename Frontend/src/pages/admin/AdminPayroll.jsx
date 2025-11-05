@@ -427,7 +427,7 @@ const AdminPayroll = () => {
         <>
           {/* Filters */}
           <div className="filters-section">
-            <div className="filter-group">
+            <div className="filter-dat">
               <label>
                 <Calendar size={16} />
                 Tháng
@@ -446,7 +446,7 @@ const AdminPayroll = () => {
               </select>
             </div>
 
-            <div className="filter-group">
+            <div className="filter-dat">
               <label>
                 <Calendar size={16} />
                 Năm
@@ -465,7 +465,7 @@ const AdminPayroll = () => {
               </select>
             </div>
 
-            <div className="filter-group">
+            <div className="filter-dat">
               <label>
                 <Filter size={16} />
                 Trạng thái
@@ -482,7 +482,7 @@ const AdminPayroll = () => {
               </select>
             </div>
 
-            <div className="filter-group">
+            <div className="filter-dat">
               <label>
                 <Users size={16} />
                 Phòng ban
@@ -500,7 +500,7 @@ const AdminPayroll = () => {
               </select>
             </div>
 
-            <div className="filter-group search-group">
+            <div className="filter-dat search-group">
               <label>
                 <Search size={16} />
                 Tìm kiếm

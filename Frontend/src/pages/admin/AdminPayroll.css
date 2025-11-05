@@ -168,7 +168,7 @@
   align-items: flex-end !important;
 }
 
-.filter-group {
+.filter-dat {
   display: flex !important;
   flex-direction: column !important;
   gap: 0.5rem !important;
@@ -176,7 +176,7 @@
   flex-shrink: 0 !important;
 }
 
-.filter-group label {
+.filter-dat label {
   font-size: 0.875rem !important;
   font-weight: 600 !important;
   color: #374151 !important;
@@ -186,8 +186,8 @@
   margin-bottom: 0 !important;
 }
 
-.filter-group select,
-.filter-group input {
+.filter-dat select,
+.filter-dat input {
   padding: 0.625rem !important;
   border: 1px solid #d1d5db !important;
   border-radius: 8px !important;
@@ -198,8 +198,8 @@
   box-sizing: border-box !important;
 }
 
-.filter-group select:focus,
-.filter-group input:focus {
+.filter-dat select:focus,
+.filter-dat input:focus {
   outline: none !important;
   border-color: #10b981 !important;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
@@ -1036,7 +1036,7 @@
     align-items: stretch;
   }
 
-  .filter-group,
+  .filter-dat,
   .search-group {
     width: 100%;
   }
