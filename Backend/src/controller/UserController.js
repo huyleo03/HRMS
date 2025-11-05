@@ -3,6 +3,44 @@ const Department = require("../models/Department");
 const crypto = require("crypto");
 const sendEmail = require("../utils/email");
 
+/**
+ * Tạo avatar với 2 chữ cái đầu của tên
+ * @param {string} fullName - Tên đầy đủ
+ * @returns {string} - URL data:image/svg+xml
+ */
+const generateInitialsAvatar = (fullName) => {
+  // Lấy 2 chữ cái đầu
+  const nameParts = fullName.trim().split(/\s+/);
+  let initials = '';
+  
+  if (nameParts.length >= 2) {
+    // Lấy chữ cái đầu của từ đầu và từ cuối
+    initials = (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+  } else if (nameParts.length === 1) {
+    // Nếu chỉ có 1 từ, lấy 2 ký tự đầu
+    initials = nameParts[0].substring(0, 2).toUpperCase();
+  }
+
+  // Random màu background
+  const colors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+    '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788'
+  ];
+  const bgColor = colors[Math.floor(Math.random() * colors.length)];
+
+  // Tạo SVG avatar
+  const svg = `
+    <svg width="150" height="150" xmlns="http://www.w3.org/2000/svg">
+      <rect width="150" height="150" fill="${bgColor}"/>
+      <text x="50%" y="50%" dy="0.35em" fill="white" font-size="60" font-family="Arial, sans-serif" font-weight="bold" text-anchor="middle">${initials}</text>
+    </svg>
+  `;
+
+  // Encode to base64
+  const base64 = Buffer.from(svg.trim()).toString('base64');
+  return `data:image/svg+xml;base64,${base64}`;
+};
+
 // Create a new user by Admin
 exports.createUserByAdmin = async (req, res) => {
   const { email, full_name, role, department, jobTitle, salary, avatar } =
@@ -29,6 +67,9 @@ exports.createUserByAdmin = async (req, res) => {
 
     const temporaryPassword = crypto.randomBytes(8).toString("hex");
 
+    // Tạo avatar: nếu có upload thì dùng, không thì tạo avatar với 2 chữ cái đầu
+    const userAvatar = avatar || generateInitialsAvatar(full_name);
+
     const newUser = new User({
       email,
       full_name,
@@ -37,7 +78,7 @@ exports.createUserByAdmin = async (req, res) => {
       department,
       jobTitle,
       salary,
-      avatar: avatar || "https://i.pravatar.cc/150",
+      avatar: userAvatar,
     });
 
     const savedUser = await newUser.save();

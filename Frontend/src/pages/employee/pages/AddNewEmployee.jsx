@@ -195,7 +195,8 @@ const AddNewEmployee = () => {
         department: formData.department,
         jobTitle: formData.jobTitle,
         salary: formData.salary ? parseFloat(formData.salary) : null,
-        avatar: formData.avatar, // Include avatar
+        // Chỉ gửi avatar nếu user đã upload, nếu null thì backend tự tạo ảnh 2 chữ cái
+        ...(formData.avatar && { avatar: formData.avatar }),
       };
 
       const result = await createUser(submitData, token);

@@ -140,15 +140,16 @@ const FaceIdEnrollment = ({ onComplete, onCancel }) => {
    * @returns {boolean} True nếu đúng góc
    */
   const validateFaceAngle = (landmarks, angleId) => {
-    // Góc 0 (nhìn thẳng) và Góc 3 (ngẩng đầu) - LUÔN CHO QUA
-    if (angleId === 0 || angleId === 3) {
-      console.log(`✅ Angle ${angleId} - AUTO PASS`);
+    // Góc 0 (nhìn thẳng) - LUÔN CHO QUA
+    if (angleId === 0) {
+      console.log(`✅ Angle ${angleId} - AUTO PASS (nhìn thẳng)`);
       return true;
     }
 
     const nose = landmarks.getNose();
     const leftEye = landmarks.getLeftEye();
     const rightEye = landmarks.getRightEye();
+    const mouth = landmarks.getMouth();
 
     // Tính trung điểm 2 mắt
     const eyeCenter = {
@@ -156,40 +157,69 @@ const FaceIdEnrollment = ({ onComplete, onCancel }) => {
       y: (leftEye[0].y + rightEye[3].y) / 2,
     };
 
-    // Tính vector từ mũi đến trung điểm mắt
+    // Tính trung điểm miệng
+    const mouthCenter = {
+      x: (mouth[0].x + mouth[6].x) / 2,
+      y: (mouth[3].y + mouth[9].y) / 2, // Trên + dưới
+    };
+
+    // Tính vector từ mũi đến trung điểm mắt (cho yaw)
     const nosePoint = nose[3]; // Tip of nose
     const dx = nosePoint.x - eyeCenter.x;
-    const dy = eyeCenter.y - nosePoint.y; // ĐẢO NGƯỢC: mắt - mũi
+    
+    // Tính khoảng cách giữa 2 mắt để làm tỷ lệ
+    const eyeDistance = Math.sqrt(
+      Math.pow(rightEye[3].x - leftEye[0].x, 2) + 
+      Math.pow(rightEye[3].y - leftEye[0].y, 2)
+    );
 
-    // Tính góc yaw (xoay trái/phải) và pitch (ngẩng/cúi)
-    const yaw = Math.atan2(dx, 150) * (180 / Math.PI); // Góc ngang
-    const pitch = Math.atan2(dy, 150) * (180 / Math.PI); // Góc dọc
+    // Tính góc yaw (xoay trái/phải)
+    const yaw = Math.atan2(dx, eyeDistance * 1.5) * (180 / Math.PI);
+    
+    // Tính pitch (ngẩng/cúi) - dùng Y của mũi so với Y của mắt
+    const noseTipY = nosePoint.y;
+    const eyeCenterY = eyeCenter.y;
+    const mouthBottomY = mouth[9].y; // Điểm dưới cùng của miệng
+    
+    // Tính tỷ lệ: (mũi - mắt) / (miệng - mắt)
+    const pitchRatio = (noseTipY - eyeCenterY) / (mouthBottomY - eyeCenterY);
+    const pitch = pitchRatio * 100; // Scale lên để dễ đọc
 
-    console.log(`📐 Angle ${angleId} - yaw: ${yaw.toFixed(1)}°, pitch: ${pitch.toFixed(1)}°`);
+    console.log(`📐 Angle ${angleId} (${REQUIRED_ANGLES[angleId].name})`);
+    console.log(`   yaw: ${yaw.toFixed(1)}° (trái-, phải+), pitch: ${pitch.toFixed(1)} (ratio)`);
+    console.log(`   noseY: ${noseTipY.toFixed(1)}, eyeY: ${eyeCenterY.toFixed(1)}, mouthY: ${mouthBottomY.toFixed(1)}, pitchRatio: ${pitchRatio.toFixed(2)}`);
 
-    const YAW_TOLERANCE = 12;
-    const PITCH_TOLERANCE = 10;
+    // Ngưỡng
+    const YAW_TOLERANCE = 4;
 
     let isValid = false;
 
     switch (angleId) {
-      case 1: // Quay trái
+      case 1: // Quay trái - yaw phải âm (-)
         isValid = yaw < -YAW_TOLERANCE;
+        console.log(`   ⚙️ Quay trái: yaw=${yaw.toFixed(1)} < -${YAW_TOLERANCE}? → ${isValid ? '✅' : '❌'}`);
         break;
       
-      case 2: // Quay phải
+      case 2: // Quay phải - yaw phải dương (+)
         isValid = yaw > YAW_TOLERANCE;
+        console.log(`   ⚙️ Quay phải: yaw=${yaw.toFixed(1)} > ${YAW_TOLERANCE}? → ${isValid ? '✅' : '❌'}`);
         break;
       
-      case 4: // Cúi đầu - pitch âm
-        isValid = pitch < -PITCH_TOLERANCE;
+      case 3: // Ngẩng đầu - pitch < 40 (mũi cao hơn bình thường, gần mắt)
+        isValid = pitch < 40;
+        console.log(`   ⚙️ Ngẩng: pitch=${pitch.toFixed(1)} < 40? → ${isValid ? '✅' : '❌'}`);
+        break;
+      
+      case 4: // Cúi đầu - pitch > 50 (mũi thấp hơn, xa mắt, gần miệng)
+        isValid = pitch > 50;
+        console.log(`   ⚙️ Cúi: pitch=${pitch.toFixed(1)} > 50? → ${isValid ? '✅' : '❌'}`);
         break;
       
       default:
         isValid = true;
     }
 
-    console.log(`${isValid ? '✅' : '❌'} Angle ${angleId} validation:`, isValid);
+    console.log(`${isValid ? '✅' : '❌'} Kết quả: ${isValid ? 'ĐẠT' : 'CHƯA ĐẠT'}`);
     return isValid;
   };
 
