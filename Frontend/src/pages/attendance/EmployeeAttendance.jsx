@@ -15,6 +15,8 @@ import {
   TrendingUp,
   ChevronLeft,
   ChevronRight,
+  Fingerprint,
+  Shield,
 } from "lucide-react";
 import {
   pingIntranet,
@@ -24,10 +26,13 @@ import {
   getMyHistory,
 } from "../../service/AttendanceService";
 import FaceRecognitionService from "../../service/FaceRecognitionService";
+import { apiCall } from "../../service/api";
 import { useAuth } from "../../contexts/AuthContext";
+import FaceIdEnrollment from "./FaceIdEnrollment";
+import FaceIdVerification from "./FaceIdVerification";
 import "./EmployeeAttendance.css";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5; // Giảm xuống 5 để dễ test phân trang
 
 const EmployeeAttendance = () => {
   // State Management
@@ -38,13 +43,18 @@ const EmployeeAttendance = () => {
   const [isIntranet, setIsIntranet] = useState(false);
   const [isCheckingNetwork, setIsCheckingNetwork] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isFaceVerifying, setIsFaceVerifying] = useState(false); // Face verification state
-  const [isLivenessChecking, setIsLivenessChecking] = useState(false); // Liveness detection state
-  const [livenessProgress, setLivenessProgress] = useState(null); // Liveness progress info
+  const [isFaceVerifying, setIsFaceVerifying] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [actionType, setActionType] = useState(null); // 'in' | 'out'
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Face ID States
+  const [faceIdStatus, setFaceIdStatus] = useState(null);
+  const [showEnrollment, setShowEnrollment] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [isLoadingFaceId, setIsLoadingFaceId] = useState(true);
+  
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -74,6 +84,7 @@ const EmployeeAttendance = () => {
   useEffect(() => {
     checkIntranet();
     fetchTodayStatus();
+    checkFaceIdStatus();
   }, []);
 
   // Fetch history when switching to history tab
@@ -107,6 +118,18 @@ const EmployeeAttendance = () => {
     }
   };
 
+  const checkFaceIdStatus = async () => {
+    setIsLoadingFaceId(true);
+    try {
+      const response = await apiCall("/api/face-id/status", { method: 'GET' });
+      setFaceIdStatus(response.data);
+    } catch (error) {
+      console.error("Error checking Face ID status:", error);
+    } finally {
+      setIsLoadingFaceId(false);
+    }
+  };
+
   const fetchHistory = async (page = 1) => {
     try {
       const params = {
@@ -119,7 +142,13 @@ const EmployeeAttendance = () => {
 
       const response = await getMyHistory(params);
       setHistory(response.data);
-      setPagination(response.pagination);
+      
+      // Backend trả về { total, page, pages } - cần convert sang format frontend
+      setPagination({
+        total: response.pagination.total,
+        currentPage: response.pagination.page,
+        totalPages: response.pagination.pages,
+      });
     } catch (error) {
       console.error("Error fetching history:", error);
       toast.error("Không thể tải lịch sử chấm công");
@@ -134,23 +163,56 @@ const EmployeeAttendance = () => {
       return;
     }
 
+    // Kiểm tra đăng ký quét mặt
+    if (!faceIdStatus?.enrolled) {
+      toast.warning("⚠️ Bạn chưa đăng ký quét mặt!\n\nVui lòng đăng ký quét mặt trước khi chấm công.", {
+        autoClose: 5000,
+      });
+      return;
+    }
+
+    // Bật xác thực quét mặt (quét 5 góc)
     setActionType(type);
-    setShowCamera(true);
+    setShowVerification(true);
+  };
+
+  // ============ XỬ LÝ QUÉT MẶT THÀNH CÔNG ============
+  
+  const handleVerificationSuccess = async (verificationData) => {
+    setShowVerification(false);
+    setIsProcessing(true);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: 1280, height: 720 },
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
+      toast.info("✅ Xác thực thành công! Đang xử lý chấm công...", { autoClose: 2000 });
+
+      // Gọi API clock-in/clock-out (không cần photo nữa vì đã verify qua quét mặt)
+      let response;
+
+      if (actionType === "in") {
+        response = await clockIn(null); // Không cần photo
+      } else {
+        response = await clockOut(null);
+      }
+
+      if (response.success) {
+        toast.success(response.message, { autoClose: 3000 });
+        await fetchTodayStatus();
       }
     } catch (error) {
-      console.error("Camera error:", error);
-      toast.error("Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập.");
-      setShowCamera(false);
+      console.error("Attendance error:", error);
+      toast.error(error?.response?.data?.message || "Có lỗi xảy ra khi chấm công!");
+    } finally {
+      setIsProcessing(false);
+      setActionType(null);
     }
   };
+
+  const handleVerificationCancel = () => {
+    setShowVerification(false);
+    setActionType(null);
+  };
+
+  // ============ OLD CAMERA FUNCTIONS - XÓA SAU ============
 
   const capturePhoto = () => {
     const video = videoRef.current;
@@ -167,49 +229,6 @@ const EmployeeAttendance = () => {
     }
   };
 
-  /**
-   * 🛡️ LIVENESS CHECK - Bắt buộc trước khi chụp ảnh
-   */
-  const performLivenessCheck = async () => {
-    setIsLivenessChecking(true);
-    setLivenessProgress({ message: '🔍 Đang khởi động Liveness Detection...', challengeType: null });
-
-    try {
-      const video = videoRef.current;
-      if (!video) {
-        throw new Error('Video không khả dụng');
-      }
-
-      // Thực hiện liveness check
-      const result = await FaceRecognitionService.performLivenessCheck(
-        video,
-        (progress) => {
-          setLivenessProgress(progress);
-        }
-      );
-
-      if (result.success) {
-        toast.success('✅ ' + result.message, { autoClose: 2000 });
-        setLivenessProgress(null);
-        setIsLivenessChecking(false);
-        
-        // Liveness check thành công → Tự động chụp ảnh
-        setTimeout(() => {
-          capturePhoto();
-        }, 500);
-      } else {
-        toast.error('❌ ' + result.message, { autoClose: 4000 });
-        setIsLivenessChecking(false);
-        setLivenessProgress(null);
-      }
-    } catch (error) {
-      console.error('Liveness check error:', error);
-      toast.error('❌ Lỗi xác thực: ' + error.message, { autoClose: 4000 });
-      setIsLivenessChecking(false);
-      setLivenessProgress(null);
-    }
-  };
-
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -218,124 +237,11 @@ const EmployeeAttendance = () => {
     setShowCamera(false);
     setCapturedPhoto(null);
     setActionType(null);
-    setIsLivenessChecking(false);
-    setLivenessProgress(null);
   };
 
   const submitAttendance = async () => {
-    if (!capturedPhoto) {
-      toast.error("Vui lòng chụp ảnh trước khi gửi!");
-      return;
-    }
-
-    setIsProcessing(true);
-    setIsFaceVerifying(true);
-
-    try {
-      // ========== BƯỚC 1: KIỂM TRA CHẤT LƯỢNG ẢNH ==========
-      toast.info('🔍 Đang kiểm tra chất lượng ảnh...', { autoClose: 1500 });
-      const qualityCheck = await FaceRecognitionService.checkImageQuality(capturedPhoto);
-      
-      if (!qualityCheck.success) {
-        toast.error(qualityCheck.message, { autoClose: 4000 });
-        setIsProcessing(false);
-        setIsFaceVerifying(false);
-        setCapturedPhoto(null); // Cho phép chụp lại
-        return;
-      }
-
-      // ========== BƯỚC 2: XÁC THỰC KHUÔN MẶT ==========
-      // Verify face cho CẢ check-in VÀ check-out
-      const profilePhoto = user?.avatar;
-
-      if (!profilePhoto) {
-        toast.error("❌ Bạn chưa có ảnh đại diện trong hồ sơ!\n\nVui lòng cập nhật ảnh đại diện trước khi chấm công.", {
-          autoClose: 5000,
-        });
-        setIsProcessing(false);
-        setIsFaceVerifying(false);
-        return;
-      }
-
-      // KIỂM TRA: Nếu ảnh profile là URL external → BẮT BUỘC phải đổi
-      const isExternalUrl = profilePhoto.startsWith('http://') || profilePhoto.startsWith('https://');
-      
-      if (isExternalUrl) {
-        toast.error(
-          "❌ Không thể xác thực khuôn mặt!\n\n" +
-          "Ảnh đại diện của bạn đang là URL external (pravatar.cc).\n\n" +
-          "📸 Vui lòng vào My Profile và UPLOAD ảnh thật của bạn để kích hoạt AI Face Recognition.\n\n" +
-          "Hệ thống yêu cầu ảnh thật để đảm bảo an ninh chấm công!",
-          {
-            autoClose: 8000,
-          }
-        );
-        setIsProcessing(false);
-        setIsFaceVerifying(false);
-        return; // CHẶN cả check-in và check-out
-      }
-
-      // Ảnh profile hợp lệ (base64/blob) → Tiến hành xác thực AI
-      toast.info(`🔍 Đang xác thực khuôn mặt ${actionType === 'in' ? 'Check-in' : 'Check-out'} với AI...`, {
-        autoClose: 2000,
-      });
-
-      // So sánh khuôn mặt
-      const faceResult = await FaceRecognitionService.compareFaces(
-        profilePhoto,
-        capturedPhoto,
-        0.45 // threshold: 0.45 = 55% tương đồng tối thiểu (CHẶT HƠN)
-      );
-
-      setIsFaceVerifying(false);
-
-      if (!faceResult.success) {
-        toast.error(`❌ ${faceResult.message}`, {
-          autoClose: 5000,
-        });
-        setIsProcessing(false);
-        return;
-      }
-
-      if (!faceResult.isMatch) {
-        toast.error(
-          `❌ Xác thực khuôn mặt thất bại!\n\n${faceResult.message}\n\nVui lòng chụp lại hoặc liên hệ HR nếu bạn cho rằng đây là lỗi.`,
-          {
-            autoClose: 7000,
-          }
-        );
-        setIsProcessing(false);
-        return;
-      }
-
-      // Verify thành công
-      toast.success(`✅ ${faceResult.message}`, {
-        autoClose: 3000,
-      });
-
-      // ========== BƯỚC 3: GỬI REQUEST CHẤM CÔNG ==========
-      let response;
-
-      if (actionType === "in") {
-        response = await clockIn(capturedPhoto);
-      } else {
-        response = await clockOut(capturedPhoto);
-      }
-
-      if (response.success) {
-        toast.success(response.message, {
-          autoClose: 3000,
-        });
-        await fetchTodayStatus();
-        stopCamera();
-      }
-    } catch (error) {
-      console.error("Attendance error:", error);
-      toast.error(error?.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
-    } finally {
-      setIsProcessing(false);
-      setIsFaceVerifying(false);
-    }
+    // OLD FUNCTION - KHÔNG DÙNG NỮA
+    toast.warning("Vui lòng sử dụng Face ID Verification mới!");
   };
 
   // ============ RENDER HELPERS ============
@@ -392,6 +298,42 @@ const EmployeeAttendance = () => {
           </>
         )}
       </div>
+
+      {/* Trạng thái Quét mặt */}
+      {!isLoadingFaceId && (
+        <div className={`face-id-banner ${faceIdStatus?.enrolled ? "enrolled" : "not-enrolled"}`}>
+          <div className="banner-content">
+            <Fingerprint size={20} />
+            {faceIdStatus?.enrolled ? (
+              <div className="enrolled-info">
+                <span className="status-text">✅ Quét mặt đã đăng ký</span>
+                <span className="enrollment-date">
+                  Đăng ký: {new Date(faceIdStatus.enrolledAt).toLocaleDateString("vi-VN")}
+                </span>
+                {faceIdStatus.canEnroll && (
+                  <button
+                    className="btn-reenroll"
+                    onClick={() => setShowEnrollment(true)}
+                  >
+                    🔄 Đăng ký lại
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="not-enrolled-info">
+                <span className="status-text">⚠️ Chưa đăng ký quét mặt</span>
+                <button
+                  className="btn-enroll-now"
+                  onClick={() => setShowEnrollment(true)}
+                >
+                  <Shield size={16} />
+                  <span>Đăng ký ngay</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Current Time Display */}
       <div className="time-display">
@@ -477,19 +419,45 @@ const EmployeeAttendance = () => {
         <button
           className="btn-clock-in"
           onClick={() => startCamera("in")}
-          disabled={!isIntranet || todayStatus?.clockIn || isProcessing}
+          disabled={!isIntranet || !faceIdStatus?.enrolled || todayStatus?.clockIn || isProcessing}
+          title={
+            !faceIdStatus?.enrolled
+              ? "Vui lòng đăng ký quét mặt trước"
+              : !isIntranet
+              ? "Cần kết nối Intranet"
+              : todayStatus?.clockIn
+              ? "Đã check-in hôm nay"
+              : "Check-in với quét mặt"
+          }
         >
           <LogIn size={20} />
-          <span>Check-in</span>
+          <span>Check-in với quét mặt</span>
         </button>
 
         <button
           className="btn-clock-out"
           onClick={() => startCamera("out")}
-          disabled={!isIntranet || !todayStatus?.clockIn || todayStatus?.clockOut || isProcessing}
+          disabled={
+            !isIntranet ||
+            !faceIdStatus?.enrolled ||
+            !todayStatus?.clockIn ||
+            todayStatus?.clockOut ||
+            isProcessing
+          }
+          title={
+            !faceIdStatus?.enrolled
+              ? "Vui lòng đăng ký quét mặt trước"
+              : !isIntranet
+              ? "Cần kết nối Intranet"
+              : !todayStatus?.clockIn
+              ? "Chưa check-in hôm nay"
+              : todayStatus?.clockOut
+              ? "Đã check-out hôm nay"
+              : "Check-out với quét mặt"
+          }
         >
           <LogOut size={20} />
-          <span>Check-out</span>
+          <span>Check-out với quét mặt</span>
         </button>
       </div>
     </div>
@@ -592,7 +560,7 @@ const EmployeeAttendance = () => {
       </div>
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
+      {history.length > 0 && (
         <div className="pagination">
           <button
             onClick={() => fetchHistory(pagination.currentPage - 1)}
@@ -604,7 +572,8 @@ const EmployeeAttendance = () => {
           </button>
 
           <span className="pagination-info">
-            Trang {pagination.currentPage} / {pagination.totalPages}
+            Trang {pagination.currentPage} / {pagination.totalPages} 
+            {pagination.total > 0 && ` (${pagination.total} bản ghi)`}
           </span>
 
           <button
@@ -628,7 +597,7 @@ const EmployeeAttendance = () => {
         <div className="camera-header">
           <h3>
             <Camera size={20} />
-            <span>{actionType === "in" ? "Check-in" : "Check-out"}</span>
+            <span>{actionType === "in" ? "Check-in với quét mặt" : "Check-out với quét mặt"}</span>
           </h3>
           <button onClick={stopCamera} className="btn-close">
             ×
@@ -640,29 +609,10 @@ const EmployeeAttendance = () => {
             <div className="camera-preview">
               <video ref={videoRef} autoPlay playsInline />
               <canvas ref={canvasRef} style={{ display: "none" }} />
-              
-              {/* Liveness Detection Overlay */}
-              {isLivenessChecking && livenessProgress && (
-                <div className="liveness-overlay">
-                  <div className="liveness-message">
-                    {livenessProgress.challengeType === 'blink' && (
-                      <div className="challenge-icon">👁️</div>
-                    )}
-                    {livenessProgress.challengeType === 'head_turn' && (
-                      <div className="challenge-icon">🔄</div>
-                    )}
-                    <p>{livenessProgress.message}</p>
-                    {livenessProgress.blinkCount !== undefined && (
-                      <div className="progress-bar">
-                        <div 
-                          className="progress-fill" 
-                          style={{ width: `${(livenessProgress.blinkCount / 1) * 100}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <div className="face-guide-overlay">
+                <div className="face-oval"></div>
+                <p className="guide-text">Đặt khuôn mặt vào khung hình</p>
+              </div>
             </div>
           ) : (
             <div className="photo-preview">
@@ -674,25 +624,12 @@ const EmployeeAttendance = () => {
         <div className="camera-actions">
           {!capturedPhoto ? (
             <>
-              <button onClick={stopCamera} className="btn-secondary" disabled={isLivenessChecking}>
+              <button onClick={stopCamera} className="btn-secondary">
                 Hủy
               </button>
-              <button 
-                onClick={performLivenessCheck} 
-                className="btn-primary"
-                disabled={isLivenessChecking}
-              >
-                {isLivenessChecking ? (
-                  <>
-                    <Clock className="animate-spin" size={18} />
-                    <span>🛡️ Đang xác thực...</span>
-                  </>
-                ) : (
-                  <>
-                    <Camera size={18} />
-                    <span>🛡️ Bắt đầu xác thực</span>
-                  </>
-                )}
+              <button onClick={capturePhoto} className="btn-primary">
+                <Camera size={18} />
+                <span>Chụp ảnh</span>
               </button>
             </>
           ) : (
@@ -708,7 +645,7 @@ const EmployeeAttendance = () => {
                 {isFaceVerifying ? (
                   <>
                     <Clock className="animate-spin" size={18} />
-                    <span>🔍 Đang xác thực khuôn mặt...</span>
+                    <span>Đang xác thực...</span>
                   </>
                 ) : isProcessing ? (
                   <>
@@ -760,6 +697,35 @@ const EmployeeAttendance = () => {
 
       {/* Camera Modal */}
       {showCamera && renderCameraModal()}
+
+      {/* Modal Đăng ký quét mặt */}
+      {showEnrollment && (
+        <div className="enrollment-modal-overlay">
+          <FaceIdEnrollment
+            onComplete={() => {
+              setShowEnrollment(false);
+              checkFaceIdStatus();
+              toast.success("✅ Đăng ký quét mặt thành công! Bạn có thể chấm công ngay bây giờ.", {
+                autoClose: 4000,
+              });
+            }}
+            onCancel={() => {
+              setShowEnrollment(false);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Modal Xác thực quét mặt (Check-in/out) */}
+      {showVerification && (
+        <div className="enrollment-modal-overlay">
+          <FaceIdVerification
+            actionType={actionType}
+            onSuccess={handleVerificationSuccess}
+            onCancel={handleVerificationCancel}
+          />
+        </div>
+      )}
     </div>
   );
 };
