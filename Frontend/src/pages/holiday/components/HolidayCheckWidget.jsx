@@ -71,14 +71,17 @@ function HolidayCheckWidget({ compact = false, defaultCollapsed = true }) {
     return (
       <div className="holiday-check-widget holiday-check-widget--compact">
         <div className="widget-header-compact" onClick={toggleCollapse}>
-          <span className="header-title">🔍 Kiểm tra ngày lễ</span>
+          <div className="header-left">
+            <span className="header-icon">🔍</span>
+            <span className="header-title">Kiểm tra ngày lễ nhanh</span>
+          </div>
           <button className="collapse-toggle" type="button">
-            {isCollapsed ? "�" : "�"}
+            {isCollapsed ? "▼" : "▲"}
           </button>
         </div>
         
         {!isCollapsed && (
-          <>
+          <div className="widget-content-compact">
             <div className="check-form">
               <input
                 type="date"
@@ -86,13 +89,14 @@ function HolidayCheckWidget({ compact = false, defaultCollapsed = true }) {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="date-input"
                 max="2100-12-31"
+                placeholder="Chọn ngày..."
               />
               <button 
                 className="btn-check"
                 onClick={handleCheck}
                 disabled={isChecking || !selectedDate}
               >
-                {isChecking ? "⏳" : "🔍"} Check
+                {isChecking ? "⏳" : "Kiểm tra"}
               </button>
             </div>
 
@@ -104,20 +108,31 @@ function HolidayCheckWidget({ compact = false, defaultCollapsed = true }) {
                     <div className="result-icon">🎉</div>
                     <div className="result-content">
                       <strong>{result.holiday.name}</strong>
-                      <span className="result-type">{result.holiday.type}</span>
+                      <div className="result-meta">
+                        <span className="result-badge">{result.holiday.type}</span>
+                        {result.holiday.isPaid && <span className="result-badge result-badge--paid">Có lương</span>}
+                      </div>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="result-icon">📅</div>
-                    <span>Ngày làm việc bình thường</span>
+                    <div className="result-content">
+                      <strong>Ngày làm việc thường</strong>
+                      <span className="result-hint">Không phải ngày lễ</span>
+                    </div>
                   </>
                 )}
               </div>
             )}
 
-            {error && <div className="check-error">{error}</div>}
-          </>
+            {error && (
+              <div className="check-error">
+                <span className="error-icon">⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+          </div>
         )}
       </div>
     );

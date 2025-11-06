@@ -15,7 +15,8 @@ const {
   forceRejectRequest,
   getAdminStats,
   getRequestCounts,
-  getApprovedLeavesByDepartmentAndMonth,
+  getMyApprovedLeavesForCalendar,
+  getAllCompanyLeavesForCalendar,
 } = require("../controller/RequestController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
@@ -35,16 +36,6 @@ const {
   adminLimiter,
   uploadLimiter,
 } = require("../middlewares/rateLimitMiddleware");
-
-// ✅ IMPORT AUDIT LOGGING MIDDLEWARE
-const {
-  logRequestCreation,
-  logRequestApproval,
-  logRequestRejection,
-  logRequestChanges,
-  logRequestResubmit,
-  logRequestCancellation,
-} = require("../middlewares/auditMiddleware");
 
 // ============ ADMIN ROUTES ============
 // Lấy OT requests của employee (cho payroll detail - không cần Admin role)
@@ -73,7 +64,6 @@ router.put(
   adminLimiter, // ✅ Rate limit admin operations
   validateObjectId("requestId"), // ✅ Validate requestId
   validateComment, // ✅ Validate comment
-  logRequestApproval, // ✅ Audit log
   forceApproveRequest
 );
 
@@ -85,7 +75,6 @@ router.put(
   adminLimiter, // ✅ Rate limit admin operations
   validateObjectId("requestId"), // ✅ Validate requestId
   validateComment, // ✅ Validate comment (required for reject)
-  logRequestRejection, // ✅ Audit log
   forceRejectRequest
 );
 
@@ -104,7 +93,6 @@ router.post(
   strictLimiter, // ✅ Rate limit: 10 requests/minute
   uploadLimiter, // ✅ Rate limit uploads: 20/hour
   validateCreateRequest, // ✅ Validate request payload
-  logRequestCreation, // ✅ Audit log
   createRequest
 );
 
@@ -124,7 +112,6 @@ router.put(
   strictLimiter, // ✅ Rate limit: 10 requests/minute
   validateObjectId("requestId"), // ✅ Validate requestId
   validateComment, // ✅ Validate comment
-  logRequestCancellation, // ✅ Audit log
   cancelRequest
 );
 
@@ -135,7 +122,6 @@ router.put(
   strictLimiter, // ✅ Rate limit: 10 requests/minute
   validateObjectId("requestId"), // ✅ Validate requestId
   validateComment, // ✅ Validate comment
-  logRequestApproval, // ✅ Audit log
   approveRequest
 );
 
@@ -146,7 +132,6 @@ router.put(
   strictLimiter, // ✅ Rate limit: 10 requests/minute
   validateObjectId("requestId"), // ✅ Validate requestId
   validateComment, // ✅ Validate comment (required)
-  logRequestRejection, // ✅ Audit log
   rejectRequest
 );
 
@@ -157,7 +142,6 @@ router.put(
   strictLimiter, // ✅ Rate limit: 10 requests/minute
   validateObjectId("requestId"), // ✅ Validate requestId
   validateComment, // ✅ Validate comment (required)
-  logRequestChanges, // ✅ Audit log
   requestChanges
 );
 
@@ -168,7 +152,6 @@ router.put(
   strictLimiter, // ✅ Rate limit: 10 requests/minute
   validateObjectId("requestId"), // ✅ Validate requestId
   validateResubmitRequest, // ✅ Validate resubmit payload
-  logRequestResubmit, // ✅ Audit log
   resubmitRequest
 );
 
@@ -183,12 +166,21 @@ router.put(
   overrideRequest
 );
 
-// ✅ LẤY APPROVED LEAVES THEO DEPARTMENT VÀ THÁNG (CHO CALENDAR)
+// ✅ LẤY APPROVED LEAVES CÁ NHÂN (CHO CALENDAR)
+// Manager và Employee chỉ xem nghỉ phép của CHÍNH MÌNH
 router.get(
-  "/approved-leaves/calendar",
+  "/my-approved-leaves/calendar",
   authenticate,
   authorize("Manager", "Employee"), // Manager và Employee
-  getApprovedLeavesByDepartmentAndMonth
+  getMyApprovedLeavesForCalendar
+);
+
+// ✅ LẤY TẤT CẢ APPROVED LEAVES TOÀN CÔNG TY (CHO ADMIN)
+router.get(
+  "/all-company-leaves/calendar",
+  authenticate,
+  authorize("Admin"), // Chỉ Admin
+  getAllCompanyLeavesForCalendar
 );
 
 module.exports = router;

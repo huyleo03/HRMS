@@ -1,6 +1,14 @@
 import React, { useState } from "react";
+import ModalWrapper from "./shared/ModalWrapper";
+import DetailRow from "./shared/DetailRow";
+import HolidayForm from "./shared/HolidayForm";
+import { getHolidayIcon, formatShortDate } from "../utils/holidayUtils";
 import "../css/HolidayModal.css";
 
+/**
+ * HolidayDetailModal - View and edit company holidays (Admin only)
+ * Refactored to use shared components
+ */
 const HolidayDetailModal = ({ holiday, onClose, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -35,163 +43,84 @@ const HolidayDetailModal = ({ holiday, onClose, onUpdate, onDelete }) => {
   };
   
   if (!isEditing) {
-    // View mode
+    // View mode - Using shared components
+    const viewFooter = (
+      <>
+        <button className="btn btn--danger" onClick={handleDelete} disabled={loading}>
+          {loading ? "Deleting..." : "🗑️ Delete"}
+        </button>
+        <button className="btn btn--primary" onClick={() => setIsEditing(true)}>
+          ✏️ Edit
+        </button>
+      </>
+    );
+
     return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content modal-content--large" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>📅 {holiday.name}</h2>
-            <button className="close-btn" onClick={onClose}>✕</button>
-          </div>
+      <ModalWrapper 
+        title={`📅 ${holiday.name}`}
+        onClose={onClose}
+        footer={viewFooter}
+        size="large"
+      >
+        <div className="holiday-detail">
+          <DetailRow label="📅 Ngày:">
+            <span className="detail-value">
+              {formatShortDate(holiday.date)}
+              {holiday.endDate && ` - ${formatShortDate(holiday.endDate)}`}
+            </span>
+          </DetailRow>
           
-          <div className="modal-body holiday-detail">
-            <div className="detail-row">
-              <span className="detail-label">📅 Ngày:</span>
-              <span className="detail-value">
-                {new Date(holiday.date).toLocaleDateString("vi-VN")}
-                {holiday.endDate && ` - ${new Date(holiday.endDate).toLocaleDateString("vi-VN")}`}
-              </span>
-            </div>
-            
-            <div className="detail-row">
-              <span className="detail-label">🏷️ Loại:</span>
-              <span className={`badge badge--${holiday.type.toLowerCase()}`}>
-                {getHolidayIcon(holiday.type)} {holiday.type}
-              </span>
-            </div>
-            
-            <div className="detail-row">
-              <span className="detail-label">💰 Trả lương:</span>
-              <span className="detail-value">{holiday.isPaid ? "✅ Có" : "❌ Không"}</span>
-            </div>
-            
-            {holiday.description && (
-              <div className="detail-row">
-                <span className="detail-label">📝 Mô tả:</span>
-                <p className="detail-value">{holiday.description}</p>
-              </div>
-            )}
-            
-            <div className="detail-row">
-              <span className="detail-label">👤 Tạo bởi:</span>
-              <span className="detail-value">
-                {holiday.createdBy?.full_name || "Unknown"} - {new Date(holiday.createdAt).toLocaleDateString("vi-VN")}
-              </span>
-            </div>
-          </div>
+          <DetailRow label="🏷️ Loại:">
+            <span className={`badge badge--${holiday.type.toLowerCase()}`}>
+              {getHolidayIcon(holiday.type)} {holiday.type}
+            </span>
+          </DetailRow>
           
-          <div className="modal-footer">
-            <button className="btn btn--danger" onClick={handleDelete} disabled={loading}>
-              {loading ? "Deleting..." : "🗑️ Delete"}
-            </button>
-            <button className="btn btn--primary" onClick={() => setIsEditing(true)}>
-              ✏️ Edit
-            </button>
-          </div>
+          <DetailRow 
+            label="💰 Trả lương:" 
+            value={holiday.isPaid ? "✅ Có" : "❌ Không"}
+          />
+          
+          {holiday.description && (
+            <DetailRow label="📝 Mô tả:">
+              <p className="detail-value">{holiday.description}</p>
+            </DetailRow>
+          )}
+          
+          <DetailRow label="👤 Tạo bởi:">
+            <span className="detail-value">
+              {holiday.createdBy?.full_name || "Unknown"} - {formatShortDate(holiday.createdAt)}
+            </span>
+          </DetailRow>
         </div>
-      </div>
+      </ModalWrapper>
     );
   }
   
-  // Edit mode
+  // Edit mode - Using shared form component
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>✏️ Edit Holiday</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
-        </div>
+    <ModalWrapper 
+      title="✏️ Edit Holiday"
+      onClose={onClose}
+    >
+      <form onSubmit={handleUpdate}>
+        <HolidayForm 
+          formData={formData} 
+          onChange={setFormData}
+          mode="edit"
+        />
         
-        <form onSubmit={handleUpdate} className="modal-body">
-          <div className="form-group">
-            <label>Tên ngày lễ *</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required
-            />
-          </div>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label>Ngày bắt đầu *</label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({...formData, date: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>Ngày kết thúc</label>
-              <input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({...formData, endDate: e.target.value})}
-                min={formData.date}
-              />
-            </div>
-          </div>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label>Loại ngày lễ *</label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({...formData, type: e.target.value})}
-              >
-                <option value="National">🎆 National</option>
-                <option value="Company">🎉 Company</option>
-                <option value="Optional">⭐ Optional</option>
-                <option value="Regional">🏖️ Regional</option>
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label>Có lương?</label>
-              <select
-                value={formData.isPaid}
-                onChange={(e) => setFormData({...formData, isPaid: e.target.value === "true"})}
-              >
-                <option value="true">✅ Có</option>
-                <option value="false">❌ Không</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="form-group">
-            <label>Mô tả</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              rows={3}
-            />
-          </div>
-          
-          <div className="modal-footer">
-            <button type="button" className="btn btn--secondary" onClick={() => setIsEditing(false)} disabled={loading}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn--primary" disabled={loading}>
-              {loading ? "Saving..." : "✅ Save Changes"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn--secondary" onClick={() => setIsEditing(false)} disabled={loading}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn--primary" disabled={loading}>
+            {loading ? "Saving..." : "✅ Save Changes"}
+          </button>
+        </div>
+      </form>
+    </ModalWrapper>
   );
 };
-
-function getHolidayIcon(type) {
-  const icons = {
-    National: "🎆",
-    Company: "🎉",
-    Optional: "⭐",
-    Regional: "🏖️",
-  };
-  return icons[type] || "📅";
-}
 
 export default HolidayDetailModal;

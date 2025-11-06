@@ -1,83 +1,80 @@
 import React from "react";
+import ModalWrapper from "./shared/ModalWrapper";
+import { formatDate, getTypeLabel, getApplicabilityLabel, calculateDuration } from "../utils/holidayUtils";
 import "../css/HolidayModal.css";
 
 /**
  * HolidayViewModal - Read-only modal to view holiday details
  * Used by Employee and Manager (no edit/delete permissions)
+ * Refactored to use shared components and utilities
  */
 const HolidayViewModal = ({ holiday, onClose }) => {
   if (!holiday) return null;
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "long",
-    });
-  };
+  // Check if this is a dateEvents object (from calendar click) or direct holiday/leave object
+  const isDateEvents = holiday.date && holiday.events;
+  const actualEvent = isDateEvents ? holiday.events[0] : holiday;
 
-  const getTypeLabel = (type) => {
-    const types = {
-      "Public Holiday": "🎊 Ngày lễ quốc gia",
-      "National Holiday": "🇻🇳 Ngày lễ",
-      "Company Holiday": "🏢 Ngày nghỉ công ty",
-      "Optional Holiday": "⭐ Ngày lễ tùy chọn",
-      "Regional Holiday": "🌏 Ngày lễ địa phương",
-    };
-    return types[type] || type;
-  };
+  // Check if this is an employee leave (has employeeName) or company holiday
+  const isEmployeeLeave = actualEvent && actualEvent.employeeName;
 
-  const getApplicabilityLabel = (appliesTo) => {
-    const labels = {
-      "All Employees": "👥 Tất cả nhân viên",
-      "Specific Departments": "🏢 Phòng ban cụ thể",
-      "Specific Employees": "👤 Nhân viên cụ thể",
-    };
-    return labels[appliesTo] || appliesTo;
-  };
+  if (!actualEvent) return null;
 
-  const isMultiDay = holiday.endDate && holiday.endDate !== holiday.date;
-  const duration = isMultiDay
-    ? Math.ceil(
-        (new Date(holiday.endDate) - new Date(holiday.date)) / (1000 * 60 * 60 * 24)
-      ) + 1
-    : 1;
+  // Calculate dates based on data type
+  const startDate = actualEvent.startDate || actualEvent.date;
+  const endDate = actualEvent.endDate;
+  const isMultiDay = endDate && endDate !== startDate;
+  const duration = calculateDuration(startDate, endDate);
+
+  const footer = (
+    <button className="btn btn--secondary" onClick={onClose}>
+      Đóng
+    </button>
+  );
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>📅 Chi tiết ngày lễ</h2>
-          <button className="close-btn" onClick={onClose}>
-            ×
-          </button>
-        </div>
-
-        <div className="modal-body">
-          {/* Holiday Name with Color Indicator */}
-          <div className="info-group">
-            <div
-              className="color-indicator"
-              style={{ backgroundColor: holiday.color }}
-            ></div>
-            <div>
-              <label>Tên ngày lễ</label>
-              <h3>{holiday.name}</h3>
+    <ModalWrapper 
+      title={isEmployeeLeave ? "🏖️ Chi tiết nghỉ phép" : "📅 Chi tiết ngày lễ"}
+      onClose={onClose}
+      footer={footer}
+    >
+      {/* Employee Leave Info OR Holiday Name */}
+          {isEmployeeLeave ? (
+            <div className="info-group">
+              <label>👤 Nhân viên</label>
+              <h3>{actualEvent.employeeName}</h3>
+              {actualEvent.departmentName && (
+                <p
+                  style={{ fontSize: "0.9em", color: "#666", marginTop: "4px" }}
+                >
+                  🏢 {actualEvent.departmentName}
+                </p>
+              )}
             </div>
-          </div>
+          ) : (
+            <div className="info-group">
+              <div
+                className="color-indicator"
+                style={{ backgroundColor: actualEvent.color }}
+              ></div>
+              <div>
+                <label>Tên ngày lễ</label>
+                <h3>{actualEvent.name}</h3>
+              </div>
+            </div>
+          )}
 
           {/* Date Information */}
           <div className="info-row">
             <div className="info-group">
               <label>📅 Ngày bắt đầu</label>
-              <p>{formatDate(holiday.date)}</p>
+              <p>{formatDate(startDate)}</p>
             </div>
 
             {isMultiDay && (
               <div className="info-group">
                 <label>📅 Ngày kết thúc</label>
-                <p>{formatDate(holiday.endDate)}</p>
+                <p>{formatDate(endDate)}</p>
               </div>
             )}
           </div>
@@ -88,39 +85,73 @@ const HolidayViewModal = ({ holiday, onClose }) => {
             </div>
           )}
 
-          {/* Type and Status */}
-          <div className="info-row">
+          {/* Type - different layout for employee leave vs holiday */}
+          {isEmployeeLeave ? (
+            // Employee leave: only show type (already approved)
             <div className="info-group">
-              <label>Loại ngày lễ</label>
-              <p>{getTypeLabel(holiday.type)}</p>
-            </div>
-
-            <div className="info-group">
-              <label>Trạng thái</label>
-              <div className={`badge badge--${holiday.status.toLowerCase()}`}>
-                {holiday.status === "Active"
-                  ? "✅ Đang áp dụng"
-                  : holiday.status === "Inactive"
-                  ? "❌ Không áp dụng"
-                  : "📝 Nháp"}
+              <label>📋 Loại nghỉ</label>
+              <div
+                className="info-badge info-badge--success"
+                style={{ marginBottom: "8px" }}
+              >
+                {getTypeLabel(actualEvent.type)} - ✅ Đã duyệt
               </div>
             </div>
-          </div>
+          ) : (
+            // Holiday: show type and status in row
+            <div className="info-row">
+              <div className="info-group">
+                <label>Loại ngày lễ</label>
+                <p>{getTypeLabel(actualEvent.type)}</p>
+              </div>
 
-          {/* Paid Status */}
-          <div className="info-group">
-            <label>Chế độ nghỉ</label>
-            <div
-              className={`info-badge ${
-                holiday.isPaid ? "info-badge--success" : "info-badge--warning"
-              }`}
-            >
-              {holiday.isPaid ? "💰 Nghỉ có lương" : "⚠️ Nghỉ không lương"}
+              <div className="info-group">
+                <label>Trạng thái</label>
+                {actualEvent.status ? (
+                  <div
+                    className={`badge badge--${actualEvent.status.toLowerCase()}`}
+                  >
+                    {actualEvent.status === "Active"
+                      ? "✅ Đang áp dụng"
+                      : actualEvent.status === "Inactive"
+                      ? "❌ Không áp dụng"
+                      : "📝 Nháp"}
+                  </div>
+                ) : (
+                  <p>-</p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Recurring */}
-          {holiday.isRecurring && (
+          {/* Reason for employee leave */}
+          {isEmployeeLeave && actualEvent.reason && (
+            <div className="info-group">
+              <label>💬 Lý do nghỉ</label>
+              <p className="description-text">{actualEvent.reason}</p>
+            </div>
+          )}
+
+          {/* Paid Status - only for holidays */}
+          {!isEmployeeLeave && actualEvent.isPaid !== undefined && (
+            <div className="info-group">
+              <label>Chế độ nghỉ</label>
+              <div
+                className={`info-badge ${
+                  actualEvent.isPaid
+                    ? "info-badge--success"
+                    : "info-badge--warning"
+                }`}
+              >
+                {actualEvent.isPaid
+                  ? "💰 Nghỉ có lương"
+                  : "⚠️ Nghỉ không lương"}
+              </div>
+            </div>
+          )}
+
+          {/* Recurring - only for holidays */}
+          {!isEmployeeLeave && actualEvent.isRecurring && (
             <div className="info-group">
               <label>Lặp lại hàng năm</label>
               <div className="info-badge info-badge--info">
@@ -129,20 +160,23 @@ const HolidayViewModal = ({ holiday, onClose }) => {
             </div>
           )}
 
-          {/* Applicability */}
-          <div className="info-group">
-            <label>Áp dụng cho</label>
-            <p>{getApplicabilityLabel(holiday.appliesTo)}</p>
-          </div>
+          {/* Applicability - only for holidays */}
+          {!isEmployeeLeave && actualEvent.appliesTo && (
+            <div className="info-group">
+              <label>Áp dụng cho</label>
+              <p>{getApplicabilityLabel(actualEvent.appliesTo)}</p>
+            </div>
+          )}
 
-          {/* Departments (if applicable) */}
-          {holiday.appliesTo === "Specific Departments" &&
-            holiday.departments &&
-            holiday.departments.length > 0 && (
+          {/* Departments (if applicable) - only for holidays */}
+          {!isEmployeeLeave &&
+            actualEvent.appliesTo === "Specific Departments" &&
+            actualEvent.departments &&
+            actualEvent.departments.length > 0 && (
               <div className="info-group">
                 <label>Phòng ban</label>
                 <div className="tags-list">
-                  {holiday.departments.map((dept, index) => (
+                  {actualEvent.departments.map((dept, index) => (
                     <span key={index} className="tag tag--department">
                       🏢 {dept.name}
                     </span>
@@ -151,38 +185,41 @@ const HolidayViewModal = ({ holiday, onClose }) => {
               </div>
             )}
 
-          {/* Description */}
-          {holiday.description && (
+          {/* Description - only for holidays */}
+          {!isEmployeeLeave && actualEvent.description && (
             <div className="info-group">
               <label>Mô tả</label>
-              <p className="description-text">{holiday.description}</p>
+              <p className="description-text">{actualEvent.description}</p>
             </div>
           )}
 
-          {/* Notes */}
-          {holiday.notes && (
+          {/* Notes - only for holidays */}
+          {!isEmployeeLeave && actualEvent.notes && (
             <div className="info-group">
               <label>Ghi chú</label>
-              <div className="notes-box">{holiday.notes}</div>
+              <div className="notes-box">{actualEvent.notes}</div>
+            </div>
+          )}
+
+          {/* Subject - for employee leaves */}
+          {isEmployeeLeave && actualEvent.subject && (
+            <div className="info-group">
+              <label>Tiêu đề</label>
+              <p className="description-text">{actualEvent.subject}</p>
             </div>
           )}
 
           {/* Metadata */}
-          <div className="info-meta">
-            <small>
-              📅 Năm: {holiday.year} | 🕐 Tạo lúc:{" "}
-              {new Date(holiday.createdAt).toLocaleString("vi-VN")}
-            </small>
-          </div>
-        </div>
-
-        <div className="modal-footer">
-          <button className="btn btn--secondary" onClick={onClose}>
-            Đóng
-          </button>
-        </div>
-      </div>
-    </div>
+          {actualEvent.createdAt && (
+            <div className="info-meta">
+              <small>
+                {actualEvent.year && `📅 Năm: ${actualEvent.year} | `}
+                🕐 Tạo lúc:{" "}
+                {new Date(actualEvent.createdAt).toLocaleString("vi-VN")}
+              </small>
+            </div>
+          )}
+    </ModalWrapper>
   );
 };
 
