@@ -6,13 +6,6 @@ const { authenticate, authorize } = require("../middlewares/authMiddleware");
 // ✅ IMPORT RATE LIMITING MIDDLEWARE
 const { adminLimiter } = require("../middlewares/rateLimitMiddleware");
 
-// ✅ IMPORT AUDIT LOGGING MIDDLEWARE
-const {
-  logWorkflowCreation,
-  logWorkflowUpdate,
-  logWorkflowDeletion,
-} = require("../middlewares/auditMiddleware");
-
 router.get(
   "/template",
   authenticate,
@@ -39,7 +32,6 @@ router.post(
   authenticate,
   authorize("Admin"),
   adminLimiter, // ✅ Rate limit: 50 operations/5 min
-  logWorkflowCreation, // ✅ Audit log
   workflowController.createWorkflow
 );
 
@@ -48,7 +40,6 @@ router.put(
   authenticate,
   authorize("Admin"),
   adminLimiter, // ✅ Rate limit: 50 operations/5 min
-  logWorkflowUpdate, // ✅ Audit log
   workflowController.updateWorkflow
 );
 
@@ -57,7 +48,6 @@ router.delete(
   authenticate,
   authorize("Admin"),
   adminLimiter, // ✅ Rate limit: 50 operations/5 min
-  logWorkflowDeletion, // ✅ Audit log
   workflowController.deleteWorkflow
 );
 

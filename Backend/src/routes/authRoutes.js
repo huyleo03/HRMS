@@ -11,9 +11,6 @@ const {
   strictLimiter,
 } = require("../middlewares/rateLimitMiddleware");
 
-// ✅ IMPORT AUDIT LOGGING MIDDLEWARE
-const { logLogin } = require("../middlewares/auditMiddleware");
-
 // Forgot password (gửi OTP)
 router.post("/forgot-password", authLimiter, authController.forgotPassword);
 
@@ -29,7 +26,7 @@ router.post(
 );
 
 // Login
-router.post("/login", authLimiter, logLogin, authController.login);
+router.post("/login", authLimiter, authController.login);
 
 router.post(
   "/change-password",
