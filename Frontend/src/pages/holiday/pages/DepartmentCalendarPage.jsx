@@ -1,27 +1,25 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { getCalendarHolidays } from "../../../service/HolidayService";
-import { getApprovedLeaves } from "../../../service/RequestService";
+import { getMyApprovedLeavesForCalendar } from "../../../service/RequestService";
 import HolidayCalendarGrid from "../components/HolidayCalendarGrid";
 import HolidayViewModal from "../components/HolidayViewModal";
 import HolidayCheckWidget from "../components/HolidayCheckWidget";
 import "../css/ManagerHolidayCalendar.css";
-import { useAuth } from "../../../contexts/AuthContext";
 
 /**
- * DepartmentCalendarPage - Unified calendar for Manager & Employee
+ * DepartmentCalendarPage - Personal calendar for Manager & Employee
  * Shows:
  * 1. Company Holidays (from Holiday module) - Created by Admin
- * 2. Employee Leaves (from Request module) - Approved leaves in same department
+ * 2. Personal Leaves (from Request module) - CHỈ nghỉ phép của CHÍNH MÌNH
  * 
  * Both Manager and Employee have read-only access
- * They can only view leaves from their own department
+ * KHÔNG được xem lịch nghỉ của đồng nghiệp trong phòng ban
  */
 function DepartmentCalendarPage() {
-  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [companyHolidays, setCompanyHolidays] = useState([]);
-  const [employeeLeaves, setEmployeeLeaves] = useState([]);
+  const [personalLeaves, setPersonalLeaves] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null); 
   const [selectedItemType, setSelectedItemType] = useState(null); 
   const [loading, setLoading] = useState(true);
@@ -29,8 +27,6 @@ function DepartmentCalendarPage() {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
-  const departmentId = user?.department?.department_id;
-  const departmentName = user?.department?.department_name || "N/A";
 
   const fetchCalendarData = React.useCallback(async () => {
     setLoading(true);
@@ -38,10 +34,10 @@ function DepartmentCalendarPage() {
     try {
       const [holidaysData, leavesData] = await Promise.all([
         getCalendarHolidays({ year, month }),
-        getApprovedLeaves({ departmentId, year, month })
+        getMyApprovedLeavesForCalendar({ year, month })
       ]);
       setCompanyHolidays(holidaysData || []);
-      setEmployeeLeaves(leavesData || []);
+      setPersonalLeaves(leavesData || []);
     } catch (err) {
       console.error("Error fetching calendar data:", err);
       setError("Không thể tải dữ liệu lịch");
@@ -49,16 +45,11 @@ function DepartmentCalendarPage() {
     } finally {
       setLoading(false);
     }
-  }, [year, month, departmentId]);
+  }, [year, month]);
 
   React.useEffect(() => {
-    if (departmentId) {
-      fetchCalendarData();
-    } else {
-      setError("Bạn chưa được gán vào phòng ban nào");
-      setLoading(false);
-    }
-  }, [departmentId, fetchCalendarData]);
+    fetchCalendarData();
+  }, [fetchCalendarData]);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -112,7 +103,7 @@ function DepartmentCalendarPage() {
       })
       .map(h => ({ ...h, itemType: 'holiday' }));
 
-    const upcomingLeaves = employeeLeaves
+    const upcomingLeaves = personalLeaves
       .filter(l => {
         const leaveStart = new Date(l.startDate);
         return leaveStart >= today && leaveStart <= next30Days;
@@ -129,7 +120,7 @@ function DepartmentCalendarPage() {
   // Merge holidays and leaves for calendar display
   const mergedCalendarData = [
     ...companyHolidays.map(h => ({ ...h, itemType: 'holiday' })),
-    ...employeeLeaves.map(l => ({ ...l, itemType: 'leave', date: l.startDate }))
+    ...personalLeaves.map(l => ({ ...l, itemType: 'leave', date: l.startDate }))
   ];
 
   const formatDate = (dateString) => {
@@ -146,9 +137,9 @@ function DepartmentCalendarPage() {
     <div className="manager-holiday-container">
       <div className="calendar-header">
         <div>
-          <h1>📅 Lịch nghỉ - {departmentName}</h1>
+          <h1>📅 Lịch nghỉ cá nhân</h1>
           <p className="subtitle">
-            Xem lịch nghỉ lễ công ty và lịch nghỉ phép của phòng ban
+            Xem lịch nghỉ lễ công ty và lịch nghỉ phép cá nhân của bạn
           </p>
         </div>
       </div>
@@ -159,7 +150,7 @@ function DepartmentCalendarPage() {
       {/* Upcoming Section */}
       {upcomingItems.length > 0 && (
         <div className="upcoming-holidays-section">
-          <h3>🔔 Sắp tới trong 30 ngày</h3>
+          <h3>🔔 Lịch sắp tới trong 30 ngày</h3>
           <div className="upcoming-holidays-list">
             {upcomingItems.map((item) => (
               <div
@@ -259,7 +250,7 @@ function DepartmentCalendarPage() {
 
           {/* Info Section */}
           <div className="info-section">
-            <div className="info-card">
+            <div className="info-card-huyleo">
               <h3>📝 Chú ý</h3>
               <ul>
                 <li>
@@ -268,7 +259,7 @@ function DepartmentCalendarPage() {
                 </li>
                 <li>
                   <strong>Lịch nghỉ cá nhân (màu tím)</strong>: 
-                  Nghỉ phép & công tác đã được duyệt của các đồng nghiệp trong phòng ban <strong>{departmentName}</strong>.
+                  Nghỉ phép & công tác đã được duyệt của <strong>chính bạn</strong>.
                 </li>
                 <li>
                   Cả hai loại lịch được <strong>hiển thị lồng ghép (overlay)</strong> trên cùng một calendar.
@@ -279,7 +270,7 @@ function DepartmentCalendarPage() {
               </ul>
             </div>
 
-            <div className="info-card">
+            <div className="info-card-huyleo">
               <h3>🎨 Chú thích màu</h3>
               <div className="color-legend">
                 <div className="legend-item">
@@ -288,7 +279,7 @@ function DepartmentCalendarPage() {
                 </div>
                 <div className="legend-item">
                   <div className="legend-color" style={{ background: '#8b5cf6' }}></div>
-                  <span>👥 Nghỉ phép & Công tác (Request đã duyệt)</span>
+                  <span>� Nghỉ phép cá nhân của bạn (Request đã duyệt)</span>
                 </div>
               </div>
               <p style={{ marginTop: '12px', fontSize: '13px', color: '#6b7280' }}>
@@ -353,7 +344,7 @@ function LeaveViewModal({ leave, onClose }) {
 
         <div className="modal-body">
           <div className="holiday-detail-row">
-            <span className="detail-label">Nhân viên:</span>
+            <span className="detail-label-huyleo">Nhân viên:</span>
             <div className="employee-info">
               {leave.employeeAvatar && (
                 <img 
@@ -368,37 +359,37 @@ function LeaveViewModal({ leave, onClose }) {
           </div>
 
           <div className="holiday-detail-row">
-            <span className="detail-label">Ngày bắt đầu:</span>
+            <span className="detail-label-huyleo">Ngày bắt đầu:</span>
             <span>{formatDate(leave.startDate)}</span>
           </div>
 
           <div className="holiday-detail-row">
-            <span className="detail-label">Ngày kết thúc:</span>
+            <span className="detail-label-huyleo">Ngày kết thúc:</span>
             <span>{formatDate(leave.endDate)}</span>
           </div>
 
           <div className="holiday-detail-row">
-            <span className="detail-label">Loại:</span>
+            <span className="detail-label-huyleo">Loại:</span>
             <span className="badge badge--info">
               {leave.requestType === "BusinessTrip" ? "✈️ Công tác" : "👤 Nghỉ phép"}
             </span>
           </div>
 
           <div className="holiday-detail-row">
-            <span className="detail-label">Số ngày:</span>
+            <span className="detail-label-huyleo">Số ngày:</span>
             <span className="badge badge--info">{calculateDuration()} ngày</span>
           </div>
 
           {leave.subject && (
             <div className="holiday-detail-row">
-              <span className="detail-label">Tiêu đề:</span>
+              <span className="detail-label-huyleo">Tiêu đề:</span>
               <span>{leave.subject}</span>
             </div>
           )}
 
           {leave.reason && (
             <div className="holiday-detail-section">
-              <span className="detail-label">Lý do:</span>
+              <span className="detail-label-huyleo">Lý do:</span>
               <p className="detail-text">{leave.reason}</p>
             </div>
           )}

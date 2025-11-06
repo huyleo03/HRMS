@@ -1305,32 +1305,18 @@ exports.getRequestCounts = async (req, res) => {
   }
 };
 
-// ===== LẤY APPROVED LEAVES THEO DEPARTMENT VÀ THÁNG (CHO CALENDAR) =====
-exports.getApprovedLeavesByDepartmentAndMonth = async (req, res) => {
+// ===== LẤY APPROVED LEAVES CÁ NHÂN (CHO CALENDAR) =====
+// CHỈ lấy nghỉ phép của chính người dùng đang đăng nhập
+exports.getMyApprovedLeavesForCalendar = async (req, res) => {
   try {
-    const { departmentId, year, month } = req.query;
-    const currentUser = await User.findById(req.user.id);
-
-    if (!currentUser) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Người dùng không tồn tại" 
-      });
-    }
+    const { year, month } = req.query;
+    const currentUserId = req.user.id;
 
     // Validate parameters
-    if (!departmentId || !year || !month) {
+    if (!year || !month) {
       return res.status(400).json({
         success: false,
-        message: "departmentId, year và month là bắt buộc"
-      });
-    }
-
-    // Check permission: User chỉ được xem lịch của department mình
-    if (currentUser.department?.department_id?.toString() !== departmentId) {
-      return res.status(403).json({
-        success: false,
-        message: "Bạn chỉ được xem lịch nghỉ của phòng ban mình"
+        message: "year và month là bắt buộc"
       });
     }
 
@@ -1338,18 +1324,17 @@ exports.getApprovedLeavesByDepartmentAndMonth = async (req, res) => {
     const startOfMonth = new Date(parseInt(year), parseInt(month) - 1, 1);
     const endOfMonth = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
 
-    // Query approved Leave and BusinessTrip requests
+    // Query approved Leave and BusinessTrip requests CỦA CHÍNH USER
     const approvedLeaves = await Request.find({
-      "department.department_id": departmentId,
-      type: { $in: ["Leave", "BusinessTrip"] }, // Nghỉ phép + Công tác
+      submittedBy: currentUserId, 
+      type: { $in: ["Leave", "BusinessTrip"] }, 
       status: "Approved",
       startDate: { $lte: endOfMonth },
       $or: [
         { endDate: { $gte: startOfMonth } },
-        { endDate: null } // Single day leave
+        { endDate: null } 
       ]
     })
-    .populate('submittedBy', 'role') // Populate role để phân biệt Manager/Employee
     .select('submittedBy submittedByName submittedByAvatar startDate endDate reason subject type')
     .sort({ startDate: 1 })
     .lean();
@@ -1357,16 +1342,15 @@ exports.getApprovedLeavesByDepartmentAndMonth = async (req, res) => {
     // Format response
     const formattedLeaves = approvedLeaves.map(leave => ({
       _id: leave._id,
-      employeeId: leave.submittedBy?._id || leave.submittedBy,
+      employeeId: leave.submittedBy,
       employeeName: leave.submittedByName,
       employeeAvatar: leave.submittedByAvatar,
-      employeeRole: leave.submittedBy?.role || 'Employee', // Manager or Employee
       startDate: leave.startDate,
-      endDate: leave.endDate || leave.startDate, // Single day if endDate null
+      endDate: leave.endDate || leave.startDate, 
       reason: leave.reason,
       subject: leave.subject || (leave.type === 'BusinessTrip' ? 'Công tác' : 'Nghỉ phép'),
-      requestType: leave.type, // 'Leave' or 'BusinessTrip'
-      type: 'employee_leave' // Để phân biệt với company holiday
+      requestType: leave.type, 
+      type: 'personal_leave' 
     }));
 
     res.status(200).json({
@@ -1376,14 +1360,92 @@ exports.getApprovedLeavesByDepartmentAndMonth = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ [getApprovedLeavesByDepartmentAndMonth] Lỗi:", error);
+    console.error("❌ [getMyApprovedLeavesForCalendar] Lỗi:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi server khi lấy lịch nghỉ phép",
+      message: "Lỗi server khi lấy lịch nghỉ phép cá nhân",
       error: error.message
     });
   }
 };
+
+// ===== LẤY TẤT CẢ APPROVED LEAVES TOÀN CÔNG TY (CHO ADMIN) =====
+exports.getAllCompanyLeavesForCalendar = async (req, res) => {
+  try {
+    const { year, month } = req.query;
+
+    // Validate Admin role
+    const currentUser = await User.findById(req.user.id);
+    if (!currentUser || currentUser.role !== "Admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Chỉ Admin mới có quyền xem lịch nghỉ toàn công ty"
+      });
+    }
+
+    // Validate parameters
+    if (!year || !month) {
+      return res.status(400).json({
+        success: false,
+        message: "year và month là bắt buộc"
+      });
+    }
+
+    // Calculate date range
+    const startOfMonth = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endOfMonth = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
+
+    // Query tất cả approved Leave và BusinessTrip của toàn công ty
+    const approvedLeaves = await Request.find({
+      type: { $in: ["Leave", "BusinessTrip"] },
+      status: "Approved",
+      startDate: { $lte: endOfMonth },
+      $or: [
+        { endDate: { $gte: startOfMonth } },
+        { endDate: null }
+      ]
+    })
+    .populate('submittedBy', 'role')
+    .select('submittedBy submittedByName submittedByAvatar department startDate endDate reason subject type')
+    .sort({ 'department.department_name': 1, startDate: 1 })
+    .lean();
+
+    // Format response với thông tin department
+    const formattedLeaves = approvedLeaves.map(leave => ({
+      _id: leave._id,
+      employeeId: leave.submittedBy?._id || leave.submittedBy,
+      employeeName: leave.submittedByName,
+      employeeAvatar: leave.submittedByAvatar,
+      employeeRole: leave.submittedBy?.role || 'Employee',
+      departmentId: leave.department?.department_id,
+      departmentName: leave.department?.department_name || 'Chưa có phòng ban',
+      startDate: leave.startDate,
+      endDate: leave.endDate || leave.startDate,
+      reason: leave.reason,
+      subject: leave.subject || (leave.type === 'BusinessTrip' ? 'Công tác' : 'Nghỉ phép'),
+      requestType: leave.type,
+      type: 'employee_leave'
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formattedLeaves,
+      count: formattedLeaves.length,
+      message: `Đã tải ${formattedLeaves.length} lịch nghỉ của toàn công ty`
+    });
+
+  } catch (error) {
+    console.error("❌ [getAllCompanyLeavesForCalendar] Lỗi:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy lịch nghỉ toàn công ty",
+      error: error.message
+    });
+  }
+};
+
+
+
 
 
 

@@ -182,16 +182,30 @@ export const getRequestCounts = async () => {
   }
 };
 
-// Get approved leaves by department and month (for calendar)
-export const getApprovedLeaves = async ({ departmentId, year, month }) => {
+// Get my approved leaves for calendar (personal leaves only)
+export const getMyApprovedLeavesForCalendar = async ({ year, month }) => {
   try {
     const response = await apiCall(
-      `${API_CONFIG.ENDPOINTS.GET_REQUESTS}/approved-leaves/calendar?departmentId=${departmentId}&year=${year}&month=${month}`,
+      `${API_CONFIG.ENDPOINTS.GET_REQUESTS}/my-approved-leaves/calendar?year=${year}&month=${month}`,
       { method: "GET" }
     );
     return response.data;
   } catch (error) {
-    console.error("❌ [RequestService] Lỗi khi lấy approved leaves:", error);
+    console.error("❌ [RequestService] Lỗi khi lấy nghỉ phép cá nhân:", error);
+    throw error;
+  }
+};
+
+// Get all company approved leaves for calendar (Admin only)
+export const getAllCompanyLeavesForCalendar = async ({ year, month }) => {
+  try {
+    const response = await apiCall(
+      `${API_CONFIG.ENDPOINTS.GET_REQUESTS}/all-company-leaves/calendar?year=${year}&month=${month}`,
+      { method: "GET" }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ [RequestService] Lỗi khi lấy nghỉ phép toàn công ty:", error);
     throw error;
   }
 };

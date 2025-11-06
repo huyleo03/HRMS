@@ -3,41 +3,80 @@ import { toast } from "react-toastify";
 import { Dropdown } from "antd";
 import { MoreOutlined, FileTextOutlined, SyncOutlined } from "@ant-design/icons";
 import { getCalendarHolidays, createHoliday, updateHoliday, deleteHoliday } from "../../../service/HolidayService";
+import { getAllCompanyLeavesForCalendar } from "../../../service/RequestService";
+import { getDepartmentOptions } from "../../../service/DepartmentService";
 import HolidayCalendarGrid from "../components/HolidayCalendarGrid";
 import QuickAddModal from "../components/QuickAddModal";
 import HolidayDetailModal from "../components/HolidayDetailModal";
 import BulkImportModal from "../components/BulkImportModal";
 import GenerateRecurringModal from "../components/GenerateRecurringModal";
 import HolidayCheckWidget from "../components/HolidayCheckWidget";
+import HolidayViewModal from "../components/HolidayViewModal";
 import "../css/AdminHolidayCalendar.css";
+import "../css/DepartmentCalendarPage.css";
 
 const AdminHolidayPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [holidays, setHolidays] = useState([]);
+  const [companyLeaves, setCompanyLeaves] = useState([]); // All employee leaves
   const [selectedDate, setSelectedDate] = useState(null); // For quick add
   const [selectedHoliday, setSelectedHoliday] = useState(null); // For edit
+  const [selectedDateEvents, setSelectedDateEvents] = useState(null); // For viewing events on a date
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false); // For bulk import
   const [showGenerateRecurring, setShowGenerateRecurring] = useState(false); // For generate recurring
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
+  // Filter states - department filter
+  const [selectedDepartment, setSelectedDepartment] = useState(""); // "" = default (only company holidays)
+  const [departments, setDepartments] = useState([]); // List of all departments from DB
+  
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
   
+  // Fetch departments list (only once on mount)
   useEffect(() => {
-    fetchHolidays();
+    fetchDepartments();
+  }, []);
+
+  // Fetch calendar data when date or department filter changes
+  useEffect(() => {
+    fetchAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year, month]);
+  }, [year, month, selectedDepartment]);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await getDepartmentOptions();
+      // getDepartmentOptions returns { success, data: [...] }
+      setDepartments(response.data || []);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      toast.error("Không thể tải danh sách phòng ban");
+    }
+  };
   
-  const fetchHolidays = async () => {
+  const fetchAllData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getCalendarHolidays({ year, month });
-      setHolidays(data);
+      // Only fetch holidays when no department is selected
+      // Only fetch leaves when a department is selected
+      if (selectedDepartment === "") {
+        // Default mode: Show company holidays only
+        const holidaysData = await getCalendarHolidays({ year, month });
+        setHolidays(holidaysData || []);
+        setCompanyLeaves([]); // Clear leaves data
+      } else {
+        // Department selected: Show employee leaves only
+        const leavesData = await getAllCompanyLeavesForCalendar({ year, month });
+        setCompanyLeaves(leavesData || []);
+        setHolidays([]); // Clear holidays data
+      }
     } catch (error) {
-      console.error("Error fetching holidays:", error);
-      setError("Không thể tải danh sách ngày lễ. Vui lòng thử lại.");
+      console.error("Error fetching data:", error);
+      setError("Không thể tải dữ liệu lịch nghỉ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -59,20 +98,39 @@ const AdminHolidayPage = () => {
     setCurrentDate(new Date());
   };
   
-  const handleDateClick = (date) => {
-    // Click vào ô trống → mở quick add modal
-    setSelectedDate(date);
-  };
-  
   const handleHolidayClick = (holiday) => {
-    // Click vào holiday → mở detail modal
-    setSelectedHoliday(holiday);
+    if (holiday.itemType === 'leave') {
+      setSelectedDateEvents({
+        date: new Date(holiday.startDate).toLocaleDateString('vi-VN'),
+        events: [holiday]
+      });
+      setIsViewModalOpen(true);
+    } else {
+      setSelectedHoliday(holiday);
+    }
   };
   
+  
+  const displayHolidays = React.useMemo(() => {
+    if (selectedDepartment === "") {
+      return holidays;
+    } else {
+      return [];
+    }
+  }, [holidays, selectedDepartment]);
+
+  const displayLeaves = React.useMemo(() => {
+    if (selectedDepartment === "") {
+      return [];
+    } else {
+      return companyLeaves.filter(leave => leave.departmentName === selectedDepartment);
+    }
+  }, [companyLeaves, selectedDepartment]);
+
   const handleCreateHoliday = async (data) => {
     try {
       await createHoliday(data);
-      await fetchHolidays();
+      await fetchAllData();
       setSelectedDate(null);
       toast.success("Tạo ngày lễ thành công!");
     } catch (error) {
@@ -84,7 +142,25 @@ const AdminHolidayPage = () => {
   const handleUpdateHoliday = async (id, data) => {
     try {
       await updateHoliday(id, data);
-      await fetchHolidays();
+      
+      // Check if the updated date is in a different month/year
+      const updatedDate = new Date(data.date);
+      const updatedYear = updatedDate.getFullYear();
+      const updatedMonth = updatedDate.getMonth() + 1;
+      
+      // If date changed to different month, navigate to that month
+      if (updatedYear !== year || updatedMonth !== month) {
+        setCurrentDate(updatedDate);
+        // fetchAllData will be called automatically by useEffect
+      } else {
+        // Update local state immediately for same month
+        setHolidays(prevHolidays => 
+          prevHolidays.map(h => h._id === id ? { ...h, ...data, _id: id } : h)
+        );
+        // Still fetch to ensure consistency
+        await fetchAllData();
+      }
+      
       setSelectedHoliday(null);
       toast.success("Cập nhật ngày lễ thành công!");
     } catch (error) {
@@ -96,7 +172,7 @@ const AdminHolidayPage = () => {
   const handleDeleteHoliday = async (id) => {
     try {
       await deleteHoliday(id);
-      await fetchHolidays();
+      await fetchAllData();
       setSelectedHoliday(null);
       toast.success("Xóa ngày lễ thành công!");
     } catch (error) {
@@ -104,11 +180,29 @@ const AdminHolidayPage = () => {
       toast.error("Lỗi: " + (error.message || "Không thể xóa ngày lễ"));
     }
   };
+
+  const handleDateClickOnCalendar = (dateStr, events) => {
+    if (events && events.length > 0) {
+      setSelectedDateEvents({
+        date: dateStr,
+        events: events
+      });
+      setIsViewModalOpen(true);
+    } else {
+      // Click vào ô trống → mở quick add modal
+      setSelectedDate(dateStr);
+    }
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedDateEvents(null);
+  };
   
   return (
     <div className="holiday-calendar-page">
       {/* Holiday Check Widget */}
-      <HolidayCheckWidget defaultCollapsed={true} />
+      <HolidayCheckWidget compact={true} defaultCollapsed={true} />
       
       {/* Header with navigation */}
       <div className="calendar-header">
@@ -128,6 +222,12 @@ const AdminHolidayPage = () => {
           <button className="btn btn--secondary" onClick={handleToday}>
             Today
           </button>
+          {/* <button 
+            className="btn btn--primary" 
+            onClick={() => window.location.href = "/admin/company-calendar"}
+          >
+            📅 Xem lịch nghỉ toàn công ty
+          </button> */}
           
           {/* Secondary Actions Dropdown */}
           <Dropdown
@@ -180,8 +280,12 @@ const AdminHolidayPage = () => {
       ) : (
         <HolidayCalendarGrid
           currentDate={currentDate}
-          holidays={holidays}
-          onDateClick={handleDateClick}
+          holidays={displayHolidays}
+          employeeLeaves={displayLeaves}
+          departments={departments}
+          selectedDepartment={selectedDepartment}
+          onDepartmentChange={setSelectedDepartment}
+          onDateClick={handleDateClickOnCalendar}
           onHolidayClick={handleHolidayClick}
         />
       )}
@@ -205,12 +309,20 @@ const AdminHolidayPage = () => {
         />
       )}
 
+      {/* View Events Modal (khi click vào date có events) */}
+      {isViewModalOpen && selectedDateEvents && (
+        <HolidayViewModal
+          holiday={selectedDateEvents}
+          onClose={handleCloseViewModal}
+        />
+      )}
+
       {/* Bulk Import Modal */}
       {showBulkImport && (
         <BulkImportModal
           isOpen={showBulkImport}
           onClose={() => setShowBulkImport(false)}
-          onSuccess={fetchHolidays}
+          onSuccess={fetchAllData}
         />
       )}
 
@@ -219,7 +331,7 @@ const AdminHolidayPage = () => {
         <GenerateRecurringModal
           isOpen={showGenerateRecurring}
           onClose={() => setShowGenerateRecurring(false)}
-          onSuccess={fetchHolidays}
+          onSuccess={fetchAllData}
         />
       )}
     </div>

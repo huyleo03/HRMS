@@ -77,17 +77,17 @@ const AdminDashboard = () => {
             </div>
 
             {/* Main Stats Cards */}
-            <div className="stats-grid">
+            <div className="stats-grid-huyleo">
                 {/* Total Employees */}
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-title">Tổng Nhân Viên</span>
-                        <div className="stat-card-icon blue">
+                <div className="stat-card-huyleo">
+                    <div className="stat-card-huyleo-header">
+                        <span className="stat-card-huyleo-title">Tổng Nhân Viên</span>
+                        <div className="stat-card-huyleo-icon blue">
                             👥
                         </div>
                     </div>
-                    <div className="stat-card-value">{employees?.total || 0}</div>
-                    <div className="stat-card-details">
+                    <div className="stat-card-huyleo-value">{employees?.total || 0}</div>
+                    <div className="stat-card-huyleo-details">
                         <div className="stat-detail-row">
                             <span className="stat-detail-label">Đang làm việc</span>
                             <span className="stat-detail-value positive">{employees?.active || 0}</span>
@@ -104,15 +104,15 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Attendance Today */}
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-title">Chấm Công Hôm Nay</span>
-                        <div className="stat-card-icon green">
+                <div className="stat-card-huyleo">
+                    <div className="stat-card-huyleo-header">
+                        <span className="stat-card-huyleo-title">Chấm Công Hôm Nay</span>
+                        <div className="stat-card-huyleo-icon green">
                             ✓
                         </div>
                     </div>
-                    <div className="stat-card-value">{attendance?.todayPresent || 0}</div>
-                    <div className="stat-card-details">
+                    <div className="stat-card-huyleo-value">{attendance?.todayPresent || 0}</div>
+                    <div className="stat-card-huyleo-details">
                         <div className="stat-detail-row">
                             <span className="stat-detail-label">Đi muộn</span>
                             <span className="stat-detail-value">{attendance?.todayLate || 0}</span>
@@ -133,15 +133,15 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Pending Requests */}
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-title">Đơn Từ Chờ Duyệt</span>
-                        <div className="stat-card-icon yellow">
+                <div className="stat-card-huyleo">
+                    <div className="stat-card-huyleo-header">
+                        <span className="stat-card-huyleo-title">Đơn Từ Chờ Duyệt</span>
+                        <div className="stat-card-huyleo-icon yellow">
                             ⏱
                         </div>
                     </div>
-                    <div className="stat-card-value">{requests?.totalPending || 0}</div>
-                    <div className="stat-card-details">
+                    <div className="stat-card-huyleo-value">{requests?.totalPending || 0}</div>
+                    <div className="stat-card-huyleo-details">
                         <div className="stat-detail-row">
                             <span className="stat-detail-label">Đã duyệt</span>
                             <span className="stat-detail-value positive">{requests?.totalApproved || 0}</span>
@@ -162,17 +162,17 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Payroll This Month */}
-                <div className="stat-card">
-                    <div className="stat-card-header">
-                        <span className="stat-card-title">Lương Tháng Này</span>
-                        <div className="stat-card-icon purple">
+                <div className="stat-card-huyleo">
+                    <div className="stat-card-huyleo-header">
+                        <span className="stat-card-huyleo-title">Lương Tháng Này</span>
+                        <div className="stat-card-huyleo-icon purple">
                             💰
                         </div>
                     </div>
-                    <div className="stat-card-value">
+                    <div className="stat-card-huyleo-value">
                         {payroll?.totalThisMonth?.toLocaleString('vi-VN') || 0} đ
                     </div>
-                    <div className="stat-card-details">
+                    <div className="stat-card-huyleo-details">
                         <div className="stat-detail-row">
                             <span className="stat-detail-label">Chi phí OT</span>
                             <span className="stat-detail-value">

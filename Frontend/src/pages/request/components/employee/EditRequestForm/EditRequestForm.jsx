@@ -131,7 +131,7 @@ const EditRequestForm = ({ isOpen, onClose, requestToEdit, onSuccess }) => {
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="modal-header">
+        <div className="modal-huyleo">
           <h2>
             <Edit3 size={24} style={{ marginRight: "12px" }} />
             Chỉnh sửa đơn
@@ -146,10 +146,10 @@ const EditRequestForm = ({ isOpen, onClose, requestToEdit, onSuccess }) => {
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmit} className="modal-content">
+        <form onSubmit={handleSubmit} className="modal-content-form">
           {/* Subject */}
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-huyleo">
               Tiêu đề <span className="required">*</span>
             </label>
             <input
@@ -168,7 +168,7 @@ const EditRequestForm = ({ isOpen, onClose, requestToEdit, onSuccess }) => {
 
           {/* Reason */}
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-huyleo">
               Lý do <span className="required">*</span>
             </label>
             <textarea
@@ -186,7 +186,7 @@ const EditRequestForm = ({ isOpen, onClose, requestToEdit, onSuccess }) => {
           {/* Date Range */}
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">
+              <label className="form-huyleo">
                 Ngày bắt đầu <span className="required">*</span>
               </label>
               <input
@@ -202,7 +202,7 @@ const EditRequestForm = ({ isOpen, onClose, requestToEdit, onSuccess }) => {
               )}
             </div>
             <div className="form-group">
-              <label className="form-label">Ngày kết thúc</label>
+              <label className="form-huyleo">Ngày kết thúc</label>
               <input
                 type="date"
                 name="endDate"
@@ -217,7 +217,7 @@ const EditRequestForm = ({ isOpen, onClose, requestToEdit, onSuccess }) => {
 
           {/* Attachments */}
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-huyleo">
               <Paperclip size={16} />
               File đính kèm
             </label>

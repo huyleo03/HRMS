@@ -30,6 +30,7 @@ import AdminPayroll from "./pages/admin/AdminPayroll.jsx";
 import ManagerPayroll from "./pages/manager/ManagerPayroll.jsx";
 import EmployeePayroll from "./pages/employee/EmployeePayroll.jsx";
 import AdminHolidayPage from "./pages/holiday/pages/AdminHolidayPage.jsx";
+import AdminCompanyCalendarPage from "./pages/holiday/pages/AdminCompanyCalendarPage.jsx";
 import DepartmentCalendarPage from "./pages/holiday/pages/DepartmentCalendarPage.jsx";
 import WorkflowManagement from "./pages/workflow/WorkflowManagement.jsx";
 import WorkflowForm from "./pages/workflow/WorkflowForm.jsx";
@@ -81,6 +82,7 @@ function App() {
           <Route path="/payroll" element={<AdminPayroll />} />
           <Route path="/holidays" element={<AdminHolidayPage />} />
           <Route path="/admin/holidays" element={<AdminHolidayPage />} />
+          <Route path="/admin/company-calendar" element={<AdminCompanyCalendarPage />} />
           <Route path="/admin/workflow" element={<WorkflowManagement />} />
           <Route path="/admin/workflow/create" element={<WorkflowForm />} />
           <Route path="/admin/workflow/edit/:id" element={<WorkflowForm />} />

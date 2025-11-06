@@ -2,7 +2,16 @@ import React, { useState } from "react";
 import "../css/HolidayCalendarGrid.css";
 import DayEventsModal from "./DayEventsModal";
 
-const HolidayCalendarGrid = ({ currentDate, holidays, onDateClick, onHolidayClick }) => {
+const HolidayCalendarGrid = ({ 
+  currentDate, 
+  holidays, 
+  employeeLeaves = [],
+  departments = [],
+  selectedDepartment = "",
+  onDepartmentChange,
+  onDateClick, 
+  onHolidayClick 
+}) => {
   const [selectedDay, setSelectedDay] = useState(null);
   const MAX_VISIBLE_ITEMS = 2;
   const year = currentDate.getFullYear();
@@ -32,7 +41,7 @@ const HolidayCalendarGrid = ({ currentDate, holidays, onDateClick, onHolidayClic
         date.getMonth() === new Date().getMonth() &&
         date.getFullYear() === new Date().getFullYear();
       
-      // Tìm holidays trong ngày này
+      // Tìm holidays trong ngày này (company holidays)
       const dayHolidays = holidays.filter(h => {
         const holidayDate = new Date(h.date);
         holidayDate.setHours(0, 0, 0, 0);
@@ -42,13 +51,33 @@ const HolidayCalendarGrid = ({ currentDate, holidays, onDateClick, onHolidayClic
         checkDate.setHours(0, 0, 0, 0);
         return checkDate >= holidayDate && checkDate <= endDate;
       });
+
+      // Tìm employee leaves trong ngày này
+      const dayLeaves = employeeLeaves.filter(leave => {
+        const leaveStartDate = new Date(leave.startDate);
+        leaveStartDate.setHours(0, 0, 0, 0);
+        const leaveEndDate = new Date(leave.endDate || leave.startDate);
+        leaveEndDate.setHours(0, 0, 0, 0);
+        const checkDate = new Date(date);
+        checkDate.setHours(0, 0, 0, 0);
+        return checkDate >= leaveStartDate && checkDate <= leaveEndDate;
+      });
+
+      // Gộp cả holidays và leaves
+      const allEvents = [
+        ...dayHolidays,
+        ...dayLeaves.map(leave => ({
+          ...leave,
+          itemType: 'leave'
+        }))
+      ];
       
       days.push({
         date: new Date(date),
         dayNumber: date.getDate(),
         isCurrentMonth,
         isToday,
-        holidays: dayHolidays,
+        holidays: allEvents, // Giữ tên 'holidays' để tương thích với code cũ
       });
       
       currentDatePointer.setDate(currentDatePointer.getDate() + 1);
@@ -60,6 +89,25 @@ const HolidayCalendarGrid = ({ currentDate, holidays, onDateClick, onHolidayClic
   
   return (
     <div className="holiday-calendar-grid">
+      {/* Department Filter */}
+      {departments && departments.length > 0 && onDepartmentChange && (
+        <div className="calendar-department-filter">
+          <label>🏢 Phòng ban:</label>
+          <select 
+            value={selectedDepartment} 
+            onChange={(e) => onDepartmentChange(e.target.value)}
+            className="department-filter-select"
+          >
+            <option value="">-- Lịch nghỉ chung --</option>
+            {departments.map(dept => (
+              <option key={dept._id} value={dept.department_name}>
+                {dept.department_name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Header - Weekday names */}
       <div className="calendar-weekdays">
         {weekDays.map(day => (

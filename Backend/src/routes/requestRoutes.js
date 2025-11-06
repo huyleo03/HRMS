@@ -14,7 +14,8 @@ const {
   forceRejectRequest,
   getAdminStats,
   getRequestCounts,
-  getApprovedLeavesByDepartmentAndMonth,
+  getMyApprovedLeavesForCalendar,
+  getAllCompanyLeavesForCalendar,
 } = require("../controller/RequestController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
@@ -174,12 +175,21 @@ router.put(
   overrideRequest
 );
 
-// ✅ LẤY APPROVED LEAVES THEO DEPARTMENT VÀ THÁNG (CHO CALENDAR)
+// ✅ LẤY APPROVED LEAVES CÁ NHÂN (CHO CALENDAR)
+// Manager và Employee chỉ xem nghỉ phép của CHÍNH MÌNH
 router.get(
-  "/approved-leaves/calendar",
+  "/my-approved-leaves/calendar",
   authenticate,
   authorize("Manager", "Employee"), // Manager và Employee
-  getApprovedLeavesByDepartmentAndMonth
+  getMyApprovedLeavesForCalendar
+);
+
+// ✅ LẤY TẤT CẢ APPROVED LEAVES TOÀN CÔNG TY (CHO ADMIN)
+router.get(
+  "/all-company-leaves/calendar",
+  authenticate,
+  authorize("Admin"), // Chỉ Admin
+  getAllCompanyLeavesForCalendar
 );
 
 module.exports = router;
