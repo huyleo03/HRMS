@@ -201,31 +201,17 @@ exports.clockOut = async (req, res) => {
     const now = new Date();
     const { workHours, overtimeHours } = calculateWorkHours(attendance.clockIn, now, CONFIG);
     
-    // ========== OPTION B: KIỂM TRA EARLY LEAVE ==========
-    const clockOutTime = now;
-    const [endHour, endMinute] = CONFIG.workEndTime.split(":").map(Number);
-    const scheduledEnd = new Date(clockOutTime);
-    scheduledEnd.setHours(endHour, endMinute, 0, 0);
+    // ========== CHECK EARLY LEAVE ==========
+    attendance.checkEarlyLeave(CONFIG);
     
-    const isEarlyLeave = clockOutTime < scheduledEnd;
-    
-    // Update status dựa trên cả Late (từ check-in) VÀ Early Leave (từ check-out)
-    let finalStatus = attendance.status; // Giữ status cũ (Present hoặc Late)
-    
-    if (attendance.isLate && isEarlyLeave) {
-      finalStatus = "Late & Early Leave"; // Cả 2 đều sai
-    } else if (isEarlyLeave) {
-      finalStatus = "Early Leave"; // Chỉ về sớm
-    }
-    // Nếu attendance.isLate = true và isEarlyLeave = false → giữ "Late"
-    // Nếu cả 2 đều false → giữ "Present"
+    // Update status based on both late and early leave
+    attendance.updateStatus();
     
     attendance.clockOut = now;
     attendance.clockOutIP = clientIP;
     attendance.clockOutPhoto = photo;
     attendance.workHours = workHours;
     attendance.overtimeHours = overtimeHours;
-    attendance.status = finalStatus; // CẬP NHẬT STATUS SAU CHECK-OUT
     
     await attendance.save();
     

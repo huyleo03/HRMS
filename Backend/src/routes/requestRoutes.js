@@ -10,6 +10,7 @@ const {
   overrideRequest,
   getUserRequests,
   getAllRequestsAdmin,
+  getEmployeeOvertimeRequests,
   forceApproveRequest,
   forceRejectRequest,
   getAdminStats,
@@ -46,6 +47,14 @@ const {
 } = require("../middlewares/auditMiddleware");
 
 // ============ ADMIN ROUTES ============
+// Lấy OT requests của employee (cho payroll detail - không cần Admin role)
+router.get(
+  "/employee-overtime",
+  authenticate,
+  searchLimiter,
+  getEmployeeOvertimeRequests
+);
+
 // Lấy tất cả đơn (Admin)
 router.get(
   "/admin/all",

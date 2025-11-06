@@ -29,6 +29,7 @@ async function calculateWorkingStats(employeeId, startDate, endDate) {
   let overtimePendingWeekend = 0;
   let overtimePendingHoliday = 0;
   let lateMinutes = 0;
+  let earlyLeaveMinutes = 0;
   let absentDays = 0;
 
   // Get employee info for holiday checking
@@ -81,6 +82,11 @@ async function calculateWorkingStats(employeeId, startDate, endDate) {
     if (att.lateMinutes > 0) {
       lateMinutes += att.lateMinutes;
     }
+    
+    // Sum early leave minutes
+    if (att.earlyLeaveMinutes > 0) {
+      earlyLeaveMinutes += att.earlyLeaveMinutes;
+    }
   }
 
   return {
@@ -96,6 +102,7 @@ async function calculateWorkingStats(employeeId, startDate, endDate) {
       holiday: overtimePendingHoliday,
     },
     lateMinutes,
+    earlyLeaveMinutes,
     absentDays,
   };
 }
@@ -152,6 +159,7 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
   // ===== BUILD DAILY BREAKDOWN =====
   const dailyBreakdown = [];
   const lateDeductionRate = 10000; // 10,000 VND per minute
+  const earlyLeaveDeductionRate = 10000; // 10,000 VND per minute
   const daysInMonth = new Date(year, month, 0).getDate(); // Get total days in month
   
   for (let day = 1; day <= daysInMonth; day++) {
@@ -188,6 +196,7 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
     let dailySalaryAmount = 0;
     let otSalary = 0;
     let lateDeduction = 0;
+    let earlyLeaveDeduction = 0;
     let otMultiplier = 0;
     
     if (attendance) {
@@ -220,6 +229,11 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
       if (attendance.lateMinutes > 0) {
         lateDeduction = attendance.lateMinutes * lateDeductionRate;
       }
+      
+      // 4. Early Leave Deduction
+      if (attendance.earlyLeaveMinutes > 0) {
+        earlyLeaveDeduction = attendance.earlyLeaveMinutes * earlyLeaveDeductionRate;
+      }
     } else if (isWorkingDay && !isHoliday) {
       // Không có attendance và là ngày làm việc thường → Vắng mặt (đã tính trong absentDays)
       dailySalaryAmount = 0;
@@ -232,8 +246,9 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
     dailySalaryAmount = Math.round(dailySalaryAmount * 100) / 100;
     otSalary = Math.round(otSalary * 100) / 100;
     lateDeduction = Math.round(lateDeduction * 100) / 100;
+    earlyLeaveDeduction = Math.round(earlyLeaveDeduction * 100) / 100;
     
-    const dayTotal = dailySalaryAmount + otSalary - lateDeduction;
+    const dayTotal = dailySalaryAmount + otSalary - lateDeduction - earlyLeaveDeduction;
     
     dailyBreakdown.push({
       date: day,
@@ -245,6 +260,7 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
       checkOut: formatTime(attendance?.clockOut),
       status: attendance?.status || (isWeekend ? 'Weekend' : (isHoliday ? 'Holiday' : 'Absent')),
       lateMinutes: attendance?.lateMinutes || 0,
+      earlyLeaveMinutes: attendance?.earlyLeaveMinutes || 0,
       workHours: attendance?.workHours || 0,
       otHours: (attendance?.overtimeHours && attendance?.overtimeApproved) ? attendance.overtimeHours : 0,
       otApproved: attendance?.overtimeApproved || false,
@@ -252,11 +268,12 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
       dailySalary: dailySalaryAmount,
       otSalary,
       lateDeduction,
+      earlyLeaveDeduction,
       dayTotal: Math.round(dayTotal * 100) / 100,
     });
   }
 
-  // Calculate deductions (late + absent)
+  // Calculate deductions (late + early leave + absent)
   let deductions = [];
   let totalDeduction = 0;
 
@@ -264,18 +281,29 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
   if (stats.lateMinutes > 0) {
     const lateDeduction = Math.round(stats.lateMinutes * lateDeductionRate * 100) / 100;
     deductions.push({
-      type: "Late",
+      type: "Đi muộn",
       amount: lateDeduction,
       description: `${stats.lateMinutes} phút đi muộn`,
     });
     totalDeduction += lateDeduction;
   }
 
+  // Early leave deduction: 10,000 VND per minute
+  if (stats.earlyLeaveMinutes > 0) {
+    const earlyLeaveDeduction = Math.round(stats.earlyLeaveMinutes * earlyLeaveDeductionRate * 100) / 100;
+    deductions.push({
+      type: "Về sớm",
+      amount: earlyLeaveDeduction,
+      description: `${stats.earlyLeaveMinutes} phút về sớm`,
+    });
+    totalDeduction += earlyLeaveDeduction;
+  }
+
   // Absent deduction: 1 day = dailySalary
   if (stats.absentDays > 0) {
     const absentDeduction = Math.round(dailySalary * stats.absentDays * 100) / 100;
     deductions.push({
-      type: "Absent",
+      type: "Vắng mặt",
       amount: absentDeduction,
       description: `${stats.absentDays} ngày vắng mặt`,
     });
@@ -296,8 +324,7 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
     payroll.overtimePending = stats.overtimePending;
     payroll.overtimeRates = otRates;
     payroll.overtimeAmount = overtimeAmount;
-    payroll.allowances = []; // No allowances
-    payroll.bonuses = []; // No bonuses
+    // allowances và bonuses đã bị xóa khỏi model
     payroll.deductions = deductions;
     payroll.dailyBreakdown = dailyBreakdown;
     payroll.calculatedAt = new Date();
@@ -318,8 +345,7 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
       overtimePending: stats.overtimePending,
       overtimeRates: otRates,
       overtimeAmount,
-      allowances: [], // No allowances
-      bonuses: [], // No bonuses
+      // allowances và bonuses đã bị xóa khỏi model
       deductions,
       dailyBreakdown,
       calculatedAt: new Date(),
@@ -537,10 +563,10 @@ const getAllPayrolls = async (req, res) => {
       totalPayrolls: totalFiltered,
       totalCost: payrolls.reduce((sum, p) => sum + (p.netSalary || 0), 0),
       byStatus: {
-        Draft: payrolls.filter((p) => p.status === "Draft").length,
-        Pending: payrolls.filter((p) => p.status === "Pending").length,
-        Approved: payrolls.filter((p) => p.status === "Approved").length,
-        Paid: payrolls.filter((p) => p.status === "Paid").length,
+        "Nháp": payrolls.filter((p) => p.status === "Nháp").length,
+        "Chờ duyệt": payrolls.filter((p) => p.status === "Chờ duyệt").length,
+        "Đã duyệt": payrolls.filter((p) => p.status === "Đã duyệt").length,
+        "Đã thanh toán": payrolls.filter((p) => p.status === "Đã thanh toán").length,
       },
     };
 
@@ -604,19 +630,17 @@ const updatePayroll = async (req, res) => {
     }
 
     // Only allow editing Draft or Pending
-    if (["Approved", "Paid"].includes(payroll.status)) {
+    if (["Đã duyệt", "Đã thanh toán"].includes(payroll.status)) {
       return res.status(403).json({
         success: false,
         message: `Không thể sửa payroll đã ${payroll.status}`,
       });
     }
 
-    // Update fields
+    // Update fields (đã xóa allowances và bonuses)
     const allowedFields = [
       "actualBaseSalary",
       "overtimeAmount",
-      "allowances",
-      "bonuses",
       "deductions",
       "notes",
     ];
@@ -670,7 +694,7 @@ const approvePayroll = async (req, res) => {
       });
     }
 
-    if (payroll.status === "Approved") {
+    if (payroll.status === "Đã duyệt") {
       return res.status(400).json({
         success: false,
         message: "Payroll đã được duyệt trước đó",
@@ -688,7 +712,7 @@ const approvePayroll = async (req, res) => {
       }
     }
 
-    payroll.status = "Approved";
+    payroll.status = "Đã duyệt";
     payroll.approvedBy = approvedBy;
     payroll.approvedAt = new Date();
     await payroll.save();
@@ -752,8 +776,8 @@ const bulkApprovePayrolls = async (req, res) => {
           continue;
         }
 
-        if (payroll.status !== "Approved") {
-          payroll.status = "Approved";
+        if (payroll.status !== "Đã duyệt") {
+          payroll.status = "Đã duyệt";
           payroll.approvedBy = approvedBy;
           payroll.approvedAt = new Date();
           await payroll.save();
@@ -791,7 +815,7 @@ const markAsPaid = async (req, res) => {
       });
     }
 
-    if (payroll.status !== "Approved") {
+    if (payroll.status !== "Đã duyệt") {
       return res.status(400).json({
         success: false,
         message: "Chỉ có thể thanh toán payroll đã Approved",
@@ -799,7 +823,7 @@ const markAsPaid = async (req, res) => {
     }
 
     // Update payroll status
-    payroll.status = "Paid";
+    payroll.status = "Đã thanh toán";
     payroll.paidBy = paidBy;
     payroll.paidAt = new Date();
     
@@ -844,7 +868,7 @@ const markAsPaid = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `Đã thanh toán lương cho ${payroll.employeeId.full_name}`,
-      data: { payroll, payment },
+      data: { payroll },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -865,10 +889,10 @@ const deletePayroll = async (req, res) => {
       });
     }
 
-    if (payroll.status !== "Draft") {
+    if (payroll.status !== "Nháp") {
       return res.status(403).json({
         success: false,
-        message: "Chỉ có thể xóa payroll Draft",
+        message: "Chỉ có thể xóa payroll Nháp",
       });
     }
 
@@ -895,7 +919,7 @@ const getPayrollAnalytics = async (req, res) => {
       });
     }
 
-    const payrolls = await Payroll.find({ year: parseInt(year), status: "Paid" });
+    const payrolls = await Payroll.find({ year: parseInt(year), status: "Đã thanh toán" });
 
     // Group by month
     const byMonth = {};
@@ -1056,8 +1080,8 @@ const managerApprovePayroll = async (req, res) => {
     }
 
     // Manager can ONLY approve Draft → Pending (pre-approval)
-    if (payroll.status === "Draft") {
-      payroll.status = "Pending";
+    if (payroll.status === "Nháp") {
+      payroll.status = "Chờ duyệt";
       payroll.notes = notes || "Đã duyệt bởi Manager";
     } else {
       return res.status(400).json({
@@ -1112,7 +1136,7 @@ const managerRejectPayroll = async (req, res) => {
     }
 
     // Manager can only reject Draft (send back for recalculation)
-    if (payroll.status !== "Draft") {
+    if (payroll.status !== "Nháp") {
       return res.status(400).json({
         success: false,
         message: "Manager chỉ có thể từ chối phiếu lương ở trạng thái Draft",
@@ -1120,7 +1144,7 @@ const managerRejectPayroll = async (req, res) => {
     }
 
     // ✅ PHƯƠNG ÁN 2: Trả về Draft + Đánh dấu đã bị reject
-    payroll.status = "Draft"; // Giữ nguyên Draft để Admin có thể sửa/tính lại
+    payroll.status = "Nháp"; // Giữ nguyên Draft để Admin có thể sửa/tính lại
     payroll.rejectedByManager = true;
     
     // Lấy thông tin Manager để lưu vào history

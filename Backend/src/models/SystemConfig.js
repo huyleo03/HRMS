@@ -22,6 +22,12 @@ const systemConfigSchema = new mongoose.Schema(
         default: "17:00",
         match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Định dạng thời gian không hợp lệ (HH:mm)"],
       },
+      standardWorkHours: {
+        type: Number,
+        default: 8,
+        min: 1,
+        max: 12,
+      },
       gracePeriodMinutes: {
         type: Number,
         default: 15,

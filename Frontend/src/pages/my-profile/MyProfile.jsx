@@ -166,15 +166,17 @@ const MyProfile = () => {
   };
 
   const handleSaveEdit = async () => {
-    // Validate required fields
-    if (!editFormData.full_name?.trim()) {
-      toast.error('Họ tên không được để trống');
-      return;
-    }
-    
-    if (!editFormData.jobTitle?.trim()) {
-      toast.error('Chức vụ không được để trống');
-      return;
+    // ✅ Chỉ Admin mới được validate full_name và jobTitle
+    if (employeeData.role === 'Admin') {
+      if (!editFormData.full_name?.trim()) {
+        toast.error('Họ tên không được để trống');
+        return;
+      }
+      
+      if (!editFormData.jobTitle?.trim()) {
+        toast.error('Chức vụ không được để trống');
+        return;
+      }
     }
 
     try {
@@ -182,14 +184,18 @@ const MyProfile = () => {
       
       // Prepare data to send to backend
       const updateData = {
-        full_name: editFormData.full_name,
-        jobTitle: editFormData.jobTitle,
         phone: editFormData.phone || null,
         gender: editFormData.gender || null,
         address: editFormData.address || null,
         avatar: editFormData.avatar || null,
         dateOfBirth: editFormData.dateOfBirth || null
       };
+      
+      // ✅ Chỉ Admin mới được cập nhật full_name và jobTitle
+      if (employeeData.role === 'Admin') {
+        updateData.full_name = editFormData.full_name;
+        updateData.jobTitle = editFormData.jobTitle;
+      }
       
       const response = await updateOwnProfile(updateData);
       
@@ -247,7 +253,7 @@ const MyProfile = () => {
           Dashboard
         </span>
         <span className="breadcrumb-separator">{'>'}</span>
-        <span className="breadcrumb-current">My Profile</span>
+        <span className="breadcrumb-current">Hồ sơ cá nhân</span>
       </div>
 
       <div className="profile-content">
@@ -334,15 +340,15 @@ const MyProfile = () => {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M3 21H21M13.7844 5.31171C13.7844 5.31171 13.7844 6.94634 15.419 8.58096C17.0537 10.2156 18.6883 10.2156 18.6883 10.2156M7.31963 17.9881L10.7523 17.4977C11.2475 17.4269 11.7064 17.1975 12.06 16.8438L20.3229 8.58096C21.2257 7.67818 21.2257 6.21449 20.3229 5.31171L18.6883 3.67708C17.7855 2.77431 16.3218 2.77431 15.419 3.67708L7.15616 11.94C6.80248 12.2936 6.57305 12.7525 6.50231 13.2477L6.01193 16.6804C5.90295 17.4432 6.5568 18.097 7.31963 17.9881Z" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
-                Edit Profile
+                Sửa hồ sơ
               </button>
             ) : (
               <div className="edit-actions">
                 <button className="save-btn" onClick={handleSaveEdit} disabled={saving}>
-                  {saving ? 'Saving...' : 'Save'}
+                  {saving ? 'Đang lưu...' : 'Lưu'}
                 </button>
                 <button className="cancel-btn" onClick={handleCancelEdit}>
-                  Cancel
+                  Hủy
                 </button>
               </div>
             )}
@@ -357,7 +363,7 @@ const MyProfile = () => {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 12.25C14.0393 12.25 15.9229 12.7209 17.3223 13.5205C18.7002 14.308 19.75 15.5103 19.75 17C19.75 18.4897 18.7002 19.692 17.3223 20.4795C15.9229 21.2791 14.0393 21.75 12 21.75C9.96067 21.75 8.0771 21.2791 6.67773 20.4795C5.29976 19.692 4.25 18.4897 4.25 17C4.25 15.5103 5.29976 14.308 6.67773 13.5205C8.0771 12.7209 9.96067 12.25 12 12.25ZM12 2.25C14.6234 2.25 16.75 4.37665 16.75 7C16.75 9.62335 14.6234 11.75 12 11.75C9.37665 11.75 7.25 9.62335 7.25 7C7.25 4.37665 9.37665 2.25 12 2.25Z" fill="#7152F3"/>
             </svg>
-            <span>Personal Information</span>
+            <span>Thông tin cá nhân</span>
           </div>
         </div>
 
@@ -367,8 +373,9 @@ const MyProfile = () => {
             <div className="info-grid">
               <div className="info-row">
                 <div className="info-field">
-                  <label>Full Name</label>
-                  {isEditing ? (
+                  <label>Họ và tên</label>
+                  {/* ✅ Chỉ Admin mới được sửa Full Name */}
+                  {isEditing && employeeData.role === 'Admin' ? (
                     <input
                       type="text"
                       className="field-input"
@@ -381,7 +388,7 @@ const MyProfile = () => {
                   <div className="field-line"></div>
                 </div>
                 <div className="info-field">
-                  <label>Employee ID</label>
+                  <label>Mã nhân viên</label>
                   <div className="field-value">{employeeData.employeeId || 'N/A'}</div>
                   <div className="field-line"></div>
                 </div>
@@ -389,14 +396,14 @@ const MyProfile = () => {
 
               <div className="info-row">
                 <div className="info-field">
-                  <label>Mobile Number</label>
+                  <label>Số điện thoại</label>
                   {isEditing ? (
                     <input
                       type="text"
                       className="field-input"
                       value={editFormData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="Enter mobile number"
+                      placeholder="Nhập số điện thoại"
                     />
                   ) : (
                     <div className="field-value">{employeeData.phone || 'N/A'}</div>
@@ -404,7 +411,7 @@ const MyProfile = () => {
                   <div className="field-line"></div>
                 </div>
                 <div className="info-field">
-                  <label>Email Address</label>
+                  <label>Email</label>
                   <div className="field-value">{employeeData.email}</div>
                   <div className="field-line"></div>
                 </div>
@@ -412,12 +419,12 @@ const MyProfile = () => {
 
               <div className="info-row">
                 <div className="info-field">
-                  <label>Start Date</label>
+                  <label>Ngày bắt đầu</label>
                   <div className="field-value">{formatDate(employeeData.startDate)}</div>
                   <div className="field-line"></div>
                 </div>
                 <div className="info-field">
-                  <label>Date of Birth</label>
+                  <label>Ngày sinh</label>
                   {isEditing ? (
                     <input
                       type="date"
@@ -431,11 +438,11 @@ const MyProfile = () => {
                   <div className="field-line"></div>
                 </div>
               </div>
-
               <div className="info-row">
                 <div className="info-field">
-                  <label>Job Title</label>
-                  {isEditing ? (
+                  <label>Chức danh</label>
+                  {/* ✅ Chỉ Admin mới được sửa Job Title */}
+                  {isEditing && employeeData.role === 'Admin' ? (
                     <input
                       type="text"
                       className="field-input"
@@ -448,16 +455,16 @@ const MyProfile = () => {
                   <div className="field-line"></div>
                 </div>
                 <div className="info-field">
-                  <label>Gender</label>
+                  <label>Giới tính</label>
                   {isEditing ? (
                     <select
                       className="field-select"
                       value={editFormData.gender}
                       onChange={(e) => handleInputChange('gender', e.target.value)}
                     >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
+                      <option value="">Chọn giới tính</option>
+                      <option value="Male">Nam</option>
+                      <option value="Female">Nữ</option>
                     </select>
                   ) : (
                     <div className="field-value">{employeeData.gender || 'N/A'}</div>
@@ -468,14 +475,14 @@ const MyProfile = () => {
 
               <div className="info-row">
                 <div className="info-field">
-                  <label>Address</label>
+                  <label>Địa chỉ</label>
                   {isEditing ? (
                     <input
                       type="text"
                       className="field-input"
                       value={editFormData.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="Enter address"
+                      placeholder="Nhập địa chỉ"
                     />
                   ) : (
                     <div className="field-value">{employeeData.address || 'N/A'}</div>
@@ -483,7 +490,7 @@ const MyProfile = () => {
                   <div className="field-line"></div>
                 </div>
                 <div className="info-field">
-                  <label>Role</label>
+                  <label>Vai trò</label>
                   <div className="field-value">{employeeData.role}</div>
                   <div className="field-line"></div>
                 </div>
@@ -492,16 +499,16 @@ const MyProfile = () => {
               {employeeData.role !== 'Admin' && (
                 <div className="info-row">
                   <div className="info-field">
-                    <label>Department</label>
+                    <label>Phòng ban</label>
                     <div className="field-value">
                       {employeeData.department?.department_name || 'N/A'}
                     </div>
                     <div className="field-line"></div>
                   </div>
                   <div className="info-field">
-                    <label>Salary</label>
+                    <label>Lương</label>
                     <div className="field-value">
-                      {employeeData.salary ? `$${employeeData.salary.toLocaleString()}` : 'N/A'}
+                      {employeeData.salary ? `${employeeData.salary.toLocaleString()} VNĐ` : 'N/A'}
                     </div>
                     <div className="field-line"></div>
                   </div>

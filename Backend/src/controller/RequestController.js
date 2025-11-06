@@ -799,6 +799,55 @@ exports.overrideRequest = async (req, res) => {
 
 // ============ ADMIN FUNCTIONS ============
 
+// GET EMPLOYEE OVERTIME REQUESTS (for payroll detail view - no role restriction)
+exports.getEmployeeOvertimeRequests = async (req, res) => {
+  try {
+    const { employeeId, month, year, status } = req.query;
+
+    if (!employeeId) {
+      return res.status(400).json({ message: "Employee ID là bắt buộc" });
+    }
+
+    const query = {
+      submittedBy: employeeId,
+      type: "Overtime",
+    };
+
+    // Filter by status (default: Approved)
+    if (status) {
+      query.status = status;
+    } else {
+      query.status = "Approved"; // Mặc định lấy Approved
+    }
+
+    // Filter by month/year if provided
+    if (month && year) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+      query.created_at = { $gte: startDate, $lte: endDate };
+    }
+
+    const requests = await Request.find(query)
+      .populate("submittedBy", "full_name email avatar")
+      .populate("approvalFlow.approverId", "full_name email avatar role")
+      .sort({ created_at: -1 })
+      .limit(100)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: requests,
+      total: requests.length,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy OT requests:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Lỗi server",
+    });
+  }
+};
+
 // GET ALL REQUESTS (Admin only)
 exports.getAllRequestsAdmin = async (req, res) => {
   try {

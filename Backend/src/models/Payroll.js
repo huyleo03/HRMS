@@ -115,69 +115,28 @@ const payrollSchema = new mongoose.Schema(
       },
     },
     
-    // ===== PHỤ CẤP (ALLOWANCES) =====
-    allowances: [
-      {
-        type: {
-          type: String,
-          enum: ["Transport", "Housing", "Meal", "Phone", "Position", "Other"],
-          required: true,
-        },
-        amount: {
-          type: Number,
-          required: true,
-          min: 0,
-        },
-        description: {
-          type: String,
-          trim: true,
-        },
-      },
-    ],
+    // ===== PHỤ CẤP (ALLOWANCES) - REMOVED (không dùng) =====
+    // allowances: [],
     totalAllowances: {
       type: Number,
       default: 0,
       min: 0,
     },
     
-    // ===== THƯỞNG (BONUSES) =====
-    bonuses: [
-      {
-        type: {
-          type: String,
-          enum: ["Performance", "Project", "Holiday", "Annual", "Other"],
-          required: true,
-        },
-        amount: {
-          type: Number,
-          required: true,
-          min: 0,
-        },
-        reason: {
-          type: String,
-          trim: true,
-        },
-        approvedBy: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        approvedAt: {
-          type: Date,
-        },
-      },
-    ],
+    // ===== THƯỞNG (BONUSES) - REMOVED (không dùng) =====
+    // bonuses: [],
     totalBonuses: {
       type: Number,
       default: 0,
       min: 0,
     },
     
-    // ===== KHẤU TRỪ (DEDUCTIONS) =====
+    // ===== KHẤU TRỪ (DEDUCTIONS) - CHỈ GIỮ: Đi muộn, Về sớm, Vắng mặt =====
     deductions: [
       {
         type: {
           type: String,
-          enum: ["Tax", "Insurance", "Late", "Absent", "Advance", "Other"],
+          enum: ["Đi muộn", "Về sớm", "Vắng mặt"],
           required: true,
         },
         amount: {
@@ -213,8 +172,8 @@ const payrollSchema = new mongoose.Schema(
     // ===== TRẠNG THÁI =====
     status: {
       type: String,
-      enum: ["Draft", "Pending", "Approved", "Paid", "Rejected"],
-      default: "Draft",
+      enum: ["Nháp", "Chờ duyệt", "Đã duyệt", "Đã thanh toán", "Từ chối"],
+      default: "Nháp",
       index: true,
     },
     
@@ -323,6 +282,10 @@ const payrollSchema = new mongoose.Schema(
           type: Number,
           default: 0,
         },
+        earlyLeaveMinutes: {
+          type: Number,
+          default: 0,
+        },
         workHours: {
           type: Number,
           default: 0,
@@ -348,6 +311,10 @@ const payrollSchema = new mongoose.Schema(
           default: 0,
         },
         lateDeduction: {
+          type: Number,
+          default: 0,
+        },
+        earlyLeaveDeduction: {
           type: Number,
           default: 0,
         },
@@ -393,23 +360,19 @@ payrollSchema.virtual("periodDisplay").get(function () {
 
 // ===== PRE-SAVE: Auto Calculate Totals =====
 payrollSchema.pre("save", function (next) {
-  // Calculate total allowances
-  this.totalAllowances = this.allowances.reduce((sum, item) => sum + item.amount, 0);
-  
-  // Calculate total bonuses
-  this.totalBonuses = this.bonuses.reduce((sum, item) => sum + item.amount, 0);
+  // Allowances và Bonuses đã bị xóa - set về 0
+  this.totalAllowances = 0;
+  this.totalBonuses = 0;
   
   // Calculate total deductions
   this.totalDeductions = this.deductions.reduce((sum, item) => sum + item.amount, 0);
   
-  // Calculate gross salary (keep for compatibility)
+  // Calculate gross salary (chỉ gồm: baseSalary + overtime)
   this.grossSalary = 
     this.actualBaseSalary + 
-    this.overtimeAmount + 
-    this.totalAllowances + 
-    this.totalBonuses;
+    this.overtimeAmount;
   
-  // Calculate net salary (simplified: actual + overtime - deductions)
+  // Calculate net salary (actual + overtime - deductions)
   this.netSalary = Math.round(
     (this.actualBaseSalary + this.overtimeAmount - this.totalDeductions) * 100
   ) / 100;
@@ -458,8 +421,7 @@ payrollSchema.methods.getBreakdown = function () {
     period: this.periodDisplay,
     baseSalary: this.actualBaseSalary,
     overtime: this.overtimeAmount,
-    allowances: this.totalAllowances,
-    bonuses: this.totalBonuses,
+    // allowances và bonuses đã bị xóa
     deductions: this.totalDeductions,
     gross: this.grossSalary,
     net: this.netSalary,

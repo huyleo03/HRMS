@@ -1142,6 +1142,33 @@
   overflow-y: auto;
 }
 
+.admin-payroll-container .daily-breakdown-table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.admin-payroll-container .daily-breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  min-width: 1200px;
+}
+
+.admin-payroll-container .daily-breakdown-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.admin-payroll-container .daily-breakdown-table tfoot {
+  position: sticky;
+  bottom: 0;
+  background: #f9fafb;
+  border-top: 3px solid #10b981;
+  z-index: 10;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+}
+
 /* ============================================
    RESPONSIVE
 ============================================ */
