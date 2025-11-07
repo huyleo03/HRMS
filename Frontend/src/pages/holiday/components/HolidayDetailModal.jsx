@@ -18,12 +18,22 @@ const HolidayDetailModal = ({ holiday, onClose, onUpdate, onDelete }) => {
     type: holiday.type,
     isPaid: holiday.isPaid,
     description: holiday.description || "",
+    appliesTo: holiday.appliesTo || "All Employees",
+    departments: holiday.departments?.map(d => d._id || d) || [],
   });
   
   const [loading, setLoading] = useState(false);
   
   const handleUpdate = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (formData.appliesTo === "Specific Departments" && 
+        (!formData.departments || formData.departments.length === 0)) {
+      alert("Vui lòng chọn ít nhất một phòng ban");
+      return;
+    }
+    
     setLoading(true);
     try {
       await onUpdate(holiday._id, formData);
@@ -80,6 +90,24 @@ const HolidayDetailModal = ({ holiday, onClose, onUpdate, onDelete }) => {
             label="💰 Trả lương:" 
             value={holiday.isPaid ? "✅ Có" : "❌ Không"}
           />
+          
+          <DetailRow label="👥 Áp dụng cho:">
+            <span className="detail-value">
+              {holiday.appliesTo === "All Employees" ? "Tất cả nhân viên" : "Phòng ban cụ thể"}
+            </span>
+          </DetailRow>
+          
+          {holiday.appliesTo === "Specific Departments" && holiday.departments && holiday.departments.length > 0 && (
+            <DetailRow label="🏢 Phòng ban:">
+              <div className="detail-value">
+                {holiday.departments.map((dept, index) => (
+                  <span key={dept._id || index} className="badge badge--department" style={{ marginRight: "5px", marginBottom: "5px" }}>
+                    {dept.department_name || dept}
+                  </span>
+                ))}
+              </div>
+            </DetailRow>
+          )}
           
           {holiday.description && (
             <DetailRow label="📝 Mô tả:">

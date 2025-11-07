@@ -25,6 +25,14 @@ exports.createHoliday = async (req, res) => {
       });
     }
     
+    // Validate departments if appliesTo is "Specific Departments"
+    if (appliesTo === "Specific Departments" && (!departments || departments.length === 0)) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng chọn ít nhất một phòng ban khi áp dụng cho phòng ban cụ thể",
+      });
+    }
+    
     const holidayDate = new Date(date);
     const year = holidayDate.getFullYear();
     
@@ -181,6 +189,14 @@ exports.updateHoliday = async (req, res) => {
       color,
       status,
     } = req.body;
+    
+    // Validate departments if appliesTo is "Specific Departments"
+    if (appliesTo === "Specific Departments" && (!departments || departments.length === 0)) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng chọn ít nhất một phòng ban khi áp dụng cho phòng ban cụ thể",
+      });
+    }
     
     // Update fields
     if (name) holiday.name = name;

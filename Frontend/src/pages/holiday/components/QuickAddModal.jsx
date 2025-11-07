@@ -15,12 +15,22 @@ const QuickAddModal = ({ date, onClose, onSubmit }) => {
     type: "National",
     isPaid: true,
     description: "",
+    appliesTo: "All Employees",
+    departments: [],
   });
   
   const [loading, setLoading] = useState(false);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (formData.appliesTo === "Specific Departments" && 
+        (!formData.departments || formData.departments.length === 0)) {
+      alert("Vui lòng chọn ít nhất một phòng ban");
+      return;
+    }
+    
     setLoading(true);
     try {
       await onSubmit(formData);

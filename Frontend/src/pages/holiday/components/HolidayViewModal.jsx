@@ -177,8 +177,8 @@ const HolidayViewModal = ({ holiday, onClose }) => {
                 <label>Phòng ban</label>
                 <div className="tags-list">
                   {actualEvent.departments.map((dept, index) => (
-                    <span key={index} className="tag tag--department">
-                      🏢 {dept.name}
+                    <span key={dept._id || index} className="tag tag--department">
+                      🏢 {dept.department_name || dept.name || dept}
                     </span>
                   ))}
                 </div>
