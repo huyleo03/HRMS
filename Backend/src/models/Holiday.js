@@ -43,8 +43,8 @@ const holidaySchema = new mongoose.Schema(
     // Applicability
     appliesTo: {
       type: String,
-      enum: ["All", "Specific Departments"],
-      default: "All",
+      enum: ["All Employees", "Specific Departments"],
+      default: "All Employees",
     },
     departments: [{
       type: mongoose.Schema.Types.ObjectId,
@@ -142,7 +142,7 @@ holidaySchema.pre("save", function (next) {
 
 // Check if holiday applies to a user
 holidaySchema.methods.appliesToUser = function (userId, userDeptId) {
-  if (this.appliesTo === "All") return true;
+  if (this.appliesTo === "All Employees") return true;
   
   if (this.appliesTo === "Specific Departments") {
     return this.departments.some(d => d.toString() === userDeptId.toString());

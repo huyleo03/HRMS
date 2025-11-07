@@ -50,7 +50,7 @@ exports.createHoliday = async (req, res) => {
       year,
       type: type || "National",
       isRecurring: isRecurring || false,
-      appliesTo: appliesTo || "All",
+      appliesTo: appliesTo || "All Employees",
       departments: departments || [],
       isPaid: isPaid !== undefined ? isPaid : true,
       notes,
@@ -357,7 +357,7 @@ exports.bulkCreateHolidays = async (req, res) => {
           year,
           date: holidayDate,
           endDate: holidayData.endDate ? new Date(holidayData.endDate) : null,
-          appliesTo: holidayData.appliesTo || "All", // Default: áp dụng cho tất cả
+          appliesTo: holidayData.appliesTo || "All Employees", // Default: áp dụng cho tất cả
           createdBy: req.user._id,
         });
         

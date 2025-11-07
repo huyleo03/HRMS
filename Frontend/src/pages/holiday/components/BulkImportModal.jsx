@@ -56,7 +56,7 @@ function BulkImportModal({ isOpen, onClose, onSuccess }) {
             isRecurring: columns[5]?.toLowerCase() === "true" || columns[5] === "1" || false,
             description: columns[6] || "",
             color: columns[7] || "#3b82f6",
-            appliesTo: "All", // Admin chỉ tạo holidays cho toàn công ty
+            appliesTo: "All Employees", // Admin chỉ tạo holidays cho toàn công ty
             status: "Active",
           };
         });
