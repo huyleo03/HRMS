@@ -105,13 +105,15 @@ exports.enrollFaceId = async (req, res) => {
     // Upload sample photos (nếu có)
     let uploadedPhotos = [];
     if (samplePhotos && Array.isArray(samplePhotos)) {
-      for (const photo of samplePhotos.slice(0, 3)) { // Chỉ lưu 3 ảnh
+      console.log(`📸 Uploading ${samplePhotos.length} sample photos...`);
+      for (const photo of samplePhotos.slice(0, 5)) { // Lưu tất cả 5 ảnh từ 5 góc
         try {
           const result = await uploadBase64Image(photo, 'face-id-samples');
           uploadedPhotos.push({
             url: result,
             capturedAt: new Date(),
           });
+          console.log(`✅ Uploaded photo ${uploadedPhotos.length}/5: ${result}`);
         } catch (uploadError) {
           console.warn('⚠️ Upload photo failed:', uploadError.message);
         }
@@ -124,8 +126,17 @@ exports.enrollFaceId = async (req, res) => {
     user.faceId.enrolledAt = now;
     user.faceId.nextEnrollmentDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // +30 ngày
     user.faceId.enrollmentCount = (user.faceId.enrollmentCount || 0) + 1;
+    
+    console.log('📊 Before saving:', {
+      hasOldPhotos: user.faceId.samplePhotos?.length > 0,
+      oldPhotoCount: user.faceId.samplePhotos?.length || 0,
+      newPhotoCount: uploadedPhotos.length
+    });
+
+    // Luôn cập nhật ảnh mới khi có upload thành công
     if (uploadedPhotos.length > 0) {
       user.faceId.samplePhotos = uploadedPhotos;
+      console.log(`✅ Saved ${uploadedPhotos.length} new photos (overwrote old photos if any)`);
     }
 
     await user.save();
@@ -399,6 +410,7 @@ exports.resetFaceId = async (req, res) => {
     // Reset Face ID
     user.faceId.enrolled = false;
     user.faceId.descriptors = [];
+    user.faceId.samplePhotos = [];
     user.faceId.enrolledAt = null;
     user.faceId.nextEnrollmentDate = null;
     // Không reset enrollmentCount để tracking
@@ -416,6 +428,57 @@ exports.resetFaceId = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi khi reset Face ID',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * POST /api/face-id/admin/allow-reenroll/:userId
+ * Admin cho phép nhân viên đăng ký lại Face ID (bỏ qua giới hạn thời gian)
+ */
+exports.allowReEnroll = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const adminUser = req.user;
+
+    // Kiểm tra quyền Admin (chỉ Admin, không phải Manager)
+    if (adminUser.role !== 'Admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Chỉ Admin mới có quyền cho phép đăng ký lại Face ID',
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng',
+      });
+    }
+
+    // Xóa ảnh cũ và cho phép đăng ký lại ngay
+    user.faceId.enrolled = false;
+    user.faceId.descriptors = [];
+    user.faceId.samplePhotos = [];
+    user.faceId.nextEnrollmentDate = null; // Cho phép đăng ký lại ngay
+    // Giữ enrolledAt và enrollmentCount để tracking lịch sử
+
+    await user.save();
+
+    console.log(`🔄 Admin ${adminUser.full_name} allowed ${user.full_name} to re-enroll Face ID`);
+
+    res.json({
+      success: true,
+      message: `✅ Đã cho phép ${user.full_name} đăng ký lại Face ID. Ảnh cũ đã bị xóa.`,
+    });
+  } catch (error) {
+    console.error('❌ Allow re-enroll error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi cho phép đăng ký lại Face ID',
       error: error.message,
     });
   }

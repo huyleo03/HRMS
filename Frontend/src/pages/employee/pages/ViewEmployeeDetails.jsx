@@ -4,6 +4,7 @@ import { getUserById, updateUser } from '../../../service/UserService';
 import { getDepartmentOptions } from '../../../service/DepartmentService';
 import { useAuth } from '../../../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import { apiCall } from '../../../service/api';
 import '../css/ViewEmployeeDetails.css';
 
 const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
@@ -23,7 +24,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const routerLocation = useLocation(); 
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   useEffect(() => {
     const fetchEmployeeData = async () => {
@@ -252,6 +253,30 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
     }
   };
 
+  const handleAllowReEnroll = async () => {
+    if (!window.confirm('Cho phép nhân viên này đăng ký lại Face ID?\n\nẢnh khuôn mặt cũ sẽ bị xóa và nhân viên sẽ cần chụp lại ảnh mới.')) {
+      return;
+    }
+
+    try {
+      const response = await apiCall(`/api/face-id/admin/allow-reenroll/${id}`, {
+        method: 'POST'
+      });
+
+      if (response.success) {
+        toast.success('✅ Đã cho phép nhân viên đăng ký lại Face ID!');
+        // Reload employee data
+        const updatedEmployee = await getUserById(id, token);
+        setEmployeeData(updatedEmployee.user);
+      } else {
+        throw new Error(response.message || 'Có lỗi xảy ra');
+      }
+    } catch (err) {
+      console.error('Error allowing re-enroll:', err);
+      toast.error(err.response?.data?.message || err.message || 'Không thể cho phép đăng ký lại Face ID');
+    }
+  };
+
   if (loading) {
     return (
       <div className="employee-details-loading">
@@ -301,19 +326,20 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
         </svg>
       )
     },
-    {
-      id: 'attendance',
-      label: 'Chấm công',
+    // Face ID tab - chỉ hiện với Admin/Manager và nhân viên đã đăng ký
+    ...(user?.role === 'Admin' || user?.role === 'Manager' ? [{
+      id: 'faceid',
+      label: 'Face ID',
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
              xmlns="http://www.w3.org/2000/svg">
-          <path d="M8 2V5M16 2V5" stroke={activeSidebarItem === 'attendance' ? '#7152F3' : '#16151C'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M3 7.5C3 5.29086 4.79086 3.5 7 3.5H17C19.2091 3.5 21 7.5V18C21 20.2091 19.2091 22 17 22H7C4.79086 22 3 20.2091 3 18V7.5Z" stroke={activeSidebarItem === 'attendance' ? '#7152F3' : '#16151C'} strokeWidth="1.5"/>
-          <path d="M9 15L10.7528 16.4023C11.1707 16.7366 11.7777 16.6826 12.1301 16.2799L15 13" stroke={activeSidebarItem === 'attendance' ? '#7152F3' : '#16151C'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M3 9H21" stroke={activeSidebarItem === 'attendance' ? '#7152F3' : '#16151C'} strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke={activeSidebarItem === 'faceid' ? '#7152F3' : '#16151C'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M3.41003 22C3.41003 18.13 7.26003 15 12 15C12.96 15 13.89 15.13 14.76 15.37" stroke={activeSidebarItem === 'faceid' ? '#7152F3' : '#16151C'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M22 18C22 18.32 21.96 18.63 21.88 18.93C21.79 19.33 21.63 19.72 21.42 20.06C20.73 21.22 19.46 22 18 22C16.97 22 16.04 21.61 15.34 20.97C15.04 20.71 14.78 20.4 14.58 20.06C14.21 19.46 14 18.75 14 18C14 16.92 14.43 15.93 15.13 15.21C15.86 14.46 16.88 14 18 14C19.18 14 20.25 14.51 20.97 15.33C21.61 16.04 22 16.98 22 18Z" stroke={activeSidebarItem === 'faceid' ? '#7152F3' : '#16151C'} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M16.44 18L17.43 18.99L19.56 17.02" stroke={activeSidebarItem === 'faceid' ? '#7152F3' : '#16151C'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       )
-    }
+    }] : [])
   ];
 
   const formatDate = (dateString) => {
@@ -462,8 +488,23 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
 
           <div className="profile-divider"></div>
 
+          {/* Sidebar Navigation */}
+          <div className="profile-sidebar">
+            {sidebarItems.map(item => (
+              <div
+                key={item.id}
+                className={`sidebar-item ${activeSidebarItem === item.id ? 'active' : ''}`}
+                onClick={() => handleSidebarItemClick(item.id)}
+              >
+                <div className="sidebar-icon">{item.icon}</div>
+                <span className="sidebar-label">{item.label}</span>
+              </div>
+            ))}
+          </div>
+
           {/* Content - No Tabs, Direct Display */}
           <div className="tab-content">
+            {activeSidebarItem === 'profile' && (
             <div className="personal-info">
               <div className="info-grid">
                     <div className="info-row">
@@ -618,6 +659,119 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                     </div>
                   </div>
             </div>
+            )}
+
+            {/* Face ID Section - Chỉ Admin/Manager và nhân viên đã đăng ký Face ID */}
+            {activeSidebarItem === 'faceid' && (user?.role === 'Admin' || user?.role === 'Manager') && (
+              <div className="personal-info">
+                <div className="info-grid">
+                  <div className="face-id-section">
+                    <h3 className="section-title">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="#7152F3" strokeWidth="1.5"/>
+                        <path d="M22 18C22 18.32 21.96 18.63 21.88 18.93C21.79 19.33 21.63 19.72 21.42 20.06C20.73 21.22 19.46 22 18 22C16.97 22 16.04 21.61 15.34 20.97C15.04 20.71 14.78 20.4 14.58 20.06C14.21 19.46 14 18.75 14 18C14 16.92 14.43 15.93 15.13 15.21C15.86 14.46 16.88 14 18 14C19.18 14 20.25 14.51 20.97 15.33C21.61 16.04 22 16.98 22 18Z" stroke="#7152F3" strokeWidth="1.5"/>
+                        <path d="M16.44 18L17.43 18.99L19.56 17.02" stroke="#7152F3" strokeWidth="1.5"/>
+                      </svg>
+                      Face ID - Nhận diện khuôn mặt
+                    </h3>
+
+                    {employeeData.faceId?.enrolled ? (
+                      <>
+                        <div className="faceid-status enrolled">
+                          <div className="status-left">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                              <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16.78 9.7L11.11 15.37C10.97 15.51 10.78 15.59 10.58 15.59C10.38 15.59 10.19 15.51 10.05 15.37L7.22 12.54C6.93 12.25 6.93 11.77 7.22 11.48C7.51 11.19 7.99 11.19 8.28 11.48L10.58 13.78L15.72 8.64C16.01 8.35 16.49 8.35 16.78 8.64C17.07 8.93 17.07 9.4 16.78 9.7Z" fill="#10B981"/>
+                            </svg>
+                            <div className="status-text">
+                              <span className="status-label">Đã đăng ký Face ID</span>
+                              <span className="status-date">
+                                Ngày đăng ký: {new Date(employeeData.faceId.enrolledAt).toLocaleDateString('vi-VN')}
+                              </span>
+                            </div>
+                          </div>
+                          {user?.role === 'Admin' && (
+                            <button 
+                              className="btn-edit-faceid"
+                              onClick={handleAllowReEnroll}
+                              title="Cho phép nhân viên đăng ký lại Face ID"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M11 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22H15C20 22 22 20 22 15V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M16.04 3.02001L8.16 10.9C7.86 11.2 7.56 11.79 7.5 12.22L7.07 15.23C6.91 16.32 7.68 17.08 8.77 16.93L11.78 16.5C12.2 16.44 12.79 16.14 13.1 15.84L20.98 7.96001C22.34 6.60001 22.98 5.02001 20.98 3.02001C18.98 1.02001 17.4 1.66001 16.04 3.02001Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M14.91 4.15002C15.58 6.54002 17.45 8.41002 19.85 9.09002" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                              Chỉnh sửa
+                            </button>
+                          )}
+                        </div>
+
+                        {employeeData.faceId.samplePhotos && employeeData.faceId.samplePhotos.length > 0 ? (
+                          <div className="faceid-photos-container">
+                            <h4 className="photos-title">Ảnh mẫu khuôn mặt ({employeeData.faceId.samplePhotos.length} ảnh)</h4>
+                            <div className="photos-grid">
+                              {employeeData.faceId.samplePhotos.map((photo, index) => (
+                                <div key={index} className="photo-item">
+                                  <div className="photo-wrapper">
+                                    <img src={photo.url} alt={`Face ${index + 1}`} />
+                                  </div>
+                                  <div className="photo-info">
+                                    <span className="photo-label">Góc {index + 1}</span>
+                                    <span className="photo-date">
+                                      {new Date(photo.capturedAt).toLocaleDateString('vi-VN', { 
+                                        day: '2-digit', 
+                                        month: '2-digit',
+                                        year: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {user?.role === 'Admin' && (
+                              <div className="faceid-admin-actions">
+                                <button className="reset-faceid-btn">
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M14.89 5.08001C14.01 4.81001 13.06 4.64001 12 4.64001C7.20996 4.64001 3.32996 8.52001 3.32996 13.31C3.32996 18.1 7.20996 21.98 12 21.98C16.79 21.98 20.67 18.1 20.67 13.31C20.67 11.54 20.14 9.88001 19.23 8.50001" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M16.13 5.32L13.24 2.19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M16.13 5.32001L12.76 7.78001" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  Yêu cầu đăng ký lại Face ID
+                                </button>
+                                <p className="reset-note">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 8V13M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z" stroke="#F59E0B" strokeWidth="1.5"/>
+                                    <path d="M11.995 16H12.004" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round"/>
+                                  </svg>
+                                  Nhân viên sẽ cần chụp lại ảnh khuôn mặt trong lần chấm công tiếp theo
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="no-photos">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                              <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="#D1D5DB" strokeWidth="1.5"/>
+                              <path d="M3.41003 22C3.41003 18.13 7.26003 15 12 15C12.96 15 13.89 15.13 14.76 15.37" stroke="#D1D5DB" strokeWidth="1.5"/>
+                            </svg>
+                            <p>Không có ảnh mẫu</p>
+                            <span>Dữ liệu Face ID chỉ chứa mã mô tả khuôn mặt (descriptors)</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="not-enrolled">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+                          <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM15.36 14.3C15.65 14.59 15.65 15.07 15.36 15.36C15.21 15.51 15.02 15.58 14.83 15.58C14.64 15.58 14.45 15.51 14.3 15.36L12 13.06L9.7 15.36C9.55 15.51 9.36 15.58 9.17 15.58C8.98 15.58 8.79 15.51 8.64 15.36C8.35 15.07 8.35 14.59 8.64 14.3L10.94 12L8.64 9.7C8.35 9.41 8.35 8.93 8.64 8.64C8.93 8.35 9.41 8.35 9.7 8.64L12 10.94L14.3 8.64C14.59 8.35 15.07 8.35 15.36 8.64C15.65 8.93 15.65 9.41 15.36 9.7L13.06 12L15.36 14.3Z" fill="#EF4444"/>
+                        </svg>
+                        <h4>Chưa đăng ký Face ID</h4>
+                        <p>Nhân viên này chưa thiết lập Face ID cho hệ thống chấm công</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

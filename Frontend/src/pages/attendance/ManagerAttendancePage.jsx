@@ -17,6 +17,7 @@ const ManagerAttendancePage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [pageSize, setPageSize] = useState(10); // Số bản ghi mỗi trang
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -38,7 +39,7 @@ const ManagerAttendancePage = () => {
     try {
       const params = {
         page,
-        limit: 50,
+        limit: pageSize, // Sử dụng pageSize từ state
       };
 
       if (startDate) params.startDate = startDate;
@@ -68,7 +69,7 @@ const ManagerAttendancePage = () => {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pageSize]); // Thêm pageSize vào dependencies
 
   // Handle apply filters
   const handleApplyFilters = () => {
@@ -96,6 +97,12 @@ const ManagerAttendancePage = () => {
     if (newPage >= 1 && newPage <= pagination.pages) {
       fetchData(newPage);
     }
+  };
+
+  // Handle page size change
+  const handlePageSizeChange = (e) => {
+    setPageSize(Number(e.target.value));
+    fetchData(1); // Reset về trang 1 khi thay đổi page size
   };
 
   // Get status badge class
@@ -377,13 +384,13 @@ const ManagerAttendancePage = () => {
                   <td>{record.lateMinutes || 0}</td>
                   <td>
                     <button 
-                      className="action-btn-manager" 
+                      className="action-btn-manager action-btn-view" 
                       onClick={() => handleViewDetails(record)}
                       title="Xem chi tiết"
                     >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 9V14M12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12C21 16.97 16.97 21 12 21Z" stroke="#7152F3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M11.995 17H12.004" stroke="#7152F3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M15.58 12C15.58 13.98 13.98 15.58 12 15.58C10.02 15.58 8.42004 13.98 8.42004 12C8.42004 10.02 10.02 8.42004 12 8.42004C13.98 8.42004 15.58 10.02 15.58 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 20.27C15.53 20.27 18.82 18.19 21.11 14.59C22.01 13.18 22.01 10.81 21.11 9.39997C18.82 5.79997 15.53 3.71997 12 3.71997C8.46997 3.71997 5.17997 5.79997 2.88997 9.39997C1.98997 10.81 1.98997 13.18 2.88997 14.59C5.17997 18.19 8.46997 20.27 12 20.27Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
                   </td>
@@ -394,18 +401,40 @@ const ManagerAttendancePage = () => {
         )}
       </div>
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="pagination-manager">
+      {/* Pagination - Luôn hiển thị */}
+      <div className="pagination-manager">
+        <div className="pagination-info-left">
+          <span className="pagination-showing-text">Showing</span>
+          <select 
+            className="pagination-page-size-select"
+            value={pageSize}
+            onChange={handlePageSizeChange}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+
+        <div className="pagination-info-center">
+          <span className="pagination-records-text">
+            Showing {attendanceData.length > 0 ? ((pagination.page - 1) * pageSize) + 1 : 0} to{' '}
+            {Math.min(pagination.page * pageSize, pagination.total)} out of {pagination.total} records
+          </span>
+        </div>
+
+        <div className="pagination-controls">
           <button
             className="pagination-btn"
             onClick={() => handlePageChange(pagination.page - 1)}
             disabled={pagination.page === 1}
           >
-            ‹ Previous
+            ‹
           </button>
           
-          {[...Array(pagination.pages)].map((_, index) => {
+          {pagination.pages > 0 && [...Array(pagination.pages)].map((_, index) => {
             const pageNum = index + 1;
             // Show first, last, current, and adjacent pages
             if (
@@ -431,12 +460,12 @@ const ManagerAttendancePage = () => {
           <button
             className="pagination-btn"
             onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={pagination.page === pagination.pages}
+            disabled={pagination.page === pagination.pages || pagination.pages === 0}
           >
-            Next ›
+            ›
           </button>
         </div>
-      )}
+      </div>
 
       {/* Attendance Detail Modal */}
       {showModal && (
@@ -450,4 +479,3 @@ const ManagerAttendancePage = () => {
 };
 
 export default ManagerAttendancePage;
-

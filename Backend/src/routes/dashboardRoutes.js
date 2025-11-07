@@ -6,6 +6,10 @@ const {
   getAttendanceTrend,
   getDepartmentComparison,
   getLateEmployeesToday,
+  getManagerOverview,
+  getManagerRequestsDetails,
+  getManagerAttendanceTrend,
+  getManagerLateEmployeesToday,
 } = require("../controller/DashboardController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
@@ -68,6 +72,57 @@ router.get(
   authenticate,
   authorize("Admin"),
   getLateEmployeesToday
+);
+
+// ===== MANAGER DASHBOARD ROUTES =====
+
+/**
+ * @route   GET /api/dashboard/stats/manager-overview
+ * @desc    Get overview stats for Manager's department only
+ * @access  Manager only
+ */
+router.get(
+  "/stats/manager-overview",
+  authenticate,
+  authorize("Manager"),
+  getManagerOverview
+);
+
+/**
+ * @route   GET /api/dashboard/stats/manager-requests-details
+ * @desc    Get detailed requests statistics for Manager's department
+ * @access  Manager only
+ */
+router.get(
+  "/stats/manager-requests-details",
+  authenticate,
+  authorize("Manager"),
+  getManagerRequestsDetails
+);
+
+/**
+ * @route   GET /api/dashboard/stats/manager-attendance-trend
+ * @desc    Get attendance trend for Manager's department
+ * @access  Manager only
+ * @query   period: 'week' | 'month'
+ */
+router.get(
+  "/stats/manager-attendance-trend",
+  authenticate,
+  authorize("Manager"),
+  getManagerAttendanceTrend
+);
+
+/**
+ * @route   GET /api/dashboard/stats/manager-late-employees-today
+ * @desc    Get late employees in Manager's department today
+ * @access  Manager only
+ */
+router.get(
+  "/stats/manager-late-employees-today",
+  authenticate,
+  authorize("Manager"),
+  getManagerLateEmployeesToday
 );
 
 module.exports = router;

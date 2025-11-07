@@ -4,35 +4,38 @@ import { manualAdjust } from "../../../service/AttendanceService";
 import "../css/AttendanceAdjustModal.css";
 
 const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
-  // Helper function to convert UTC date to local datetime-local format
-  const toLocalDateTimeString = (dateString) => {
+  // Helper function to get time only (HH:mm format)
+  const toTimeString = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    // Adjust for timezone offset to get local time
-    const offset = date.getTimezoneOffset() * 60000;
-    const localDate = new Date(date.getTime() - offset);
-    return localDate.toISOString().slice(0, 16);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
   };
 
+  // Get the date from record (this will be fixed, user can only change time)
+  const recordDate = new Date(record.date);
+  recordDate.setHours(0, 0, 0, 0);
+
   const [formData, setFormData] = useState({
-    clockIn: toLocalDateTimeString(record.clockIn),
-    clockOut: toLocalDateTimeString(record.clockOut),
-    status: record.status || "",
+    clockInTime: toTimeString(record.clockIn),
+    clockOutTime: toTimeString(record.clockOut),
     reason: record.adjustmentReason || "",
   });
   const [loading, setLoading] = useState(false);
 
-  // Get current datetime for max attribute
-  const getCurrentDateTimeLocal = () => {
-    const now = new Date();
-    const offset = now.getTimezoneOffset() * 60000;
-    const localDate = new Date(now.getTime() - offset);
-    return localDate.toISOString().slice(0, 16);
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Helper to combine date with time
+  const combineDateTime = (timeString) => {
+    if (!timeString) return null;
+    const [hours, minutes] = timeString.split(':');
+    const dateTime = new Date(recordDate);
+    dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    return dateTime;
   };
 
   const handleSubmit = async (e) => {
@@ -43,42 +46,35 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
       return;
     }
 
-    // Validate dates - không cho phép ngày trong tương lai
+    // Combine date with time
+    const clockInDate = formData.clockInTime ? combineDateTime(formData.clockInTime) : null;
+    const clockOutDate = formData.clockOutTime ? combineDateTime(formData.clockOutTime) : null;
+
+    // Validate dates - không cho phép thời gian trong tương lai
     const now = new Date();
     
-    if (formData.clockIn) {
-      const clockInDate = new Date(formData.clockIn);
-      if (clockInDate > now) {
-        toast.error("Giờ vào không được trong tương lai!");
-        return;
-      }
+    if (clockInDate && clockInDate > now) {
+      toast.error("Giờ vào không được trong tương lai!");
+      return;
     }
     
-    if (formData.clockOut) {
-      const clockOutDate = new Date(formData.clockOut);
-      if (clockOutDate > now) {
-        toast.error("Giờ ra không được trong tương lai!");
-        return;
-      }
+    if (clockOutDate && clockOutDate > now) {
+      toast.error("Giờ ra không được trong tương lai!");
+      return;
     }
 
     // Validate clockOut phải sau clockIn
-    if (formData.clockIn && formData.clockOut) {
-      const clockInDate = new Date(formData.clockIn);
-      const clockOutDate = new Date(formData.clockOut);
-      if (clockOutDate <= clockInDate) {
-        toast.error("Giờ ra phải sau giờ vào!");
-        return;
-      }
+    if (clockInDate && clockOutDate && clockOutDate <= clockInDate) {
+      toast.error("Giờ ra phải sau giờ vào!");
+      return;
     }
 
     setLoading(true);
     try {
       const adjustData = {
-        // Convert local datetime to ISO string (will be in UTC)
-        clockIn: formData.clockIn ? new Date(formData.clockIn).toISOString() : undefined,
-        clockOut: formData.clockOut ? new Date(formData.clockOut).toISOString() : undefined,
-        status: formData.status,
+        // Send combined datetime as ISO string (không gửi status, để backend tự tính)
+        clockIn: clockInDate ? clockInDate.toISOString() : undefined,
+        clockOut: clockOutDate ? clockOutDate.toISOString() : undefined,
         reason: formData.reason,
       };
 
@@ -141,6 +137,13 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
                   </div>
                 </div>
               </div>
+              <div className="time-only-notice">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 8V13M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M11.995 16H12.004" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Lưu ý: Chỉ được phép chỉnh sửa giờ, ngày giữ nguyên là {recordDate.toLocaleDateString('vi-VN')}
+              </div>
             </div>
 
             {/* Form Fields */}
@@ -155,12 +158,11 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
                     Giờ vào
                   </label>
                   <input
-                    type="datetime-local"
-                    name="clockIn"
+                    type="time"
+                    name="clockInTime"
                     className="form-input"
-                    value={formData.clockIn}
+                    value={formData.clockInTime}
                     onChange={handleChange}
-                    max={getCurrentDateTimeLocal()}
                   />
                 </div>
 
@@ -173,38 +175,13 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
                     Giờ ra
                   </label>
                   <input
-                    type="datetime-local"
-                    name="clockOut"
+                    type="time"
+                    name="clockOutTime"
                     className="form-input"
-                    value={formData.clockOut}
+                    value={formData.clockOutTime}
                     onChange={handleChange}
-                    max={getCurrentDateTimeLocal()}
                   />
                 </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 8V13M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z" stroke="#7152F3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M11.995 16H12.004" stroke="#7152F3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Trạng thái
-                </label>
-                <select
-                  name="status"
-                  className="form-select"
-                  value={formData.status}
-                  onChange={handleChange}
-                >
-                  <option value="">Chọn trạng thái</option>
-                  <option value="Present">Đúng giờ</option>
-                  <option value="Late">Đi muộn</option>
-                  <option value="Early Leave">Về sớm</option>
-                  <option value="Late & Early Leave">Muộn & Về sớm</option>
-                  <option value="Absent">Vắng mặt</option>
-                  <option value="On Leave">Nghỉ phép</option>
-                </select>
               </div>
 
               <div className="form-group">
@@ -224,6 +201,13 @@ const AttendanceAdjustModal = ({ record, onClose, onSuccess }) => {
                   onChange={handleChange}
                   required
                 />
+                <div className="form-note">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 8V13M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M11.995 16H12.004" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Trạng thái sẽ tự động tính lại dựa trên giờ vào/ra và cấu hình công ty
+                </div>
               </div>
             </div>
 

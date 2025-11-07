@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardService from '../../../service/DashboardService';
 import '../css/LateEmployeesTable.css';
 
-const LateEmployeesTable = () => {
+const LateEmployeesTable = ({ isManager = false }) => {
     const [lateData, setLateData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -11,7 +11,9 @@ const LateEmployeesTable = () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await DashboardService.getLateEmployeesToday();
+            const data = isManager 
+                ? await DashboardService.getManagerLateEmployeesToday()
+                : await DashboardService.getLateEmployeesToday();
             setLateData(data);
         } catch (err) {
             console.error('Error fetching late employees:', err);
@@ -27,7 +29,7 @@ const LateEmployeesTable = () => {
         // Refresh every 2 minutes (late employees change frequently)
         const interval = setInterval(fetchLateEmployees, 2 * 60 * 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [isManager]); // Add isManager to dependency array
 
     const formatTime = (dateString) => {
         const date = new Date(dateString);
@@ -58,7 +60,7 @@ const LateEmployeesTable = () => {
     return (
         <div className="late-employees-container">
             <div className="late-header">
-                <h3 className="section-title">⏰ Nhân Viên Đi Muộn Hôm Nay</h3>
+                <h3 className="section-title">⏰ Nhân Viên Đi Muộn Hôm Nay{isManager ? ' (Phòng Ban)' : ''}</h3>
                 {lateData && lateData.total > 0 && (
                     <div className="late-badge-group">
                         <span className="late-badge total">{lateData.total} người</span>
@@ -88,7 +90,9 @@ const LateEmployeesTable = () => {
                             
                             <div className="employee-info">
                                 <div className="employee-name">{employee.employeeName}</div>
-                                <div className="employee-department">{employee.department}</div>
+                                {!isManager && employee.department && (
+                                    <div className="employee-department">{employee.department}</div>
+                                )}
                             </div>
 
                             <div className="late-details">

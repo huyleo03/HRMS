@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import DashboardService from '../../../service/DashboardService';
 import '../css/AttendanceTrendChart.css';
 
-const AttendanceTrendChart = () => {
+const AttendanceTrendChart = ({ isManager = false }) => {
     const [trendData, setTrendData] = useState(null);
     const [period, setPeriod] = useState('week'); // 'week' or 'month'
     const [loading, setLoading] = useState(true);
@@ -13,7 +13,9 @@ const AttendanceTrendChart = () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await DashboardService.getAttendanceTrend(selectedPeriod);
+            const data = isManager 
+                ? await DashboardService.getManagerAttendanceTrend(selectedPeriod)
+                : await DashboardService.getAttendanceTrend(selectedPeriod);
             setTrendData(data);
         } catch (err) {
             console.error('Error fetching attendance trend:', err);
@@ -25,7 +27,7 @@ const AttendanceTrendChart = () => {
 
     useEffect(() => {
         fetchTrendData(period);
-    }, [period]);
+    }, [period, isManager]); // Add isManager to dependency array
 
     const handlePeriodChange = (newPeriod) => {
         setPeriod(newPeriod);
@@ -65,7 +67,7 @@ const AttendanceTrendChart = () => {
     return (
         <div className="attendance-trend-container">
             <div className="chart-header">
-                <h2>📈 Xu Hướng Chấm Công</h2>
+                <h2>📈 Xu Hướng Chấm Công{isManager ? ' Phòng Ban' : ''}</h2>
                 <div className="period-selector">
                     <button
                         className={`period-btn ${period === 'week' ? 'active' : ''}`}

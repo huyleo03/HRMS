@@ -519,7 +519,7 @@ exports.getCompanyReport = async (req, res) => {
 exports.manualAdjust = async (req, res) => {
   try {
     const { attendanceId } = req.params;
-    const { clockIn, clockOut, status, reason } = req.body;
+    const { clockIn, clockOut, reason } = req.body;
     
     const attendance = await Attendance.findById(attendanceId);
     if (!attendance) {
@@ -529,24 +529,47 @@ exports.manualAdjust = async (req, res) => {
       });
     }
     
+    // Load config
+    const config = await loadConfig();
+    
+    // Cập nhật giờ vào/ra
     if (clockIn) attendance.clockIn = new Date(clockIn);
     if (clockOut) attendance.clockOut = new Date(clockOut);
-    if (status) attendance.status = status;
     
-    // Tính lại nếu có clock-in
-    if (attendance.clockIn) {
-      const statusData = calculateStatus(attendance.clockIn, CONFIG);
-      attendance.isLate = statusData.isLate;
-      attendance.lateMinutes = statusData.lateMinutes;
-      if (!status) attendance.status = statusData.status;
+    // Tính lại trạng thái dựa trên config và giờ đã chỉnh sửa
+    if (attendance.clockIn && attendance.clockOut) {
+      // 1. Check Late (Đi muộn)
+      const lateStatus = calculateStatus(attendance.clockIn, config);
+      attendance.isLate = lateStatus.isLate;
+      attendance.lateMinutes = lateStatus.lateMinutes;
       
-      if (attendance.clockOut) {
-        const workData = calculateWorkHours(attendance.clockIn, attendance.clockOut, CONFIG);
-        attendance.workHours = workData.workHours;
-        attendance.overtimeHours = workData.overtimeHours;
+      // 2. Check Early Leave (Về sớm)
+      attendance.checkEarlyLeave(config);
+      
+      // 3. Calculate Work Hours & Overtime
+      const workData = calculateWorkHours(attendance.clockIn, attendance.clockOut, config);
+      attendance.workHours = workData.workHours;
+      attendance.overtimeHours = workData.overtimeHours;
+      
+      // 4. Xác định trạng thái cuối cùng
+      if (attendance.isLate && attendance.isEarlyLeave) {
+        attendance.status = "Late & Early Leave";
+      } else if (attendance.isLate) {
+        attendance.status = "Late";
+      } else if (attendance.isEarlyLeave) {
+        attendance.status = "Early Leave";
+      } else {
+        attendance.status = "Present";
       }
+    } else if (attendance.clockIn) {
+      // Chỉ có giờ vào
+      const lateStatus = calculateStatus(attendance.clockIn, config);
+      attendance.isLate = lateStatus.isLate;
+      attendance.lateMinutes = lateStatus.lateMinutes;
+      attendance.status = lateStatus.status;
     }
     
+    // Đánh dấu đã chỉnh sửa thủ công
     attendance.isManuallyAdjusted = true;
     attendance.adjustedBy = req.user._id;
     attendance.adjustedAt = new Date();
@@ -556,7 +579,7 @@ exports.manualAdjust = async (req, res) => {
     
     res.status(200).json({
       success: true,
-      message: "Đã chỉnh sửa bản ghi chấm công.",
+      message: "Đã chỉnh sửa bản ghi chấm công. Trạng thái đã được tính lại tự động.",
       data: attendance,
     });
   } catch (error) {
