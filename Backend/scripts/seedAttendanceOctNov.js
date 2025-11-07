@@ -82,6 +82,15 @@ function calculateLateMinutes(clockIn, expectedIn = "08:00") {
   return Math.max(0, inMinutes - expMinutes);
 }
 
+// Helper: Calculate early leave minutes
+function calculateEarlyLeaveMinutes(clockOut, expectedOut = "17:00") {
+  const [outH, outM] = clockOut.split(":").map(Number);
+  const [expH, expM] = expectedOut.split(":").map(Number);
+  const outMinutes = outH * 60 + outM;
+  const expMinutes = expH * 60 + expM;
+  return Math.max(0, expMinutes - outMinutes);
+}
+
 async function seedAttendance() {
   try {
     console.log("🌱 Starting attendance seeding for Oct & Nov 2025...");
@@ -105,13 +114,13 @@ async function seedAttendance() {
     console.log(`✅ Found ${holidays.length} holidays:`, holidayDates);
 
     // 3. Delete existing attendance for Oct & Nov 2025
-    await Attendance.deleteMany({
+    const deleteResult = await Attendance.deleteMany({
       date: {
-        $gte: new Date("2025-10-01"),
-        $lte: new Date("2025-11-30"),
+        $gte: new Date("2025-10-01T00:00:00.000Z"),
+        $lte: new Date("2025-11-30T23:59:59.999Z"),
       },
     });
-    console.log("🗑️  Cleared existing Oct & Nov 2025 attendance");
+    console.log(`🗑️  Cleared ${deleteResult.deletedCount} existing Oct & Nov 2025 attendance records`);
 
     // 4. Generate attendance for each employee
     let totalRecords = 0;
@@ -125,8 +134,9 @@ async function seedAttendance() {
 
       for (const { month, year, days } of months) {
         for (let day = 1; day <= days; day++) {
-          const date = new Date(year, month - 1, day);
-          const dayOfWeek = date.getDay(); // 0=Sunday, 6=Saturday
+          // Tạo date ở đầu ngày UTC để đảm bảo consistency
+          const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+          const dayOfWeek = date.getUTCDay(); // 0=Sunday, 6=Saturday
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
           const dateStr = date.toISOString().split("T")[0];
           const isHoliday = holidayDates.includes(dateStr);
@@ -175,6 +185,8 @@ async function seedAttendance() {
                 clockOut: clockOutDate,
                 status: "Present",
                 lateMinutes: calculateLateMinutes(clockIn),
+                isEarlyLeave: false,
+                earlyLeaveMinutes: 0,
                 workHours: workHours,
                 location: {
                   latitude: 21.028511 + (Math.random() - 0.5) * 0.01,
@@ -215,6 +227,20 @@ async function seedAttendance() {
               }
               
               const late = calculateLateMinutes(clockIn);
+              const earlyLeave = calculateEarlyLeaveMinutes(clockOut);
+              
+              // Xác định status
+              let status = "Present";
+              let isEarlyLeave = false;
+              if (late > 0 && earlyLeave > 0) {
+                status = "Late & Early Leave";
+                isEarlyLeave = true;
+              } else if (late > 0) {
+                status = "Late";
+              } else if (earlyLeave > 0) {
+                status = "Early Leave";
+                isEarlyLeave = true;
+              }
               
               // Tạo Date object - giữ nguyên timezone local (VN)
               const [inH, inM] = clockIn.split(":").map(Number);
@@ -227,8 +253,10 @@ async function seedAttendance() {
                 date: date,
                 clockIn: clockInDate,
                 clockOut: clockOutDate,
-                status: late > 0 ? "Late" : "Present",
+                status: status,
                 lateMinutes: late,
+                isEarlyLeave: isEarlyLeave,
+                earlyLeaveMinutes: earlyLeave,
                 workHours: workHours,
                 location: {
                   latitude: 21.028511 + (Math.random() - 0.5) * 0.01,
@@ -242,6 +270,15 @@ async function seedAttendance() {
               const clockIn = randomTime("07:45", "08:15");
               const clockOut = randomTime("15:00", "16:30");
               
+              const late = calculateLateMinutes(clockIn);
+              const earlyLeave = calculateEarlyLeaveMinutes(clockOut);
+              
+              // Xác định status
+              let status = "Early Leave";
+              if (late > 0) {
+                status = "Late & Early Leave";
+              }
+              
               // Tạo Date object - giữ nguyên timezone local (VN)
               const [inH, inM] = clockIn.split(":").map(Number);
               const [outH, outM] = clockOut.split(":").map(Number);
@@ -253,8 +290,10 @@ async function seedAttendance() {
                 date: date,
                 clockIn: clockInDate,
                 clockOut: clockOutDate,
-                status: "Early Leave",
-                lateMinutes: calculateLateMinutes(clockIn),
+                status: status,
+                lateMinutes: late,
+                isEarlyLeave: true,
+                earlyLeaveMinutes: earlyLeave,
                 workHours: calculateWorkHours(clockIn, clockOut),
                 location: {
                   latitude: 21.028511 + (Math.random() - 0.5) * 0.01,
@@ -270,6 +309,8 @@ async function seedAttendance() {
                 date: date,
                 status: "Absent",
                 lateMinutes: 0,
+                isEarlyLeave: false,
+                earlyLeaveMinutes: 0,
                 workHours: 0,
                 overtimeHours: 0,
                 overtimeApproved: false,
@@ -278,8 +319,16 @@ async function seedAttendance() {
           }
 
           if (attendanceData) {
-            await Attendance.create(attendanceData);
-            totalRecords++;
+            try {
+              await Attendance.create(attendanceData);
+              totalRecords++;
+            } catch (err) {
+              if (err.code === 11000) {
+                console.log(`⚠️  Skipped duplicate: ${employee.full_name} on ${dateStr}`);
+              } else {
+                throw err; // Re-throw other errors
+              }
+            }
           }
         }
       }

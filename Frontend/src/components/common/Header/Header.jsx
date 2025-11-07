@@ -36,7 +36,7 @@ const Header = () => {
       case "/employees/add":
         return { title: "Add New Employee", description: "Create a new employee account" };
       case "/profile":
-        return { title: "My Profile", description: "Manage your personal information" };
+        return { title: "Hồ sơ cá nhân", description: "Quản lý thông tin cá nhân của bạn" };
       case "/departments":
         return { title: "All Departments", description: "Department Information" };
       case "/attendance":
@@ -161,14 +161,14 @@ const Header = () => {
                     <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="#16151C" strokeWidth="1.5" />
                     <path d="M20.5899 22C20.5899 18.13 16.7399 15 11.9999 15C7.25991 15 3.40991 18.13 3.40991 22" stroke="#16151C" strokeWidth="1.5" />
                   </svg>
-                  My Profile
+                  Hồ sơ cá nhân
                 </button>
                 <button className="dropdown-item" onClick={() => { navigate("/change-password"); setIsDropdownOpen(false); }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M12 15C14.2091 15 16 13.2091 16 11C16 8.79086 14.2091 7 12 7C9.79086 7 8 8.79086 8 11C8 13.2091 9.79086 15 12 15Z" stroke="#16151C" strokeWidth="1.5" />
                     <path d="M4 21V19C4 16.2386 6.23858 14 9 14H15C17.7614 14 20 16.2386 20 19V21" stroke="#16151C" strokeWidth="1.5" />
                   </svg>
-                  Change Password
+                  Đổi mật khẩu
                 </button>
                 <button className="dropdown-item" onClick={handleLogout}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -176,7 +176,7 @@ const Header = () => {
                     <path d="M15 12H3.62" stroke="#16151C" strokeWidth="1.5" />
                     <path d="M5.85 8.6499L2.5 11.9999L5.85 15.3499" stroke="#16151C" strokeWidth="1.5" />
                   </svg>
-                  Logout
+                  Đăng xuất
                 </button>
               </div>
             )}

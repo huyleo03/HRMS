@@ -71,11 +71,11 @@ const EmployeePayroll = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      Draft: { label: "Nháp", className: "status-draft" },
-      Pending: { label: "Chờ duyệt", className: "status-pending" },
-      Approved: { label: "Đã duyệt", className: "status-approved" },
-      Paid: { label: "Đã trả", className: "status-paid" },
-      Rejected: { label: "Từ chối", className: "status-rejected" },
+      "Nháp": { label: "Nháp", className: "status-draft" },
+      "Chờ duyệt": { label: "Chờ duyệt", className: "status-pending" },
+      "Đã duyệt": { label: "Đã duyệt", className: "status-approved" },
+      "Đã thanh toán": { label: "Đã thanh toán", className: "status-paid" },
+      "Từ chối": { label: "Từ chối", className: "status-rejected" },
     };
 
     const s = statusMap[status] || { label: status, className: "" };
@@ -375,11 +375,13 @@ const EmployeePayroll = () => {
                       <th>Giờ vào</th>
                       <th>Giờ ra</th>
                       <th>Đi muộn (phút)</th>
+                      <th>Về sớm (phút)</th>
                       <th>Giờ làm</th>
                       <th>OT (giờ)</th>
                       <th>Lương ngày</th>
                       <th>Lương OT</th>
                       <th>Khấu trừ muộn</th>
+                      <th>Khấu trừ về sớm</th>
                       <th>Tổng ngày</th>
                     </tr>
                   </thead>
@@ -397,6 +399,7 @@ const EmployeePayroll = () => {
                           <td>{day.checkIn || '-'}</td>
                           <td>{day.checkOut || '-'}</td>
                           <td className={day.lateMinutes > 0 ? 'negative' : ''}>{day.lateMinutes || 0}</td>
+                          <td className={day.earlyLeaveMinutes > 0 ? 'negative' : ''}>{day.earlyLeaveMinutes || 0}</td>
                           <td>{day.workHours ? day.workHours.toFixed(1) : '-'}</td>
                           <td>
                             {day.otHours > 0 ? (
@@ -417,6 +420,9 @@ const EmployeePayroll = () => {
                           <td className={day.lateDeduction > 0 ? 'negative' : ''}>
                             {day.lateDeduction > 0 ? `-${formatCurrency(day.lateDeduction)}` : '-'}
                           </td>
+                          <td className={day.earlyLeaveDeduction > 0 ? 'negative' : ''}>
+                            {day.earlyLeaveDeduction > 0 ? `-${formatCurrency(day.earlyLeaveDeduction)}` : '-'}
+                          </td>
                           <td className="day-total">
                             {formatCurrency(day.dayTotal || 0)}
                           </td>
@@ -424,7 +430,7 @@ const EmployeePayroll = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="12" style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
+                        <td colSpan="14" style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
                           Không có dữ liệu chi tiết từng ngày
                         </td>
                       </tr>
@@ -434,11 +440,13 @@ const EmployeePayroll = () => {
                     <tr className="summary-row">
                       <td colSpan="5"><strong>TỔNG CỘNG</strong></td>
                       <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.lateMinutes || 0), 0) || 0} phút</strong></td>
+                      <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.earlyLeaveMinutes || 0), 0) || 0} phút</strong></td>
                       <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.workHours || 0), 0).toFixed(1) || 0} giờ</strong></td>
                       <td><strong>{selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.otHours || 0), 0).toFixed(1) || 0} giờ</strong></td>
                       <td><strong>{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.dailySalary || 0), 0) || 0)}</strong></td>
                       <td><strong>{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.otSalary || 0), 0) || 0)}</strong></td>
                       <td><strong>-{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.lateDeduction || 0), 0) || 0)}</strong></td>
+                      <td><strong>-{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.earlyLeaveDeduction || 0), 0) || 0)}</strong></td>
                       <td><strong>{formatCurrency(selectedPayroll.netSalary)}</strong></td>
                     </tr>
                   </tfoot>

@@ -735,23 +735,25 @@
 
 .manager-payroll-wrapper .breakdown-modal .modal-body {
   padding: 0;
-  overflow-x: auto;
   overflow-y: auto;
+  overflow-x: auto;
   max-height: calc(90vh - 140px); /* Adjusted for header/footer */
 }
 
 .manager-payroll-wrapper .daily-breakdown-table-wrapper {
   overflow-x: auto;
-  max-height: calc(90vh - 180px);
-  padding: 2rem 2rem 100px 2rem; /* Add padding */
+  overflow-y: visible;
+  width: 100%;
+  padding: 2rem 2rem 100px 2rem; /* Add bottom padding to prevent content being hidden by sticky footer */
 }
 
 .manager-payroll-wrapper .daily-breakdown-table {
   width: 100%;
+  table-layout: auto; /* Let columns size naturally */
   border-collapse: collapse;
-  font-size: 14px; /* Increased font size */
+  font-size: 14px; /* Increased from 13px for better readability */
   background: white;
-  min-width: 1400px; /* Ensure minimum width */
+  min-width: 1400px; /* Ensure table has minimum width */
 }
 
 .manager-payroll-wrapper .daily-breakdown-table thead {
@@ -769,7 +771,7 @@
   white-space: nowrap;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 14px;
-  min-width: 100px; /* Minimum column width */
+  min-width: 100px; /* Ensure minimum column width */
 }
 
 .manager-payroll-wrapper .daily-breakdown-table th:last-child {
@@ -791,11 +793,13 @@
 }
 
 .manager-payroll-wrapper .daily-breakdown-table td {
-  padding: 14px 12px; /* Increased padding */
+  padding: 14px 12px; /* Increased padding to match header */
   text-align: left;
   border-right: 1px solid #e5e7eb;
+  color: #374151;
+  white-space: nowrap;
   font-size: 14px; /* Increased font size */
-  min-width: 100px; /* Match header */
+  min-width: 100px; /* Match header minimum width */
 }
 
 .manager-payroll-wrapper .daily-breakdown-table td:last-child {
@@ -852,7 +856,7 @@
 
 .manager-payroll-wrapper .daily-breakdown-table .day-total {
   font-weight: 700;
-  font-size: 15px; /* Increased for emphasis */
+  font-size: 15px; /* Slightly larger for emphasis */
   color: #1f2937;
 }
 
@@ -861,16 +865,16 @@
   bottom: 0;
   background: #f9fafb;
   border-top: 3px solid #a855f7;
-  z-index: 10;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10; /* Lower than header */
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1); /* Add shadow for visibility */
 }
 
 .manager-payroll-wrapper .daily-breakdown-table tfoot td {
   padding: 18px 14px; /* Increased padding */
   font-weight: 700;
   color: #1f2937;
-  font-size: 15px;
-  background: #f9fafb;
+  font-size: 15px; /* Larger font */
+  background: #f9fafb; /* Solid background */
 }
 
 .manager-payroll-wrapper .daily-breakdown-table .summary-row {

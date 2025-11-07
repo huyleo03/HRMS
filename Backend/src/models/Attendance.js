@@ -57,6 +57,15 @@ const attendanceSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    isEarlyLeave: {
+      type: Boolean,
+      default: false,
+    },
+    earlyLeaveMinutes: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     workHours: {
       type: Number,
       default: 0,
@@ -172,8 +181,45 @@ attendanceSchema.methods.checkLate = function (config) {
 
   this.isLate = lateMinutes > config.gracePeriodMinutes;
   this.lateMinutes = this.isLate ? lateMinutes : 0;
-  this.status = this.isLate ? "Late" : "Present";
+  
+  return this;
+};
 
+// Kiểm tra có về sớm không
+attendanceSchema.methods.checkEarlyLeave = function (config) {
+  if (!this.clockOut) {
+    this.isEarlyLeave = false;
+    this.earlyLeaveMinutes = 0;
+    return this;
+  }
+
+  const clockOutTime = new Date(this.clockOut);
+  const [endHour, endMinute] = config.workEndTime.split(":").map(Number);
+
+  const scheduledEnd = new Date(clockOutTime);
+  scheduledEnd.setHours(endHour, endMinute, 0, 0);
+
+  const earlyMs = scheduledEnd - clockOutTime;
+  const earlyMinutes = Math.max(0, Math.floor(earlyMs / 60000));
+
+  this.isEarlyLeave = earlyMinutes > config.gracePeriodMinutes;
+  this.earlyLeaveMinutes = this.isEarlyLeave ? earlyMinutes : 0;
+  
+  return this;
+};
+
+// Update status based on late and early leave
+attendanceSchema.methods.updateStatus = function () {
+  if (this.isLate && this.isEarlyLeave) {
+    this.status = "Late & Early Leave";
+  } else if (this.isLate) {
+    this.status = "Late";
+  } else if (this.isEarlyLeave) {
+    this.status = "Early Leave";
+  } else if (this.clockIn && this.clockOut) {
+    this.status = "Present";
+  }
+  
   return this;
 };
 

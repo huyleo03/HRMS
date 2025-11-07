@@ -33,6 +33,9 @@ const AdminPayroll = () => {
   const [selectedPayroll, setSelectedPayroll] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [detailTab, setDetailTab] = useState("summary"); // 'summary' | 'daily'
+  const [showOTDetailModal, setShowOTDetailModal] = useState(false);
+  const [otRequests, setOTRequests] = useState([]);
   
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -334,13 +337,13 @@ const AdminPayroll = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      Draft: { label: "Nháp", className: "status-draft" },
-      Pending: { label: "Chờ duyệt", className: "status-pending" },
-      Approved: { label: "Đã duyệt", className: "status-approved" },
-      Paid: { label: "Đã trả", className: "status-paid" },
-      Rejected: { label: "Từ chối", className: "status-rejected" },
+      "Nháp": { label: "Nháp", className: "status-draft" },
+      "Chờ duyệt": { label: "Chờ duyệt", className: "status-pending" },
+      "Đã duyệt": { label: "Đã duyệt", className: "status-approved" },
+      "Đã thanh toán": { label: "Đã thanh toán", className: "status-paid" },
+      "Từ chối": { label: "Từ chối", className: "status-rejected" },
     };
-    const statusInfo = statusMap[status] || statusMap.Draft;
+    const statusInfo = statusMap[status] || statusMap["Nháp"];
     return <span className={`status-badge ${statusInfo.className}`}>{statusInfo.label}</span>;
   };
 
@@ -407,7 +410,7 @@ const AdminPayroll = () => {
             </div>
             <div className="card-content">
               <p className="card-label">Chờ duyệt</p>
-              <p className="card-value">{summary.byStatus?.Pending || 0}</p>
+              <p className="card-value">{summary.byStatus?.["Chờ duyệt"] || 0}</p>
             </div>
           </div>
           <div className="summary-card">
@@ -416,7 +419,7 @@ const AdminPayroll = () => {
             </div>
             <div className="card-content">
               <p className="card-label">Đã duyệt</p>
-              <p className="card-value">{summary.byStatus?.Approved || 0}</p>
+              <p className="card-value">{summary.byStatus?.["Đã duyệt"] || 0}</p>
             </div>
           </div>
         </div>
@@ -475,10 +478,10 @@ const AdminPayroll = () => {
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               >
                 <option value="">Tất cả</option>
-                <option value="Draft">Nháp</option>
-                <option value="Pending">Chờ duyệt</option>
-                <option value="Approved">Đã duyệt</option>
-                <option value="Paid">Đã trả</option>
+                <option value="Nháp">Nháp</option>
+                <option value="Chờ duyệt">Chờ duyệt</option>
+                <option value="Đã duyệt">Đã duyệt</option>
+                <option value="Đã thanh toán">Đã thanh toán</option>
               </select>
             </div>
 
@@ -631,7 +634,7 @@ const AdminPayroll = () => {
                             <Eye size={18} />
                           </button>
 
-                          {(payroll.status === "Draft" || payroll.status === "Pending") && (
+                          {(payroll.status === "Nháp" || payroll.status === "Chờ duyệt") && (
                             <button
                               className="btn-action approve"
                               onClick={() => handleApprove(payroll._id)}
@@ -641,7 +644,7 @@ const AdminPayroll = () => {
                             </button>
                           )}
 
-                          {payroll.status === "Approved" && (
+                          {payroll.status === "Đã duyệt" && (
                             <button
                               className="btn-action paid"
                               onClick={() => handleMarkPaid(payroll._id)}
@@ -651,7 +654,7 @@ const AdminPayroll = () => {
                             </button>
                           )}
 
-                          {payroll.status === "Draft" && (
+                          {payroll.status === "Nháp" && (
                             <>
                               <button
                                 className="btn-action edit"
@@ -918,18 +921,61 @@ const AdminPayroll = () => {
 
       {/* Detail Modal */}
       {showDetailModal && selectedPayroll && (
-        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+        <div className="modal-overlay" onClick={() => {
+          setShowDetailModal(false);
+          setDetailTab("summary");
+        }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Chi tiết bảng lương</h2>
+              <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', marginRight: '12px' }}>
+                <button
+                  onClick={() => setDetailTab("summary")}
+                  style={{
+                    padding: '8px 16px',
+                    background: detailTab === "summary" ? '#10b981' : '#f3f4f6',
+                    color: detailTab === "summary" ? 'white' : '#6b7280',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  📊 Tổng quan
+                </button>
+                <button
+                  onClick={() => setDetailTab("daily")}
+                  style={{
+                    padding: '8px 16px',
+                    background: detailTab === "daily" ? '#10b981' : '#f3f4f6',
+                    color: detailTab === "daily" ? 'white' : '#6b7280',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  📅 Chi tiết từng ngày
+                </button>
+              </div>
               <button
                 className="btn-close"
-                onClick={() => setShowDetailModal(false)}
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setDetailTab("summary");
+                }}
               >
                 ×
               </button>
             </div>
             <div className="modal-body">
+              {/* Tab: Summary */}
+              {detailTab === "summary" && (
+                <>
               {/* Manager Rejection Warning */}
               {selectedPayroll.rejectedByManager && (
                 <div className="manager-rejection-warning" style={{
@@ -1060,7 +1106,59 @@ const AdminPayroll = () => {
                 </div>
                 <div className="detail-row">
                   <span>Overtime:</span>
-                  <strong>{formatCurrency(selectedPayroll.overtimeAmount)}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong>{formatCurrency(selectedPayroll.overtimeAmount)}</strong>
+                    {selectedPayroll.overtimeAmount > 0 && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            // Sử dụng endpoint employee-overtime (không cần Admin role)
+                            const token = localStorage.getItem('auth_token');
+                            const response = await fetch(
+                              `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999'}/api/requests/employee-overtime?employeeId=${selectedPayroll.employeeId._id}&month=${selectedPayroll.month}&year=${selectedPayroll.year}&status=Approved`,
+                              {
+                                headers: {
+                                  'Authorization': `Bearer ${token}`
+                                }
+                              }
+                            );
+                            
+                            if (!response.ok) {
+                              throw new Error('Không thể tải dữ liệu');
+                            }
+                            
+                            const data = await response.json();
+                            console.log('OT Requests:', data);
+                            setOTRequests(data.data || data.requests || []);
+                            setShowOTDetailModal(true);
+                          } catch (error) {
+                            console.error('Error fetching OT requests:', error);
+                            toast.error('Không thể tải thông tin đơn tăng ca');
+                          }
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          background: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => e.target.style.background = '#2563eb'}
+                        onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+                        title="Xem chi tiết đơn tăng ca đã duyệt"
+                      >
+                        <span>📋</span>
+                        <span>Chi tiết</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 {/* OT Pending Warning */}
@@ -1156,6 +1254,522 @@ const AdminPayroll = () => {
                   </div>
                 )}
               </div>
+                </>
+              )}
+
+              {/* Tab: Daily Breakdown */}
+              {detailTab === "daily" && selectedPayroll.dailyBreakdown && selectedPayroll.dailyBreakdown.length > 0 && (
+                <div style={{ padding: 0 }}>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    padding: '16px 20px',
+                    borderRadius: '12px 12px 0 0',
+                    marginBottom: '20px',
+                    color: 'white'
+                  }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 700 }}>
+                      📅 Chi tiết từng ngày - Tháng {selectedPayroll.month}/{selectedPayroll.year}
+                    </h3>
+                  </div>
+
+                  <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: '13px',
+                      minWidth: '1200px'
+                    }}>
+                      <thead>
+                        <tr style={{
+                          background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                          fontWeight: 600,
+                          color: '#374151',
+                          fontSize: '12px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>Ngày</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>Thứ</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>Vào</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>Ra</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'left', borderBottom: '2px solid #d1d5db' }}>Trạng thái</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>Muộn (phút)</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>Về sớm (phút)</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>Giờ làm</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>OT</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '2px solid #d1d5db' }}>Lương ngày</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '2px solid #d1d5db' }}>Lương OT</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '2px solid #d1d5db' }}>Trừ muộn</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '2px solid #d1d5db' }}>Trừ về sớm</th>
+                          <th style={{ padding: '12px 8px', textAlign: 'right', borderBottom: '2px solid #d1d5db', fontWeight: 700 }}>Tổng</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedPayroll.dailyBreakdown.map((day, idx) => {
+                          const dayOfWeek = new Date(day.fullDate).getDay();
+                          const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                          const isHoliday = day.isHoliday;
+                          
+                          const rowBg = isHoliday 
+                            ? '#fef3c7' 
+                            : isWeekend 
+                              ? '#f3f4f6' 
+                              : idx % 2 === 0 
+                                ? 'white' 
+                                : '#fafafa';
+
+                          return (
+                            <tr key={idx} style={{
+                              background: rowBg,
+                              borderBottom: '1px solid #e5e7eb'
+                            }}>
+                              <td style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 600 }}>
+                                {day.date}
+                              </td>
+                              <td style={{ 
+                                padding: '10px 8px', 
+                                textAlign: 'center',
+                                color: isWeekend || isHoliday ? '#f59e0b' : '#6b7280',
+                                fontWeight: isWeekend || isHoliday ? 600 : 400
+                              }}>
+                                {dayNames[dayOfWeek]}
+                              </td>
+                              <td style={{ padding: '10px 8px', textAlign: 'center', color: '#374151' }}>
+                                {day.checkIn || '-'}
+                              </td>
+                              <td style={{ padding: '10px 8px', textAlign: 'center', color: '#374151' }}>
+                                {day.checkOut || '-'}
+                              </td>
+                              <td style={{ padding: '10px 8px' }}>
+                                <span style={{
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  background: 
+                                    day.status === 'Present' ? '#d1fae5' :
+                                    day.status === 'Late' ? '#fef3c7' :
+                                    day.status === 'Absent' ? '#fee2e2' :
+                                    day.status === 'Weekend' ? '#e5e7eb' :
+                                    day.status === 'Holiday' ? '#fef3c7' :
+                                    '#f3f4f6',
+                                  color:
+                                    day.status === 'Present' ? '#059669' :
+                                    day.status === 'Late' ? '#d97706' :
+                                    day.status === 'Absent' ? '#dc2626' :
+                                    day.status === 'Weekend' ? '#6b7280' :
+                                    day.status === 'Holiday' ? '#d97706' :
+                                    '#6b7280'
+                                }}>
+                                  {day.holidayName || day.status}
+                                </span>
+                              </td>
+                              <td style={{ 
+                                padding: '10px 8px', 
+                                textAlign: 'center',
+                                color: day.lateMinutes > 0 ? '#dc2626' : '#6b7280',
+                                fontWeight: day.lateMinutes > 0 ? 600 : 400
+                              }}>
+                                {day.lateMinutes || '-'}
+                              </td>
+                              <td style={{ 
+                                padding: '10px 8px', 
+                                textAlign: 'center',
+                                color: day.earlyLeaveMinutes > 0 ? '#dc2626' : '#6b7280',
+                                fontWeight: day.earlyLeaveMinutes > 0 ? 600 : 400
+                              }}>
+                                {day.earlyLeaveMinutes || '-'}
+                              </td>
+                              <td style={{ padding: '10px 8px', textAlign: 'center', color: '#374151' }}>
+                                {day.workHours ? day.workHours.toFixed(1) : '-'}
+                              </td>
+                              <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                                {day.otHours > 0 ? (
+                                  <span style={{
+                                    color: '#2563eb',
+                                    fontWeight: 600
+                                  }}>
+                                    {day.otHours.toFixed(1)}
+                                    {day.otMultiplier > 1 && (
+                                      <span style={{ fontSize: '10px', marginLeft: '2px' }}>
+                                        (x{day.otMultiplier})
+                                      </span>
+                                    )}
+                                  </span>
+                                ) : '-'}
+                              </td>
+                              <td style={{ 
+                                padding: '10px 8px', 
+                                textAlign: 'right',
+                                color: day.dailySalary > 0 ? '#059669' : '#9ca3af',
+                                fontWeight: 500
+                              }}>
+                                {day.dailySalary > 0 ? formatCurrency(day.dailySalary) : '-'}
+                              </td>
+                              <td style={{ 
+                                padding: '10px 8px', 
+                                textAlign: 'right',
+                                color: day.otSalary > 0 ? '#2563eb' : '#9ca3af',
+                                fontWeight: 500
+                              }}>
+                                {day.otSalary > 0 ? formatCurrency(day.otSalary) : '-'}
+                              </td>
+                              <td style={{ 
+                                padding: '10px 8px', 
+                                textAlign: 'right',
+                                color: day.lateDeduction > 0 ? '#dc2626' : '#9ca3af',
+                                fontWeight: 500
+                              }}>
+                                {day.lateDeduction > 0 ? `-${formatCurrency(day.lateDeduction)}` : '-'}
+                              </td>
+                              <td style={{ 
+                                padding: '10px 8px', 
+                                textAlign: 'right',
+                                color: day.earlyLeaveDeduction > 0 ? '#dc2626' : '#9ca3af',
+                                fontWeight: 500
+                              }}>
+                                {day.earlyLeaveDeduction > 0 ? `-${formatCurrency(day.earlyLeaveDeduction)}` : '-'}
+                              </td>
+                              <td style={{ 
+                                padding: '10px 8px', 
+                                textAlign: 'right',
+                                fontWeight: 700,
+                                color: day.dayTotal >= 0 ? '#1f2937' : '#dc2626',
+                                fontSize: '14px'
+                              }}>
+                                {formatCurrency(day.dayTotal)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        
+                        {/* Total Row */}
+                        <tr style={{
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          color: 'white',
+                          fontWeight: 700,
+                          fontSize: '14px'
+                        }}>
+                          <td colSpan="5" style={{ padding: '14px 8px', textAlign: 'right' }}>
+                            TỔNG CỘNG:
+                          </td>
+                          <td style={{ padding: '14px 8px', textAlign: 'center' }}>
+                            {selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.lateMinutes || 0), 0) || 0} phút
+                          </td>
+                          <td style={{ padding: '14px 8px', textAlign: 'center' }}>
+                            {selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.earlyLeaveMinutes || 0), 0) || 0} phút
+                          </td>
+                          <td style={{ padding: '14px 8px', textAlign: 'center' }}>
+                            {selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.workHours || 0), 0).toFixed(1) || 0} giờ
+                          </td>
+                          <td style={{ padding: '14px 8px', textAlign: 'center' }}>
+                            {selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.otHours || 0), 0).toFixed(1) || 0} giờ
+                          </td>
+                          <td style={{ padding: '14px 8px', textAlign: 'right' }}>
+                            {formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.dailySalary || 0), 0) || 0)}
+                          </td>
+                          <td style={{ padding: '14px 8px', textAlign: 'right' }}>
+                            {formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.otSalary || 0), 0) || 0)}
+                          </td>
+                          <td style={{ padding: '14px 8px', textAlign: 'right' }}>
+                            -{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.lateDeduction || 0), 0) || 0)}
+                          </td>
+                          <td style={{ padding: '14px 8px', textAlign: 'right' }}>
+                            -{formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.earlyLeaveDeduction || 0), 0) || 0)}
+                          </td>
+                          <td style={{ padding: '14px 8px', textAlign: 'right', fontSize: '16px' }}>
+                            {formatCurrency(selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.dayTotal || 0), 0) || 0)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Summary Cards Below Table */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px',
+                    marginTop: '24px'
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '2px solid #10b981'
+                    }}>
+                      <div style={{ fontSize: '13px', color: '#047857', fontWeight: 600, marginBottom: '6px' }}>
+                        💰 Tổng lương ngày
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: 700, color: '#065f46' }}>
+                        {formatCurrency(selectedPayroll.actualBaseSalary || 0)}
+                      </div>
+                    </div>
+
+                    <div style={{
+                      background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '2px solid #3b82f6'
+                    }}>
+                      <div style={{ fontSize: '13px', color: '#1e40af', fontWeight: 600, marginBottom: '6px' }}>
+                        ⏰ Tổng lương OT
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: 700, color: '#1e3a8a' }}>
+                        {formatCurrency(selectedPayroll.overtimeAmount || 0)}
+                      </div>
+                    </div>
+
+                    <div style={{
+                      background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '2px solid #ef4444'
+                    }}>
+                      <div style={{ fontSize: '13px', color: '#b91c1c', fontWeight: 600, marginBottom: '6px' }}>
+                        ⚠️ Tổng khấu trừ
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: 700, color: '#991b1b' }}>
+                        -{formatCurrency(
+                          (selectedPayroll.dailyBreakdown?.reduce((sum, d) => sum + (d.lateDeduction || 0), 0) || 0)
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{
+                      background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: '2px solid #f59e0b'
+                    }}>
+                      <div style={{ fontSize: '13px', color: '#b45309', fontWeight: 600, marginBottom: '6px' }}>
+                        🎯 Thực lĩnh
+                      </div>
+                      <div style={{ 
+                        fontSize: '20px', 
+                        fontWeight: 700, 
+                        color: selectedPayroll.netSalary >= 0 ? '#78350f' : '#dc2626'
+                      }}>
+                        {formatCurrency(selectedPayroll.netSalary || 0)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OT Detail Modal */}
+      {showOTDetailModal && (
+        <div className="modal-overlay" onClick={() => setShowOTDetailModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1000px' }}>
+            <div className="modal-header">
+              <h2>📋 Chi tiết OT đã duyệt - {selectedPayroll?.employeeId?.full_name}</h2>
+              <button
+                className="btn-close"
+                onClick={() => setShowOTDetailModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              {otRequests.length > 0 ? (
+                <>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    marginBottom: '20px',
+                    border: '2px solid #3b82f6'
+                  }}>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                      gap: '12px' 
+                    }}>
+                      <div style={{ fontSize: '14px', color: '#1e40af' }}>
+                        <strong>Tháng:</strong> {selectedPayroll.month}/{selectedPayroll.year}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#1e40af' }}>
+                        <strong>Số đơn OT:</strong> {otRequests.length} đơn
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#1e40af' }}>
+                        <strong>Tổng giờ OT:</strong>{' '}
+                        {otRequests.reduce((sum, req) => {
+                          const hours = parseFloat(req.hour) || 0;
+                          return sum + hours;
+                        }, 0).toFixed(1)} giờ
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ 
+                    fontSize: '13px', 
+                    color: '#6b7280', 
+                    marginBottom: '16px',
+                    padding: '12px',
+                    background: '#f0fdf4',
+                    borderRadius: '8px',
+                    border: '1px solid #86efac'
+                  }}>
+                    💡 <strong>Lưu ý:</strong> Chỉ OT được duyệt mới được tính vào lương. 
+                    Mỗi đơn có thể bao gồm nhiều ngày OT.
+                  </div>
+
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: '14px'
+                    }}>
+                      <thead>
+                        <tr style={{
+                          background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                          fontWeight: 600,
+                          color: '#374151'
+                        }}>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #d1d5db' }}>Mã đơn</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #d1d5db' }}>Khoảng thời gian</th>
+                          <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>Số giờ OT</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #d1d5db' }}>Lý do</th>
+                          <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #d1d5db' }}>Người duyệt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {otRequests.map((request, idx) => {
+                          const startDate = new Date(request.startDate);
+                          
+                          return (
+                            <tr key={request._id || idx} style={{
+                              background: idx % 2 === 0 ? 'white' : '#fafafa',
+                              borderBottom: '1px solid #e5e7eb'
+                            }}>
+                              <td style={{ padding: '12px' }}>
+                                <span style={{
+                                  background: '#e0e7ff',
+                                  color: '#4f46e5',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  fontFamily: 'monospace'
+                                }}>
+                                  {request.requestId || 'N/A'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px' }}>
+                                <div style={{ fontWeight: 600, color: '#374151' }}>
+                                  {startDate.toLocaleDateString('vi-VN', { 
+                                    day: '2-digit', 
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </div>
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center' }}>
+                                <span style={{
+                                  background: '#dbeafe',
+                                  color: '#1e40af',
+                                  padding: '6px 14px',
+                                  borderRadius: '8px',
+                                  fontWeight: 700,
+                                  fontSize: '14px'
+                                }}>
+                                  {request.hour || 0}h
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px', color: '#374151', fontSize: '13px', maxWidth: '200px' }}>
+                                {request.reason || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Không ghi lý do</span>}
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'center', fontSize: '13px' }}>
+                                {(() => {
+                                  const approver = request.approvalFlow?.find(a => a.status === 'Approved');
+                                  if (approver?.approverId) {
+                                    return (
+                                      <div>
+                                        <div style={{ 
+                                          color: '#059669', 
+                                          fontWeight: 600,
+                                          marginBottom: '4px'
+                                        }}>
+                                          {approver.approverId.full_name}
+                                        </div>
+                                        <div style={{
+                                          fontSize: '11px',
+                                          color: '#6b7280',
+                                          background: '#f3f4f6',
+                                          padding: '2px 8px',
+                                          borderRadius: '4px',
+                                          display: 'inline-block'
+                                        }}>
+                                          {approver.approverId.role === 'Admin' ? 'Quản trị viên' : 
+                                           approver.approverId.role === 'Manager' ? 'Quản lý' : 'Nhân viên'}
+                                        </div>
+                                        {approver.approverId.email && (
+                                          <div style={{
+                                            fontSize: '11px',
+                                            color: '#9ca3af',
+                                            marginTop: '4px'
+                                          }}>
+                                            {approver.approverId.email}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                  return <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Chưa duyệt</span>;
+                                })()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr style={{
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                          color: 'white',
+                          fontWeight: 700
+                        }}>
+                          <td colSpan="2" style={{ padding: '14px', textAlign: 'right', fontSize: '15px' }}>
+                            TỔNG CỘNG:
+                          </td>
+                          <td style={{ padding: '14px', textAlign: 'center', fontSize: '17px' }}>
+                            {otRequests.reduce((sum, req) => sum + (parseFloat(req.hour) || 0), 0).toFixed(1)}h
+                          </td>
+                          <td colSpan="2" style={{ padding: '14px', fontSize: '13px', fontWeight: 500 }}>
+                            {otRequests.length} đơn đã duyệt
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <div style={{
+                  padding: '40px',
+                  textAlign: 'center',
+                  color: '#9ca3af',
+                  background: '#f9fafb',
+                  borderRadius: '12px',
+                  border: '2px dashed #e5e7eb'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
+                  <p style={{ fontSize: '16px', margin: 0 }}>
+                    Không có đơn tăng ca nào được duyệt trong tháng này
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowOTDetailModal(false)}
+              >
+                Đóng
+              </button>
             </div>
           </div>
         </div>

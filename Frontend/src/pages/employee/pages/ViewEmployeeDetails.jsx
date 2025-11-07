@@ -274,7 +274,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
   const tabItems = [
     {
       id: 'personal',
-      label: 'Personal Information',
+      label: 'Thông tin cá nhân',
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
              xmlns="http://www.w3.org/2000/svg">
@@ -290,7 +290,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
   const sidebarItems = [
     {
       id: 'profile',
-      label: 'Profile',
+      label: 'Hồ sơ',
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
              xmlns="http://www.w3.org/2000/svg">
@@ -303,7 +303,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
     },
     {
       id: 'attendance',
-      label: 'Attendance',
+      label: 'Chấm công',
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
              xmlns="http://www.w3.org/2000/svg">
@@ -445,15 +445,15 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                     <path d="M3 21H21M13.7844 5.31171C13.7844 5.31171 13.7844 6.94634 15.419 8.58096C17.0537 10.2156 18.6883 10.2156 18.6883 10.2156M7.31963 17.9881L10.7523 17.4977C11.2475 17.4269 11.7064 17.1975 12.06 16.8438L20.3229 8.58096C21.2257 7.67818 21.2257 6.21449 20.3229 5.31171L18.6883 3.67708C17.7855 2.77431 16.3218 2.77431 15.419 3.67708L7.15616 11.94C6.80248 12.2936 6.57305 12.7525 6.50231 13.2477L6.01193 16.6804C5.90295 17.4432 6.5568 18.097 7.31963 17.9881Z"
                           stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
-                  Edit Profile
+                  Sửa hồ sơ
                 </button>
               ) : !isReadOnly && isEditing ? (
                 <div className="edit-actions">
                   <button className="save-btn" onClick={handleSaveEdit} disabled={saving}>
-                    {saving ? 'Saving...' : 'Save'}
+                    {saving ? 'Đang lưu...' : 'Lưu'}
                   </button>
                   <button className="cancel-btn" onClick={handleCancelEdit}>
-                    Cancel
+                    Hủy
                   </button>
                 </div>
               ) : null}
@@ -468,12 +468,12 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
               <div className="info-grid">
                     <div className="info-row">
                       <div className="info-field">
-                        <label>Full Name</label>
+                        <label>Họ và tên</label>
                         <div className="field-value">{employeeData.full_name || 'N/A'}</div>
                         <div className="field-line"></div>
                       </div>
                       <div className="info-field">
-                        <label>Employee ID</label>
+                        <label>Mã nhân viên</label>
                         <div className="field-value">{employeeData.employeeId || 'N/A'}</div>
                         <div className="field-line"></div>
                       </div>
@@ -481,12 +481,12 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
 
                     <div className="info-row">
                       <div className="info-field">
-                        <label>Mobile Number</label>
+                        <label>Số điện thoại</label>
                         <div className="field-value">{employeeData.phone || 'N/A'}</div>
                         <div className="field-line"></div>
                       </div>
                       <div className="info-field">
-                        <label>Email Address</label>
+                        <label>Email</label>
                         <div className="field-value">{employeeData.email}</div>
                         <div className="field-line"></div>
                       </div>
@@ -494,12 +494,12 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
 
                     <div className="info-row">
                       <div className="info-field">
-                        <label>Start Date</label>
+                        <label>Ngày bắt đầu</label>
                         <div className="field-value">{formatDate(employeeData.startDate)}</div>
                         <div className="field-line"></div>
                       </div>
                       <div className="info-field">
-                        <label>Date of Birth</label>
+                        <label>Ngày sinh</label>
                         <div className="field-value">{formatDate(employeeData.dateOfBirth)}</div>
                         <div className="field-line"></div>
                       </div>
@@ -507,7 +507,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
 
                     <div className="info-row">
                       <div className="info-field">
-                        <label>Job Title</label>
+                        <label>Chức danh</label>
                         {isEditing ? (
                           <input
                             type="text"
@@ -521,7 +521,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                         <div className="field-line"></div>
                       </div>
                       <div className="info-field">
-                        <label>Gender</label>
+                        <label>Giới tính</label>
                         <div className="field-value">{employeeData.gender || 'N/A'}</div>
                         <div className="field-line"></div>
                       </div>
@@ -529,15 +529,15 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
 
                     <div className="info-row">
                       <div className="info-field">
-                        <label>Role</label>
+                        <label>Vai trò</label>
                         {isEditing ? (
                           <select
                             className="field-select"
                             value={editFormData.role}
                             onChange={(e) => handleInputChange('role', e.target.value)}
                           >
-                            <option value="Employee">Employee</option>
-                            <option value="Manager">Manager</option>
+                            <option value="Employee">Nhân viên</option>
+                            <option value="Manager">Quản lý</option>
                           </select>
                         ) : (
                           <div className="field-value">{employeeData.role}</div>
@@ -545,7 +545,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                         <div className="field-line"></div>
                       </div>
                       <div className="info-field">
-                        <label>Address</label>
+                        <label>Địa chỉ</label>
                         <div className="field-value">{employeeData.address || 'N/A'}</div>
                         <div className="field-line"></div>
                       </div>
@@ -553,7 +553,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
 
                     <div className="info-row">
                       <div className="info-field">
-                        <label>Department</label>
+                        <label>Phòng ban</label>
                         {isEditing ? (
                           <select
                             className="field-select"
@@ -577,7 +577,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                               }
                             }}
                           >
-                            <option value="">Select Department</option>
+                            <option value="">Chọn phòng ban</option>
                             {departments && departments.length > 0 ? (
                               departments.map(dept => (
                                 <option 
@@ -588,7 +588,7 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                                 </option>
                               ))
                             ) : (
-                              <option disabled>No departments available</option>
+                              <option disabled>Không có phòng ban</option>
                             )}
                           </select>
                         ) : (
@@ -599,18 +599,18 @@ const ViewEmployeeDetails = ({ isReadOnly = false, backPath = null }) => {
                         <div className="field-line"></div>
                       </div>
                       <div className="info-field">
-                        <label>Salary</label>
+                        <label>Lương</label>
                         {isEditing ? (
                           <input
                             type="number"
                             className="field-input"
                             value={editFormData.salary}
                             onChange={(e) => handleInputChange('salary', e.target.value)}
-                            placeholder="Enter salary"
+                            placeholder="Nhập lương"
                           />
                         ) : (
                           <div className="field-value">
-                            {employeeData.salary ? `$${employeeData.salary.toLocaleString()}` : 'N/A'}
+                            {employeeData.salary ? `${employeeData.salary.toLocaleString()} VNĐ` : 'N/A'}
                           </div>
                         )}
                         <div className="field-line"></div>
