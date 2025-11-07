@@ -11,7 +11,6 @@ const createNotificationForUser = async ({
   type,
   message,
   relatedId,
-  metadata = {},
 }) => {
   try {
     console.log(`📧 Tạo notification: type=${type}, userId=${userId}, message=${message.substring(0, 50)}...`);
@@ -25,7 +24,6 @@ const createNotificationForUser = async ({
       type,
       message,
       relatedId,
-      metadata,
       isRead: false,
     });
     
@@ -50,7 +48,6 @@ const createNotificationForMultipleUsers = async (
     type,
     message,
     relatedId,
-    metadata = {},
   }
 ) => {
   try {
@@ -63,7 +60,6 @@ const createNotificationForMultipleUsers = async (
       type,
       message,
       relatedId,
-      metadata,
       isRead: false,
     }));
 
@@ -88,7 +84,6 @@ const createNotificationForAll = async ({
   type,
   message,
   relatedId,
-  metadata = {},
 }) => {
   try {
     const notification = await Notification.create({
@@ -99,7 +94,6 @@ const createNotificationForAll = async ({
       type,
       message,
       relatedId,
-      metadata,
       readBy: [],
     });
   

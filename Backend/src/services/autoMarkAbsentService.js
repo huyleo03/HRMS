@@ -66,10 +66,6 @@ async function runAutoMarkAbsent() {
           type: "AttendanceUpdate",
           message: `Bạn đã được hệ thống tự động đánh dấu vắng mặt do không chấm công hôm nay (${new Date().toLocaleDateString('vi-VN')}).`,
           relatedId: null,
-          metadata: {
-            reason: "Auto marked absent",
-            date: today,
-          },
         });
         
         console.log(`📬 Sent notifications to ${markedCount} users: ${markedUserNames.join(', ')}`);
@@ -88,12 +84,6 @@ async function runAutoMarkAbsent() {
             type: "General",
             message: `Hệ thống đã tự động đánh vắng ${markedCount} nhân viên không chấm công hôm nay (${new Date().toLocaleDateString('vi-VN')}). Danh sách: ${markedUserNames.join(', ')}.`,
             relatedId: null,
-            metadata: {
-              action: "Auto mark absent completed",
-              count: markedCount,
-              date: today,
-              users: markedUserNames,
-            },
           });
           console.log(`📬 Sent admin notification to ${adminIds.length} admins`);
         }

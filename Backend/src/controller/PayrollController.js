@@ -419,12 +419,6 @@ const calculateAllPayroll = async (req, res) => {
             type: "Payroll",
             message: `Phiếu lương tháng ${month}/${year} của bạn ${actionText}. Thực lĩnh: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(payroll.netSalary)}`,
             relatedId: payroll._id,
-            metadata: {
-              action: payroll.isNewPayroll ? "calculate" : "recalculate",
-              month,
-              year,
-              netSalary: payroll.netSalary,
-            },
           });
           console.log(`✅ Đã gửi notification ${payroll.isNewPayroll ? 'tính' : 'cập nhật'} lương cho ${employee.full_name}`);
         } catch (notifError) {
@@ -488,12 +482,6 @@ const calculatePayroll = async (req, res) => {
         type: "Payroll",
         message: `Phiếu lương tháng ${month}/${year} của bạn ${actionText}. Thực lĩnh: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(payroll.netSalary)}`,
         relatedId: payroll._id,
-        metadata: {
-          action: payroll.isNewPayroll ? "calculate" : "recalculate",
-          month,
-          year,
-          netSalary: payroll.netSalary,
-        },
       });
       console.log(`✅ Đã gửi notification ${payroll.isNewPayroll ? 'tính' : 'cập nhật'} lương cho nhân viên ${payroll.employeeId?.full_name}`);
     } catch (notifError) {
@@ -730,12 +718,6 @@ const approvePayroll = async (req, res) => {
         type: "Payroll",
         message: `Phiếu lương tháng ${payroll.month}/${payroll.year} của bạn đã được duyệt. Thực lĩnh: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(payroll.netSalary)}`,
         relatedId: payroll._id,
-        metadata: {
-          action: "approve",
-          month: payroll.month,
-          year: payroll.year,
-          netSalary: payroll.netSalary,
-        },
       });
       console.log(`✅ Đã gửi notification approve lương cho ${payroll.employeeId.full_name}`);
     } catch (notifError) {
@@ -827,16 +809,6 @@ const markAsPaid = async (req, res) => {
     payroll.paidBy = paidBy;
     payroll.paidAt = new Date();
     
-    // Store payment details in payroll metadata (không cần tạo collection riêng)
-    if (!payroll.metadata) payroll.metadata = {};
-    payroll.metadata.payment = {
-      method: paymentMethod || "BankTransfer",
-      transactionId,
-      bankDetails,
-      notes,
-      paidAt: new Date(),
-    };
-    
     await payroll.save();
 
     await payroll.populate("employeeId", "full_name email");
@@ -852,13 +824,6 @@ const markAsPaid = async (req, res) => {
         type: "Payroll",
         message: `Lương tháng ${payroll.month}/${payroll.year} đã được chuyển khoản. Số tiền: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(payroll.netSalary)}`,
         relatedId: payroll._id,
-        metadata: {
-          action: "paid",
-          month: payroll.month,
-          year: payroll.year,
-          netSalary: payroll.netSalary,
-          transactionId,
-        },
       });
       console.log(`✅ Đã gửi notification paid lương cho ${payroll.employeeId.full_name}`);
     } catch (notifError) {

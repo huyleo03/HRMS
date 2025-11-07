@@ -336,12 +336,6 @@ const payrollSchema = new mongoose.Schema(
         trim: true,
       },
     ],
-    
-    // ===== METADATA (flexible field for payment info, etc.) =====
-    metadata: {
-      type: mongoose.Schema.Types.Mixed,
-      default: {},
-    },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
