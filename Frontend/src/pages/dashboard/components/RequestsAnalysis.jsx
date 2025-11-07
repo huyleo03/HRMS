@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 import '../css/RequestsAnalysis.css';
 
 const RequestsAnalysis = ({ data }) => {
-    const { byType, byPriority, monthComparison, byDepartment } = data;
+    const { byType, byPriority, monthComparison } = data;
 
     // Prepare data for pie chart
     const typeData = Object.entries(byType || {}).map(([type, count]) => ({
@@ -14,10 +14,11 @@ const RequestsAnalysis = ({ data }) => {
     const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'];
 
     const priorityColors = {
-        Low: '#10b981',
-        Medium: '#f59e0b',
-        High: '#f97316',
-        Urgent: '#ef4444'
+        Low: { bg: '#d1fae5', text: '#065f46' },      // Light green bg, dark green text
+        Normal: { bg: '#e0e7ff', text: '#3730a3' },   // Light indigo bg, dark indigo text
+        Medium: { bg: '#fef3c7', text: '#92400e' },   // Light amber bg, dark amber text
+        High: { bg: '#fed7aa', text: '#9a3412' },     // Light orange bg, dark orange text
+        Urgent: { bg: '#fecaca', text: '#991b1b' }    // Light red bg, dark red text
     };
 
     function getTypeLabel(type) {
@@ -92,7 +93,10 @@ const RequestsAnalysis = ({ data }) => {
                             <div key={priority} className="priority-item">
                                 <span 
                                     className="priority-badge" 
-                                    style={{ backgroundColor: priorityColors[priority] }}
+                                    style={{ 
+                                        backgroundColor: priorityColors[priority]?.bg || '#f1f5f9', 
+                                        color: priorityColors[priority]?.text || '#334155'
+                                    }}
                                 >
                                     {priority}
                                 </span>
@@ -145,29 +149,6 @@ const RequestsAnalysis = ({ data }) => {
                                 </span>
                             </span>
                         </div>
-                    </div>
-                </div>
-
-                {/* Top Departments */}
-                <div className="analysis-card">
-                    <h3 className="card-title">Top Phòng Ban</h3>
-                    <div className="department-list">
-                        {(byDepartment || []).slice(0, 5).map((dept, index) => (
-                            <div key={dept.departmentId} className="department-item">
-                                <span className="department-rank">#{index + 1}</span>
-                                <div className="department-info">
-                                    <span className="department-name">{dept.departmentName}</span>
-                                    <div className="department-stats">
-                                        <span className="dept-stat">Tổng: {dept.total}</span>
-                                        <span className="dept-stat pending">Chờ: {dept.pending}</span>
-                                        <span className="dept-stat approved">Duyệt: {dept.approved}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                        {(!byDepartment || byDepartment.length === 0) && (
-                            <div className="no-data">Không có dữ liệu</div>
-                        )}
                     </div>
                 </div>
             </div>

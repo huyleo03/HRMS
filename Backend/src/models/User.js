@@ -100,29 +100,23 @@ const userSchema = new mongoose.Schema(
 
     // ===== FACE ID - Giống iPhone Face ID =====
     faceId: {
-      // Có đăng ký Face ID chưa
       enrolled: {
         type: Boolean,
         default: false,
       },
-      // Lưu nhiều face descriptors (từ nhiều góc)
       descriptors: [{
-        type: [Number], // Array of 128 hoặc 512 numbers
+        type: [Number], 
       }],
-      // Thời gian đăng ký lần cuối
       enrolledAt: {
         type: Date,
       },
-      // Thời gian có thể đăng ký lại (1 tháng sau)
       nextEnrollmentDate: {
         type: Date,
       },
-      // Số lần đăng ký (để tracking)
       enrollmentCount: {
         type: Number,
         default: 0,
       },
-      // Lưu ảnh mẫu (optional - để admin check)
       samplePhotos: [{
         url: String,
         capturedAt: Date,

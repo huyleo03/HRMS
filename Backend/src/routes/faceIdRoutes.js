@@ -23,4 +23,7 @@ router.post('/verify-angles', authenticate, FaceIdController.verifyFaceIdAngles)
 // DELETE /api/face-id/reset - Reset Face ID (emergency)
 router.delete('/reset', authenticate, FaceIdController.resetFaceId);
 
+// POST /api/face-id/admin/allow-reenroll/:userId - Admin cho phép đăng ký lại
+router.post('/admin/allow-reenroll/:userId', authenticate, FaceIdController.allowReEnroll);
+
 module.exports = router;

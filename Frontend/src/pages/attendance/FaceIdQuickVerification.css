@@ -1,0 +1,154 @@
+/* Movement Progress Bar */
+.movement-progress {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-bar-container {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, #34D399);
+  transition: width 0.2s ease;
+  border-radius: 4px;
+}
+
+.progress-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #10B981;
+  min-width: 40px;
+}
+
+/* Movement Indicator */
+.movement-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.movement-icon {
+  font-size: 48px;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+.movement-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Face Guide Simple */
+.face-guide-simple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.face-circle {
+  width: 200px;
+  height: 200px;
+  border: 3px solid rgba(16, 185, 129, 0.6);
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 0.6; 
+  }
+  50% { 
+    transform: scale(1.05); 
+    opacity: 1; 
+  }
+}
+
+/* Overlays */
+.captured-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.captured-overlay img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.processing-overlay,
+.success-overlay,
+.error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  gap: 16px;
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.processing-overlay p,
+.success-overlay p,
+.error-overlay p {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.error-overlay small {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.guide-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}

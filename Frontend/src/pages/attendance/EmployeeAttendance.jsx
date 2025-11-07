@@ -29,7 +29,7 @@ import FaceRecognitionService from "../../service/FaceRecognitionService";
 import { apiCall } from "../../service/api";
 import { useAuth } from "../../contexts/AuthContext";
 import FaceIdEnrollment from "./FaceIdEnrollment";
-import FaceIdVerification from "./FaceIdVerification";
+import FaceIdQuickVerification from "./FaceIdQuickVerification";
 import "./EmployeeAttendance.css";
 
 const ITEMS_PER_PAGE = 5; // Giảm xuống 5 để dễ test phân trang
@@ -69,6 +69,7 @@ const EmployeeAttendance = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+  const isProcessingAttendanceRef = useRef(false); // 🔒 Ngăn xử lý chấm công nhiều lần
 
   // ============ EFFECTS ============
 
@@ -179,11 +180,21 @@ const EmployeeAttendance = () => {
   // ============ XỬ LÝ QUÉT MẶT THÀNH CÔNG ============
   
   const handleVerificationSuccess = async (verificationData) => {
+    // 🔒 Ngăn chặn xử lý nhiều lần
+    if (isProcessingAttendanceRef.current) {
+      console.log('⚠️ Đang xử lý chấm công, bỏ qua lệnh gọi trùng lặp');
+      return;
+    }
+    
+    isProcessingAttendanceRef.current = true;
     setShowVerification(false);
     setIsProcessing(true);
 
     try {
-      toast.info("✅ Xác thực thành công! Đang xử lý chấm công...", { autoClose: 2000 });
+      toast.info("✅ Xác thực thành công! Đang xử lý chấm công...", { 
+        autoClose: 2000,
+        toastId: 'processing-attendance' // ✅ Chỉ hiển thị 1 toast
+      });
 
       // Gọi API clock-in/clock-out (không cần photo nữa vì đã verify qua quét mặt)
       let response;
@@ -195,15 +206,24 @@ const EmployeeAttendance = () => {
       }
 
       if (response.success) {
-        toast.success(response.message, { autoClose: 3000 });
+        toast.success(response.message, { 
+          autoClose: 3000,
+          toastId: 'attendance-success' // ✅ Chỉ hiển thị 1 toast
+        });
         await fetchTodayStatus();
       }
     } catch (error) {
       console.error("Attendance error:", error);
-      toast.error(error?.response?.data?.message || "Có lỗi xảy ra khi chấm công!");
+      toast.error(error?.response?.data?.message || "Có lỗi xảy ra khi chấm công!", {
+        toastId: 'attendance-error' // ✅ Chỉ hiển thị 1 toast
+      });
     } finally {
       setIsProcessing(false);
       setActionType(null);
+      // Reset flag sau 2 giây để cho phép chấm công lần tiếp theo
+      setTimeout(() => {
+        isProcessingAttendanceRef.current = false;
+      }, 2000);
     }
   };
 
@@ -716,10 +736,10 @@ const EmployeeAttendance = () => {
         </div>
       )}
 
-      {/* Modal Xác thực quét mặt (Check-in/out) */}
+      {/* Modal Xác thực quét mặt (Check-in/out) - CHỤP 1 LẦN */}
       {showVerification && (
         <div className="enrollment-modal-overlay">
-          <FaceIdVerification
+          <FaceIdQuickVerification
             actionType={actionType}
             onSuccess={handleVerificationSuccess}
             onCancel={handleVerificationCancel}

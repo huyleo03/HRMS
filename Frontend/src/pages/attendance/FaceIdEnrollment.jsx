@@ -108,10 +108,9 @@ const FaceIdEnrollment = ({ onComplete, onCancel }) => {
       const newDescriptors = [...descriptors, Array.from(detection.descriptor)];
       setDescriptors(newDescriptors);
 
-      // Lưu ảnh mẫu (3 ảnh đầu tiên)
-      if (samplePhotos.length < 3) {
-        setSamplePhotos([...samplePhotos, imageData]);
-      }
+      // Lưu ảnh mẫu (tất cả 5 ảnh từ 5 góc)
+      const newSamplePhotos = [...samplePhotos, imageData];
+      setSamplePhotos(newSamplePhotos);
 
       toast.success(`✅ Đã quét góc ${currentAngle + 1}/${REQUIRED_ANGLES.length}`);
 
@@ -123,7 +122,7 @@ const FaceIdEnrollment = ({ onComplete, onCancel }) => {
         // Hoàn thành quét
         setProgress(100);
         setStep('processing');
-        await submitEnrollment(newDescriptors, samplePhotos);
+        await submitEnrollment(newDescriptors, newSamplePhotos);
       }
     } catch (error) {
       console.error('❌ Capture error:', error);
@@ -225,6 +224,12 @@ const FaceIdEnrollment = ({ onComplete, onCancel }) => {
 
   const submitEnrollment = async (finalDescriptors, finalPhotos) => {
     try {
+      console.log('📤 Submitting enrollment:', {
+        descriptorCount: finalDescriptors.length,
+        photoCount: finalPhotos.length,
+        photosPreview: finalPhotos.map((p, i) => `Photo ${i+1}: ${p.substring(0, 50)}...`)
+      });
+
       const response = await apiCall('/api/face-id/enroll', {
         method: 'POST',
         body: JSON.stringify({
@@ -232,6 +237,8 @@ const FaceIdEnrollment = ({ onComplete, onCancel }) => {
           samplePhotos: finalPhotos,
         }),
       });
+
+      console.log('✅ Enrollment response:', response);
 
       if (response.success) {
         setStep('success');

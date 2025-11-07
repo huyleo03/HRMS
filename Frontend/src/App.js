@@ -51,6 +51,7 @@ function App() {
           draggable
           pauseOnHover
           theme="light"
+          limit={1}
         />
         <Routes>
           {/* --- Public Routes --- */}

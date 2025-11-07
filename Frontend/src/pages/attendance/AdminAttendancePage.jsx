@@ -25,6 +25,7 @@ const AdminAttendancePage = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [employeeSearch, setEmployeeSearch] = useState("");
+  const [manuallyAdjustedFilter, setManuallyAdjustedFilter] = useState(""); // New filter
 
   // Modal states
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -61,7 +62,7 @@ const AdminAttendancePage = () => {
     try {
       const params = {
         page,
-        limit: 50,
+        limit: 20,
       };
 
       if (startDate) params.startDate = startDate;
@@ -69,10 +70,24 @@ const AdminAttendancePage = () => {
       if (statusFilter) params.status = statusFilter;
       if (departmentFilter) params.departmentId = departmentFilter;
       if (employeeSearch) params.search = employeeSearch; // Search by name or ID
+      if (manuallyAdjustedFilter) params.isManuallyAdjusted = manuallyAdjustedFilter === "true"; // Filter by manual adjustment
 
       // Fetch attendance records
       const attendanceResponse = await getAllAttendance(params);
-      setAttendanceData(attendanceResponse.data || []);
+      let filteredData = attendanceResponse.data || [];
+      
+      // Additional client-side filtering for adjustment reason
+      if (manuallyAdjustedFilter === "true") {
+        filteredData = filteredData.filter(record => 
+          record.isManuallyAdjusted && record.adjustmentReason && record.adjustmentReason.trim() !== ""
+        );
+      } else if (manuallyAdjustedFilter === "false") {
+        filteredData = filteredData.filter(record => 
+          !record.isManuallyAdjusted || !record.adjustmentReason || record.adjustmentReason.trim() === ""
+        );
+      }
+      
+      setAttendanceData(filteredData);
       setPagination(attendanceResponse.pagination || { total: 0, page: 1, pages: 1 });
 
       // Fetch stats
@@ -109,6 +124,7 @@ const AdminAttendancePage = () => {
     setStatusFilter("");
     setDepartmentFilter("");
     setEmployeeSearch("");
+    setManuallyAdjustedFilter("");
     fetchData(1);
   };
 
@@ -121,6 +137,7 @@ const AdminAttendancePage = () => {
       if (statusFilter) params.status = statusFilter;
       if (departmentFilter) params.departmentId = departmentFilter;
       if (employeeSearch) params.search = employeeSearch;
+      if (manuallyAdjustedFilter) params.isManuallyAdjusted = manuallyAdjustedFilter === "true";
 
       await exportAttendanceData(params);
       toast.success("Xuất dữ liệu thành công!");
@@ -153,14 +170,15 @@ const AdminAttendancePage = () => {
     }
   };
 
-  // Handle view details
-  const handleViewDetails = (record) => {
+  // Handle row click to view details
+  const handleRowClick = (record) => {
     setSelectedRecord(record);
     setShowDetailModal(true);
   };
 
   // Handle adjust
-  const handleAdjust = (record) => {
+  const handleAdjust = (record, e) => {
+    e.stopPropagation(); // Prevent row click
     setSelectedRecord(record);
     setShowAdjustModal(true);
   };
@@ -275,6 +293,19 @@ const AdminAttendancePage = () => {
               <option value="Late & Early Leave">Muộn & Về sớm</option>
               <option value="Absent">Vắng mặt</option>
               <option value="On Leave">Nghỉ phép</option>
+            </select>
+          </div>
+
+          <div className="filter-group-admin">
+            <label className="filter-label-admin">Chỉnh sửa</label>
+            <select
+              className="filter-select-admin"
+              value={manuallyAdjustedFilter}
+              onChange={(e) => setManuallyAdjustedFilter(e.target.value)}
+            >
+              <option value="">Tất cả</option>
+              <option value="true">Đã chỉnh sửa</option>
+              <option value="false">Chưa chỉnh sửa</option>
             </select>
           </div>
 
@@ -446,12 +477,18 @@ const AdminAttendancePage = () => {
                 <th>Giờ làm việc</th>
                 <th>Làm thêm</th>
                 <th>Đi muộn (phút)</th>
+                <th>Lý do chỉnh sửa</th>
                 <th>Hành động</th>
               </tr>
             </thead>
             <tbody>
               {attendanceData.map((record) => (
-                <tr key={record._id}>
+                <tr 
+                  key={record._id} 
+                  onClick={() => handleRowClick(record)}
+                  className="clickable-row"
+                  style={{ cursor: 'pointer' }}
+                >
                   <td>
                     <div className="employee-cell-admin">
                       <div className="employee-avatar-admin">
@@ -482,29 +519,33 @@ const AdminAttendancePage = () => {
                   <td>{record.overtimeHours ? `${record.overtimeHours} giờ` : "0 giờ"}</td>
                   <td>{record.lateMinutes || 0}</td>
                   <td>
-                    <div className="action-buttons">
-                      <button 
-                        className="action-btn-admin action-btn-info" 
-                        onClick={() => handleViewDetails(record)}
-                        title="Chi tiết"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <path d="M15.58 12C15.58 13.98 13.98 15.58 12 15.58C10.02 15.58 8.42004 13.98 8.42004 12C8.42004 10.02 10.02 8.42004 12 8.42004C13.98 8.42004 15.58 10.02 15.58 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M12 20.27C15.53 20.27 18.82 18.19 21.11 14.59C22.01 13.18 22.01 10.81 21.11 9.39997C18.82 5.79997 15.53 3.71997 12 3.71997C8.46997 3.71997 5.17997 5.79997 2.88997 9.39997C1.98997 10.81 1.98997 13.18 2.88997 14.59C5.17997 18.19 8.46997 20.27 12 20.27Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                      <button 
-                        className="action-btn-admin action-btn-edit" 
-                        onClick={() => handleAdjust(record)}
-                        title="Điều chỉnh"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <path d="M11 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22H15C20 22 22 20 22 15V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M16.04 3.02001L8.16 10.9C7.86 11.2 7.56 11.79 7.5 12.22L7.07 15.23C6.91 16.32 7.68 17.08 8.77 16.93L11.78 16.5C12.2 16.44 12.79 16.14 13.1 15.84L20.98 7.96001C22.34 6.60001 22.98 5.02001 20.98 3.02001C18.98 1.02001 17.4 1.66001 16.04 3.02001Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M14.91 4.1499C15.58 6.5399 17.45 8.4099 19.85 9.0899" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                    </div>
+                    {record.isManuallyAdjusted ? (
+                      <div className="adjustment-info">
+                        <span className="adjustment-badge">Đã chỉnh sửa</span>
+                        {record.adjustmentReason && (
+                          <div className="adjustment-reason-preview" title={record.adjustmentReason}>
+                            {record.adjustmentReason.length > 50 
+                              ? `${record.adjustmentReason.substring(0, 50)}...` 
+                              : record.adjustmentReason}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="no-adjustment">--</span>
+                    )}
+                  </td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <button 
+                      className="action-btn-admin action-btn-edit" 
+                      onClick={(e) => handleAdjust(record, e)}
+                      title="Chỉnh sửa"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M11 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22H15C20 22 22 20 22 15V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M16.04 3.02001L8.16 10.9C7.86 11.2 7.56 11.79 7.5 12.22L7.07 15.23C6.91 16.32 7.68 17.08 8.77 16.93L11.78 16.5C12.2 16.44 12.79 16.14 13.1 15.84L20.98 7.96001C22.34 6.60001 22.98 5.02001 20.98 3.02001C18.98 1.02001 17.4 1.66001 16.04 3.02001Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M14.91 4.1499C15.58 6.5399 17.45 8.4099 19.85 9.0899" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -576,4 +617,3 @@ const AdminAttendancePage = () => {
 };
 
 export default AdminAttendancePage;
-

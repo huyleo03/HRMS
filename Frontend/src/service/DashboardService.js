@@ -206,6 +206,74 @@ const DashboardService = {
             console.error('Error fetching late employees:', error);
             throw error;
         }
+    },
+
+    // ===== MANAGER DASHBOARD SERVICES =====
+
+    /**
+     * Get overview statistics for Manager's department
+     * @returns {Promise} Manager department statistics
+     */
+    getManagerOverview: async () => {
+        try {
+            const data = await apiCall('/api/dashboard/stats/manager-overview', {
+                method: 'GET'
+            });
+            return data;
+        } catch (error) {
+            console.error('Error fetching manager overview:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get detailed requests statistics for Manager's department
+     * @returns {Promise} Manager requests details
+     */
+    getManagerRequestsDetails: async () => {
+        try {
+            const data = await apiCall('/api/dashboard/stats/manager-requests-details', {
+                method: 'GET'
+            });
+            return data;
+        } catch (error) {
+            console.error('Error fetching manager requests details:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get attendance trend for Manager's department
+     * @param {string} period - 'week' or 'month'
+     * @returns {Promise} Manager attendance trend data
+     */
+    getManagerAttendanceTrend: async (period = 'week') => {
+        try {
+            const data = await apiCall('/api/dashboard/stats/manager-attendance-trend', {
+                method: 'GET',
+                params: { period }
+            });
+            return data;
+        } catch (error) {
+            console.error('Error fetching manager attendance trend:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get late employees in Manager's department today
+     * @returns {Promise} Manager late employees data
+     */
+    getManagerLateEmployeesToday: async () => {
+        try {
+            const data = await apiCall('/api/dashboard/stats/manager-late-employees-today', {
+                method: 'GET'
+            });
+            return data;
+        } catch (error) {
+            console.error('Error fetching manager late employees:', error);
+            throw error;
+        }
     }
 };
 
