@@ -9,14 +9,10 @@ exports.createHoliday = async (req, res) => {
       date,
       endDate,
       type,
-      category,
       isRecurring,
-      recurringPattern,
       appliesTo,
       departments,
-      employees,
       isPaid,
-      affectsAttendance,
       notes,
       color,
     } = req.body;
@@ -53,14 +49,10 @@ exports.createHoliday = async (req, res) => {
       endDate: endDate ? new Date(endDate) : null,
       year,
       type: type || "National",
-      category: category || "Public Holiday",
       isRecurring: isRecurring || false,
-      recurringPattern,
       appliesTo: appliesTo || "All",
       departments: departments || [],
-      employees: employees || [],
       isPaid: isPaid !== undefined ? isPaid : true,
-      affectsAttendance: affectsAttendance !== undefined ? affectsAttendance : true,
       notes,
       color: color || "#3b82f6",
       createdBy: req.user._id,
@@ -181,14 +173,10 @@ exports.updateHoliday = async (req, res) => {
       date,
       endDate,
       type,
-      category,
       isRecurring,
-      recurringPattern,
       appliesTo,
       departments,
-      employees,
       isPaid,
-      affectsAttendance,
       notes,
       color,
       status,
@@ -203,14 +191,10 @@ exports.updateHoliday = async (req, res) => {
     }
     if (endDate !== undefined) holiday.endDate = endDate ? new Date(endDate) : null;
     if (type) holiday.type = type;
-    if (category) holiday.category = category;
     if (isRecurring !== undefined) holiday.isRecurring = isRecurring;
-    if (recurringPattern) holiday.recurringPattern = recurringPattern;
     if (appliesTo) holiday.appliesTo = appliesTo;
     if (departments !== undefined) holiday.departments = departments;
-    if (employees !== undefined) holiday.employees = employees;
     if (isPaid !== undefined) holiday.isPaid = isPaid;
-    if (affectsAttendance !== undefined) holiday.affectsAttendance = affectsAttendance;
     if (notes !== undefined) holiday.notes = notes;
     if (color) holiday.color = color;
     if (status) holiday.status = status;
@@ -238,8 +222,6 @@ exports.updateHoliday = async (req, res) => {
 // ===== 5. DELETE HOLIDAY (Admin only - soft delete) =====
 exports.deleteHoliday = async (req, res) => {
   try {
-    console.log('🗑️ [DELETE HOLIDAY] Request ID:', req.params.id);
-    console.log('🗑️ [DELETE HOLIDAY] User:', req.user?.email, '- Role:', req.user?.role);
     
     const holiday = await Holiday.findById(req.params.id);
     
@@ -250,8 +232,7 @@ exports.deleteHoliday = async (req, res) => {
         message: "Không tìm thấy ngày nghỉ",
       });
     }
-    
-    console.log('📝 [DELETE HOLIDAY] Found holiday:', holiday.name, '- Current status:', holiday.status);
+  
     
     // Soft delete - set status to Inactive
     holiday.status = "Inactive";

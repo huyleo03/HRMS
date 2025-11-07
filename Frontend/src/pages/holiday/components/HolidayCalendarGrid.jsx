@@ -77,7 +77,7 @@ const HolidayCalendarGrid = ({
         dayNumber: date.getDate(),
         isCurrentMonth,
         isToday,
-        holidays: allEvents, // Giữ tên 'holidays' để tương thích với code cũ
+        holidays: allEvents, 
       });
       
       currentDatePointer.setDate(currentDatePointer.getDate() + 1);

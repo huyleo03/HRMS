@@ -46,9 +46,9 @@ process.on('unhandledRejection', (err) => {
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM received. Shutting down gracefully...');
   
-  // Stop background services
-  slaService.stopSLAMonitoring();
-  archivingService.stopArchivingJob();
+  // Stop background services (commented out - services not imported)
+  // slaService.stopSLAMonitoring();
+  // archivingService.stopArchivingJob();
   
   server.close(() => {
     console.log('Process terminated!');
@@ -59,9 +59,9 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   console.log('\n👋 SIGINT received. Shutting down gracefully...');
   
-  // Stop background services
-  slaService.stopSLAMonitoring();
-  archivingService.stopArchivingJob();
+  // Stop background services (commented out - services not imported)
+  // slaService.stopSLAMonitoring();
+  // archivingService.stopArchivingJob();
   
   server.close(() => {
     console.log('Process terminated!');

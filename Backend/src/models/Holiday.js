@@ -33,48 +33,26 @@ const holidaySchema = new mongoose.Schema(
       enum: ["National", "Company", "Optional", "Regional"],
       default: "National",
     },
-    category: {
-      type: String,
-      enum: ["Public Holiday", "Religious", "Cultural", "Company Event", "Other"],
-      default: "Public Holiday",
-    },
     
     // Recurring Information
     isRecurring: {
       type: Boolean,
       default: false,
     },
-    recurringPattern: {
-      type: {
-        type: String,
-        enum: ["yearly", "monthly", "custom"],
-        default: "yearly",
-      },
-      day: Number, // Day of month (1-31)
-      month: Number, // Month (1-12)
-    },
     
     // Applicability
     appliesTo: {
       type: String,
-      enum: ["All", "Specific Departments", "Specific Employees"],
+      enum: ["All", "Specific Departments"],
       default: "All",
     },
     departments: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
     }],
-    employees: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    }],
     
     // Holiday Settings
     isPaid: {
-      type: Boolean,
-      default: true,
-    },
-    affectsAttendance: {
       type: Boolean,
       default: true,
     },
@@ -170,10 +148,6 @@ holidaySchema.methods.appliesToUser = function (userId, userDeptId) {
     return this.departments.some(d => d.toString() === userDeptId.toString());
   }
   
-  if (this.appliesTo === "Specific Employees") {
-    return this.employees.some(e => e.toString() === userId.toString());
-  }
-  
   return false;
 };
 
@@ -240,14 +214,10 @@ holidaySchema.statics.generateRecurringHolidays = async function (sourceYear, ta
         endDate: newEndDate,
         year: targetYear,
         type: holiday.type,
-        category: holiday.category,
         isRecurring: holiday.isRecurring,
-        recurringPattern: holiday.recurringPattern,
         appliesTo: holiday.appliesTo,
         departments: holiday.departments,
-        employees: holiday.employees,
         isPaid: holiday.isPaid,
-        affectsAttendance: holiday.affectsAttendance,
         color: holiday.color,
         notes: holiday.notes,
         createdBy: createdBy,
@@ -308,3 +278,4 @@ holidaySchema.statics.getCalendarHolidays = async function (year, month) {
 const Holiday = mongoose.model("Holiday", holidaySchema, "Holiday");
 
 module.exports = Holiday;
+  
