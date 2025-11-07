@@ -30,6 +30,9 @@ const connectDB = async () => {
       console.error('❌ MongoDB connection error:', err);
     });
 
+    const { startAutoMarkAbsentService } = require('../services/autoMarkAbsentService');
+    startAutoMarkAbsentService();
+
     return conn;
   } catch (error) {
     console.error(`❌ Error connecting to MongoDB: ${error.message}`);
