@@ -66,11 +66,6 @@ const notificationSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    // Metadata for additional information
-    metadata: {
-      type: mongoose.Schema.Types.Mixed,
-      default: {},
-    },
   },
   {
     timestamps: { createdAt: "createdAt", updatedAt: "updatedAt" },
