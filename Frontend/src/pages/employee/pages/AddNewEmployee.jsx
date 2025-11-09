@@ -8,8 +8,6 @@ import {
   getDepartmentOptions,
   checkDepartmentManager,
 } from "../../../service/DepartmentService";
-import TabNavigation from "../components/TabNavigation";
-
 const AddNewEmployee = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -28,7 +26,6 @@ const AddNewEmployee = () => {
   const [departments, setDepartments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [activeTab, setActiveTab] = useState("personal");
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -65,11 +62,12 @@ const AddNewEmployee = () => {
         token
       ) {
         try {
-          const result = await checkDepartmentManager(
+          await checkDepartmentManager(
             formData.department.department_id,
             token
           );
 
+          // Check is disabled for now
           // if (result.success && !result.hasManager) {
           //   toast.warning(result.message || "Phòng ban này đã có Manager", {
           //     position: "top-right",
@@ -274,13 +272,10 @@ const AddNewEmployee = () => {
       </div>
 
       <div className="add-employee-card">
-        <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-
         <form onSubmit={handleSubmit} className="employee-form">
-          {activeTab === "personal" && (
-            <div className="form-content">
-              {/* Thay đổi cấu trúc thành layout 2 cột */}
-              <div className="form-layout-horizontal">
+          <div className="form-content">
+            {/* Thay đổi cấu trúc thành layout 2 cột */}
+            <div className="form-layout-horizontal">
                 {/* Cột trái: Avatar (30%) */}
                 <div className="avatar-column">
                   <div className="avatar-section">
@@ -519,7 +514,6 @@ const AddNewEmployee = () => {
                 </div>
               </div>
             </div>
-          )}
         </form>
       </div>
     </div>

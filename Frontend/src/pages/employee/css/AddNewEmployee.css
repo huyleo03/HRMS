@@ -128,14 +128,14 @@
 
 /* Form Content */
 .employee-form {
-  padding: 0 20px 30px 20px;
+  padding: 20px 20px 30px 20px;
 }
 
 /* ...existing code... */
 
-/* Form Content - mặc định giữ nguyên */
+/* Form Content - Giảm padding để form gọn hơn */
 .form-content {
-  min-height: 400px;
+  padding-top: 0;
 }
 
 /* Layout 2 cột: Avatar bên trái, Fields bên phải */
@@ -144,6 +144,7 @@
   gap: 48px;
   align-items: flex-start;
   width: 100%;
+  padding-top: 20px;
 }
 
 /* Cột Avatar - Bigger width for larger avatar */
