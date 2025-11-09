@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Header.css";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -12,6 +12,7 @@ const Header = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSendNotificationModalOpen, setIsSendNotificationModalOpen] = useState(false);
   const { user, logout } = useAuth();
+  const dropdownRef = useRef(null);
 
   // Lưu tên phòng ban vào sessionStorage khi điều hướng có state
   useEffect(() => {
@@ -23,6 +24,23 @@ const Header = () => {
       }
     }
   }, [location.pathname, location.state]);
+
+  // Đóng dropdown khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   const getHeaderContent = () => {
     const path = location.pathname;
@@ -120,7 +138,7 @@ const Header = () => {
         <NotificationDropdown />
 
         {user && (
-          <div className="header-profile" onClick={toggleDropdown}>
+          <div className="header-profile" onClick={toggleDropdown} ref={dropdownRef}>
             <div className="profile-container">
               <div className="profile-avatar">
                 {(user.avatar && user.avatar !== 'https://i.pravatar.cc/150') ? (

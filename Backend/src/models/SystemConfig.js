@@ -142,6 +142,6 @@ const systemConfigSchema = new mongoose.Schema(
 // Ensure only one config document exists
 systemConfigSchema.index({ configType: 1 }, { unique: true });
 
-const SystemConfig = mongoose.model("SystemConfig", systemConfigSchema);
+const SystemConfig = mongoose.model("SystemConfig", systemConfigSchema, "SystemConfig");
 
 module.exports = SystemConfig;

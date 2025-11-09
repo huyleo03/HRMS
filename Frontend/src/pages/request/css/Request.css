@@ -299,13 +299,13 @@
   font-size: 14px;
 }
 
-.filter-group {
+.filter-huyleo {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.filter-group select {
+.filter-huyleo select {
   padding: 8px 12px;
   border: 1px solid #e1e4e8;
   border-radius: 8px;
@@ -315,11 +315,11 @@
   transition: all 0.2s ease;
 }
 
-.filter-group select:hover {
+.filter-huyleo select:hover {
   border-color: #7c3aed;
 }
 
-.filter-group select:focus {
+.filter-huyleo select:focus {
   outline: none;
   border-color: #7c3aed;
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
@@ -663,6 +663,35 @@
   flex-direction: column;
   overflow: hidden;
   border-left: 1px solid #e1e4e8;
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ✨ Smooth slide-in animation for detail panel */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ✨ Smooth fade-out when closing */
+.request-detail.closing {
+  animation: slideOutRight 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
 }
 
 .detail-header {
@@ -1758,6 +1787,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -1767,12 +1797,26 @@
   animation: fadeIn 0.3s ease;
 }
 
+/* ✨ Smooth fade-out for overlay when closing */
+.request-detail-overlay.closing {
+  animation: fadeOut 0.25s ease forwards;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 
@@ -1788,6 +1832,11 @@
   position: relative;
 }
 
+/* ✨ Smooth slide-down when closing modal */
+.request-detail-modal.closing {
+  animation: slideDown 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -1796,6 +1845,17 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
   }
 }
 

@@ -339,58 +339,59 @@ function LeaveViewModal({ leave, onClose }) {
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{getTypeIcon()} {getTypeLabel()}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="close-btn" onClick={onClose}>×</button>
         </div>
 
         <div className="modal-body">
-          <div className="holiday-detail-row">
-            <span className="detail-label-huyleo">Nhân viên:</span>
-            <div className="employee-info">
+          <div className="info-group">
+            <label>👤 Nhân viên</label>
+            <div className="employee-info" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {leave.employeeAvatar && (
                 <img 
                   src={leave.employeeAvatar} 
                   alt={leave.employeeName}
                   className="employee-avatar"
-                  style={{ width: 32, height: 32, borderRadius: '50%', marginRight: 8 }}
+                  style={{ width: 32, height: 32, borderRadius: '50%' }}
                 />
               )}
-              <strong>{leave.employeeName}</strong>
+              <strong style={{ fontSize: '16px' }}>{leave.employeeName}</strong>
             </div>
           </div>
 
-          <div className="holiday-detail-row">
-            <span className="detail-label-huyleo">Ngày bắt đầu:</span>
-            <span>{formatDate(leave.startDate)}</span>
+          <div className="info-row">
+            <div className="info-group">
+              <label>📅 Ngày bắt đầu</label>
+              <p>{formatDate(leave.startDate)}</p>
+            </div>
+
+            <div className="info-group">
+              <label>📅 Ngày kết thúc</label>
+              <p>{formatDate(leave.endDate)}</p>
+            </div>
           </div>
 
-          <div className="holiday-detail-row">
-            <span className="detail-label-huyleo">Ngày kết thúc:</span>
-            <span>{formatDate(leave.endDate)}</span>
+          <div className="info-badge info-badge--info">
+            ⏱️ Kéo dài {calculateDuration()} ngày
           </div>
 
-          <div className="holiday-detail-row">
-            <span className="detail-label-huyleo">Loại:</span>
-            <span className="badge badge--info">
-              {leave.requestType === "BusinessTrip" ? "✈️ Công tác" : "👤 Nghỉ phép"}
-            </span>
-          </div>
-
-          <div className="holiday-detail-row">
-            <span className="detail-label-huyleo">Số ngày:</span>
-            <span className="badge badge--info">{calculateDuration()} ngày</span>
+          <div className="info-group">
+            <label>📋 Loại nghỉ</label>
+            <div className="info-badge info-badge--success">
+              {leave.requestType === "BusinessTrip" ? "✈️ Công tác" : "🏖️ Nghỉ phép"} - ✅ Đã duyệt
+            </div>
           </div>
 
           {leave.subject && (
-            <div className="holiday-detail-row">
-              <span className="detail-label-huyleo">Tiêu đề:</span>
-              <span>{leave.subject}</span>
+            <div className="info-group">
+              <label>📌 Tiêu đề</label>
+              <p className="description-text">{leave.subject}</p>
             </div>
           )}
 
           {leave.reason && (
-            <div className="holiday-detail-section">
-              <span className="detail-label-huyleo">Lý do:</span>
-              <p className="detail-text">{leave.reason}</p>
+            <div className="info-group">
+              <label>💬 Lý do nghỉ</label>
+              <p className="description-text">{leave.reason}</p>
             </div>
           )}
         </div>

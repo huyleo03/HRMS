@@ -422,6 +422,6 @@ payrollSchema.methods.getBreakdown = function () {
   };
 };
 
-const Payroll = mongoose.model("Payroll", payrollSchema);
+const Payroll = mongoose.model("Payroll", payrollSchema, "Payroll");
 
 module.exports = Payroll;

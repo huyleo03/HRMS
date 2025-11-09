@@ -94,7 +94,7 @@ const HolidayViewModal = ({ holiday, onClose }) => {
                 className="info-badge info-badge--success"
                 style={{ marginBottom: "8px" }}
               >
-                {getTypeLabel(actualEvent.type)} - ✅ Đã duyệt
+                {actualEvent.requestType === 'BusinessTrip' ? '✈️ Công tác' : '🏖️ Nghỉ phép'} - ✅ Đã duyệt
               </div>
             </div>
           ) : (

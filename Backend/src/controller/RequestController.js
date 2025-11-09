@@ -1398,8 +1398,8 @@ exports.getMyApprovedLeavesForCalendar = async (req, res) => {
       endDate: leave.endDate || leave.startDate, 
       reason: leave.reason,
       subject: leave.subject || (leave.type === 'BusinessTrip' ? 'Công tác' : 'Nghỉ phép'),
-      requestType: leave.type, 
-      type: 'personal_leave' 
+      requestType: leave.type,
+      itemType: 'leave' 
     }));
 
     res.status(200).json({
@@ -1473,7 +1473,7 @@ exports.getAllCompanyLeavesForCalendar = async (req, res) => {
       reason: leave.reason,
       subject: leave.subject || (leave.type === 'BusinessTrip' ? 'Công tác' : 'Nghỉ phép'),
       requestType: leave.type,
-      type: 'employee_leave'
+      itemType: 'leave'
     }));
 
     res.status(200).json({

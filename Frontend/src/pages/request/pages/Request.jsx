@@ -9,12 +9,14 @@ import AdminStats from "../components/admin/AdminStats/AdminStats";
 import { getUserRequests, getRequestCounts } from "../../../service/RequestService";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import "../css/Request.css";
 
 const REQUESTS_PER_PAGE = 20;
 
 const Request = () => {
   const { user } = useAuth();
+  const { onNewNotification } = useNotifications();
 
   // State Management
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -106,14 +108,24 @@ const Request = () => {
     }
   }, []);
 
-  // Fetch counts on mount and after actions
   useEffect(() => {
     fetchCounts();
-    
-    // Refresh counts every 30 seconds
-    const interval = setInterval(fetchCounts, 30000);
-    return () => clearInterval(interval);
+    const pollingInterval = setInterval(fetchCounts, 10000);
+    return () => clearInterval(pollingInterval);
   }, [fetchCounts]);
+
+  useEffect(() => {
+    if (!onNewNotification) return;
+
+    const unregister = onNewNotification(() => {
+      fetchCounts();
+      if (activeTab === 'inbox') {
+        fetchRequests('inbox', pagination.currentPage);
+      }
+    });
+
+    return () => unregister?.();
+  }, [onNewNotification, fetchCounts, fetchRequests, activeTab, pagination.currentPage]);
 
   useEffect(() => {
     if (activeTab.startsWith("admin-") || prevActiveTab.startsWith("admin-")) {
@@ -173,11 +185,15 @@ const Request = () => {
       // ✅ Refresh counts after action
       fetchCounts();
 
-      if (shouldCloseDetail) {
+      // ✨ IMPROVED: Always refresh list when status changes (Approved/Rejected/NeedsReview)
+      const statusChangedToFinal = ['Approved', 'Rejected', 'Cancelled'].includes(updatedRequest.status);
+      const needsRefresh = shouldCloseDetail || statusChangedToFinal;
+
+      if (needsRefresh) {
         setTimeout(() => {
           setSelectedRequest(null);
           
-          // ✅ THÊM: Refresh AdminRequestList nếu ở admin view
+          // ✅ Refresh AdminRequestList nếu ở admin view
           if (activeTab === "admin-all") {
    
             if (adminListRef.current?.refreshList) {
@@ -187,11 +203,11 @@ const Request = () => {
             }
           }
           
-          // ✅ Refresh standard view
-          if (activeTab === "inbox") {
+          // ✅ Refresh standard view (inbox, sent, etc.)
+          if (activeTab === "inbox" || activeTab === "sent" || activeTab === "drafts") {
             fetchRequests(activeTab, 1);
           }
-        }, 1000);
+        }, 300); // Reduced delay for faster refresh
       }
     },
     [activeTab, fetchRequests, fetchCounts]

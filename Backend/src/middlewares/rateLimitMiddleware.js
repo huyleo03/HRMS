@@ -196,3 +196,50 @@ exports.adminLimiter = rateLimit({
     });
   },
 });
+
+/**
+ * Polling Rate Limiter - Cho real-time polling endpoints
+ * Giới hạn: 150 requests mỗi 1 giờ (≈ 2.5 requests/phút)
+ * 
+ * MỤC ĐÍCH:
+ * - Bảo vệ khỏi abuse (user mở quá nhiều tab, hack polling interval)
+ * - Cho phép polling bình thường (30 giây = 2 requests/phút = 120 requests/giờ)
+ * - Buffer thêm 30 requests để tránh false positive
+ * 
+ * TÍNH TOÁN:
+ * - Polling interval: 30 giây
+ * - Requests/phút: 2
+ * - Requests/giờ: 120
+ * - Buffer: +30 (cho network delay, retry, multiple tabs)
+ * - Total: 150 requests/giờ
+ * 
+ * LƯU Ý: Rate limiter này RẤT LỎI - chỉ để ngăn abuse
+ */
+exports.pollingLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 giờ
+  max: 150, // 150 requests/giờ (polling bình thường = 120, buffer = 30)
+  message: {
+    message: "Polling quá nhiều. Vui lòng kiểm tra lại ứng dụng.",
+    error: "POLLING_RATE_LIMIT_EXCEEDED"
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
+  keyGenerator: (req) => {
+    // Sử dụng userId để track per-user polling
+    if (req.user && req.user.userId) {
+      return `polling_${req.user.userId}`;
+    }
+    return req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  },
+  handler: (req, res) => {
+    console.warn(`⚠️ Polling rate limit exceeded for user: ${req.user?.userId || req.ip}`);
+    res.status(429).json({
+      message: "Hệ thống phát hiện polling bất thường. Vui lòng liên hệ support.",
+      retryAfter: Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000),
+      error: "POLLING_RATE_LIMIT_EXCEEDED",
+      details: "Có thể bạn đang mở quá nhiều tab hoặc ứng dụng gặp lỗi."
+    });
+  },
+});

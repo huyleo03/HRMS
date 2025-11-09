@@ -28,17 +28,12 @@ export const formatShortDate = (date) => {
 
 export const getTypeLabel = (type) => {
   const types = {
-    // Holiday types
-    "Public Holiday": "🎊 Ngày lễ quốc gia",
-    "National Holiday": "🇻🇳 Ngày lễ",
-    "Company Holiday": "🏢 Ngày nghỉ công ty",
-    "Optional Holiday": "⭐ Ngày lễ tùy chọn",
-    "Regional Holiday": "🌏 Ngày lễ địa phương",
-    National: "🎆 National",
-    Company: "🎉 Company",
-    Optional: "⭐ Optional",
-    Regional: "🏖️ Regional",
-    
+    // Holiday types (Unified)
+    National: "� Ngày lễ quốc gia",
+    Company: "� Ngày nghỉ công ty",
+    Optional: "⭐ Ngày lễ tùy chọn",
+    Regional: "�️ Ngày lễ địa phương",
+
     // Leave request types
     BusinessTrip: "✈️ Công tác",
     employee_leave: "🏖️ Nghỉ phép cá nhân",

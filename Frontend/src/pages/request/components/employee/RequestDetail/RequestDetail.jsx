@@ -49,6 +49,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin, viewMode = 
   const [isRequestChangesModalOpen, setIsRequestChangesModalOpen] =
     useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false); // ✨ Track closing state for animation
 
   useEffect(() => {
     if (request) {
@@ -112,10 +113,21 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin, viewMode = 
       const response = await approveRequest(currentRequest._id, comment);
       toast.success(response.message || "Phê duyệt đơn thành công!");
 
-      if (onActionSuccess) {
-        onActionSuccess(response.request);
-      }
-      setIsApproveModalOpen(false); 
+      setIsApproveModalOpen(false);
+      
+      // ✨ Trigger closing animation & refresh
+      setIsClosing(true);
+      
+      setTimeout(() => {
+        // 1. Call onActionSuccess to refresh list FIRST
+        if (onActionSuccess) {
+          onActionSuccess(response.request);
+        }
+        // 2. Then close the detail panel
+        if (onClose) {
+          onClose();
+        }
+      }, 250); // Match animation duration
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -132,10 +144,22 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin, viewMode = 
     try {
       const response = await rejectRequest(currentRequest._id, reason);
       toast.success(response.message || "Đã từ chối đơn thành công!");
+      
       setIsRejectModalOpen(false);
-      if (onActionSuccess) {
-        onActionSuccess(response.request);
-      }
+      
+      // ✨ Trigger closing animation & refresh
+      setIsClosing(true);
+      
+      setTimeout(() => {
+        // 1. Call onActionSuccess to refresh list FIRST
+        if (onActionSuccess) {
+          onActionSuccess(response.request);
+        }
+        // 2. Then close the detail panel
+        if (onClose) {
+          onClose();
+        }
+      }, 250); // Match animation duration
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -152,10 +176,22 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin, viewMode = 
     try {
       const response = await requestChanges(currentRequest._id, comment);
       toast.success(response.message || "Đã gửi yêu cầu chỉnh sửa thành công!");
+      
       setIsRequestChangesModalOpen(false);
-      if (onActionSuccess) {
-        onActionSuccess(response.request);
-      }
+      
+      // ✨ Trigger closing animation & refresh
+      setIsClosing(true);
+      
+      setTimeout(() => {
+        // 1. Call onActionSuccess to refresh list FIRST
+        if (onActionSuccess) {
+          onActionSuccess(response.request);
+        }
+        // 2. Then close the detail panel
+        if (onClose) {
+          onClose();
+        }
+      }, 250); // Match animation duration
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -179,7 +215,7 @@ const RequestDetail = ({ request, onClose, onActionSuccess, isAdmin, viewMode = 
   };
 
   return (
-    <div className="request-detail">
+    <div className={`request-detail ${isClosing ? 'closing' : ''}`}>
       <div className="detail-header">
         <div className="detail-title">
           <h2>{currentRequest.subject}</h2>

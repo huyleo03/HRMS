@@ -19,6 +19,7 @@ import ManagerDashboard from "./pages/dashboard/components/ManagerDashboard.jsx"
 import ManagerEmployees from "./pages/manager/pages/ManagerEmployees.jsx";
 import ManagerViewEmployeeDetails from "./pages/manager/pages/ManagerViewEmployeeDetails.jsx";
 import { AuthProvider } from "./contexts/AuthContext.js";
+import { NotificationProvider } from "./contexts/NotificationContext.js";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ChangePass from "./pages/authentication/ChangePass.jsx";
 import Request from "./pages/request/pages/Request.jsx";
@@ -39,21 +40,22 @@ import WorkflowDetailPage from "./pages/workflow/WorkflowDetailPage.jsx";
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-          limit={1}
-        />
-        <Routes>
+      <NotificationProvider>
+        <BrowserRouter>
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+            limit={1}
+          />
+          <Routes>
           {/* --- Public Routes --- */}
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPass />} />
@@ -117,6 +119,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

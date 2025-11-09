@@ -121,11 +121,12 @@ const HolidayForm = ({ formData, onChange, mode = "create" }) => {
         <select
           value={formData.appliesTo || "All Employees"}
           onChange={(e) => {
-            handleChange("appliesTo", e.target.value);
-            // Reset departments when switching to "All Employees"
-            if (e.target.value === "All Employees") {
-              handleChange("departments", []);
-            }
+            const newValue = e.target.value;
+            onChange({ 
+              ...formData, 
+              appliesTo: newValue,
+              departments: newValue === "All Employees" ? [] : formData.departments || []
+            });
           }}
         >
           <option value="All Employees">👥 Tất cả nhân viên</option>
