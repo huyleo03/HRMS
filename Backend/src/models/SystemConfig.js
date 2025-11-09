@@ -30,7 +30,7 @@ const systemConfigSchema = new mongoose.Schema(
       },
       gracePeriodMinutes: {
         type: Number,
-        default: 15,
+        default: 0, // Không cho phép đi muộn
         min: 0,
         max: 60,
       },

@@ -25,11 +25,15 @@ const Settings = () => {
   const fetchConfig = async () => {
     setLoading(true);
     try {
+      console.log("🔄 Fetching config...");
       const response = await getCompanyConfig();
+      console.log("✅ Config response:", response);
+      console.log("📦 Config data:", response.data);
       setConfig(response.data);
       setHasChanges(false);
     } catch (error) {
-      console.error("Error fetching config:", error);
+      console.error("❌ Error fetching config:", error);
+      console.error("Error details:", error.response?.data || error.message);
       toast.error("Không thể tải cấu hình");
     } finally {
       setLoading(false);

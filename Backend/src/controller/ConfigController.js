@@ -14,7 +14,7 @@ async function getOrCreateConfig() {
       workSchedule: {
         workStartTime: "08:00",
         workEndTime: "17:00",
-        gracePeriodMinutes: 15,
+        gracePeriodMinutes: 0, // Không cho phép đi muộn
       },
       overtime: {
         otMinimumMinutes: 30,
@@ -273,7 +273,7 @@ exports.resetToDefault = async (req, res) => {
         workStartTime: "08:00",
         workEndTime: "17:00",
         standardWorkHours: 8,
-        gracePeriodMinutes: 15,
+        gracePeriodMinutes: 0, // Không cho phép đi muộn
         lunchBreakMinutes: 60,
       },
       overtime: {

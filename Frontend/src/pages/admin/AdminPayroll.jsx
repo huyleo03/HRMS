@@ -172,8 +172,17 @@ const AdminPayroll = () => {
         calculateForm.year
       );
       toast.success(response.message || "Tính lương thành công!");
+      
+      // Update filters to match the calculated month/year so the payrolls show up
+      setFilters({
+        ...filters,
+        month: calculateForm.month,
+        year: calculateForm.year,
+        page: 1 // Reset to first page
+      });
+      
       setActiveTab("list");
-      fetchPayrolls();
+      // fetchPayrolls() will be called automatically by useEffect when filters change
     } catch (error) {
       toast.error(error.message || "Không thể tính lương");
     } finally {
@@ -196,8 +205,17 @@ const AdminPayroll = () => {
       );
       toast.success("Tính lương thành công!");
       setCalculateForm({ ...calculateForm, employeeId: "" });
+      
+      // Update filters to match the calculated month/year so the payroll shows up
+      setFilters({
+        ...filters,
+        month: calculateForm.month,
+        year: calculateForm.year,
+        page: 1 // Reset to first page
+      });
+      
       setActiveTab("list");
-      fetchPayrolls();
+      // fetchPayrolls() will be called automatically by useEffect when filters change
     } catch (error) {
       toast.error(error.message || "Không thể tính lương");
     } finally {

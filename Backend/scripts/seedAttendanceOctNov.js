@@ -41,36 +41,41 @@ function calculateWorkHours(clockIn, clockOut) {
 }
 
 // Helper: Calculate overtime hours (tính từ giờ tan ca 17:00)
-function calculateOvertimeHours(clockIn, clockOut, hasOT = false) {
+// Logic: Chỉ tính từ SAU 17:00, tối thiểu 30 phút (0.5h), tối đa 4 giờ
+// Giờ vào sớm hay muộn KHÔNG ảnh hưởng đến OT
+function calculateOvertimeHours(clockOut, hasOT = false) {
   if (!hasOT) return 0;
   
-  const [inH, inM] = clockIn.split(":").map(Number);
   const [outH, outM] = clockOut.split(":").map(Number);
-  const inMinutes = inH * 60 + inM;
   const outMinutes = outH * 60 + outM;
   
   // Giờ tan ca chuẩn: 17:00 (1020 phút từ 0:00)
-  const standardEndTime = 17 * 60; // 17:00
+  const standardEndTime = 17 * 60; // 17:00 = 1020 phút
   
   // Chỉ tính OT nếu ra sau 17:00
   if (outMinutes <= standardEndTime) return 0;
   
-  // OT = thời gian từ 17:00 đến giờ ra
-  let otMinutes = outMinutes - standardEndTime;
-  
-  // Nếu vào trước 8:00, có thể trừ bớt thời gian vào sớm (tùy chọn)
-  const standardStartTime = 8 * 60; // 08:00
-  const earlyMinutes = Math.max(0, standardStartTime - inMinutes);
-  
-  // Trừ thời gian vào sớm khỏi OT (nếu có)
-  otMinutes = Math.max(0, otMinutes - earlyMinutes);
+  // OT = thời gian từ 17:00 đến giờ ra (KHÔNG trừ giờ vào sớm)
+  const otMinutes = outMinutes - standardEndTime;
   
   // Chuyển sang giờ, làm tròn 1 chữ số
   const otHours = Math.round((otMinutes / 60) * 10) / 10;
   
-  // Giới hạn OT từ 0.5 đến 4 giờ
+  // Tối thiểu 30 phút (0.5h) mới tính OT, tối đa 4 giờ
   if (otHours < 0.5) return 0;
   return Math.min(4, otHours);
+}
+
+// Helper: Generate random IP address
+function randomIP() {
+  const prefixes = [
+    "192.168.1.", // Local network
+    "10.0.0.",    // Private network
+    "172.16.0.",  // Private network
+  ];
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const suffix = Math.floor(Math.random() * 254) + 1;
+  return prefix + suffix;
 }
 
 // Helper: Calculate late minutes
@@ -107,7 +112,7 @@ async function seedAttendance() {
     const holidays = await Holiday.find({
       date: {
         $gte: new Date("2025-10-01"),
-        $lte: new Date("2025-11-30"),
+        $lte: new Date("2025-10-31"),
       },
     });
     const holidayDates = holidays.map((h) => h.date.toISOString().split("T")[0]);
@@ -125,8 +130,7 @@ async function seedAttendance() {
     // 4. Generate attendance for each employee
     let totalRecords = 0;
     const months = [
-      { month: 10, year: 2025, days: 31 },
-      { month: 11, year: 2025, days: 30 },
+      { month: 10, year: 2025, days: 31 }
     ];
 
     for (const employee of employees) {
@@ -169,7 +173,7 @@ async function seedAttendance() {
                 clockIn = randomTime("07:45", "08:30");
                 clockOut = randomTime("18:30", "20:00");
                 workHours = calculateWorkHours(clockIn, clockOut);
-                overtimeHours = calculateOvertimeHours(clockIn, clockOut, true);
+                overtimeHours = calculateOvertimeHours(clockOut, true);
               }
               
               // Tạo Date object - giữ nguyên timezone local (VN)
@@ -182,7 +186,9 @@ async function seedAttendance() {
                 userId: employee._id,
                 date: date,
                 clockIn: clockInDate,
+                clockInIP: randomIP(),
                 clockOut: clockOutDate,
+                clockOutIP: randomIP(),
                 status: "Present",
                 lateMinutes: calculateLateMinutes(clockIn),
                 isEarlyLeave: false,
@@ -202,28 +208,29 @@ async function seedAttendance() {
               // 85% Present/Late
               let clockIn, clockOut, workHours, overtimeHours;
               
-              // 60% làm đúng giờ (7:45-8:15 vào, 17:00-17:30 ra) - không OT
+              // 60% làm đúng giờ (7:50-8:00 vào, 17:00-17:10 ra) - không OT
+              // Giới hạn: Đi muộn tối đa 30p (8:00-8:30), về sớm tối đa 30p (16:30-17:00)
               if (random < 0.51) {
-                clockIn = randomTime("07:45", "08:15");
-                clockOut = randomTime("17:00", "17:30");
+                clockIn = randomTime("07:50", "08:00"); // Đúng giờ hoặc sớm
+                clockOut = randomTime("17:00", "17:10"); // Đúng giờ hoặc muộn 10p
                 workHours = calculateWorkHours(clockIn, clockOut);
-                overtimeHours = 0; // Không OT vì ra trước/đúng 17:30
+                overtimeHours = 0; // Không OT
               } 
               // 25% làm thêm giờ (ra muộn hơn 17:30 để có OT)
               else if (random < 0.76) {
-                clockIn = randomTime("07:45", "08:15");
-                // Ra từ 18:00-19:00 → OT từ 17:00 = khoảng 1-2h
-                clockOut = randomTime("18:00", "19:00");
+                clockIn = randomTime("08:00", "08:30"); // Đi muộn 0-30 phút
+                // Ra từ 17:30-19:00 → OT từ 17:00 = khoảng 0.5-2h
+                clockOut = randomTime("17:30", "19:00");
                 workHours = calculateWorkHours(clockIn, clockOut);
-                overtimeHours = calculateOvertimeHours(clockIn, clockOut, true);
+                overtimeHours = calculateOvertimeHours(clockOut, true);
               }
               // 10% làm thêm nhiều (ra rất muộn)
               else {
-                clockIn = randomTime("07:45", "08:15");
-                // Ra từ 19:00-20:30 → OT từ 17:00 = khoảng 2-3.5h
-                clockOut = randomTime("19:00", "20:30");
+                clockIn = randomTime("08:00", "08:30"); // Đi muộn 0-30 phút
+                // Ra từ 19:00-21:00 → OT từ 17:00 = khoảng 2-4h
+                clockOut = randomTime("19:00", "21:00");
                 workHours = calculateWorkHours(clockIn, clockOut);
-                overtimeHours = calculateOvertimeHours(clockIn, clockOut, true);
+                overtimeHours = calculateOvertimeHours(clockOut, true);
               }
               
               const late = calculateLateMinutes(clockIn);
@@ -252,7 +259,9 @@ async function seedAttendance() {
                 userId: employee._id,
                 date: date,
                 clockIn: clockInDate,
+                clockInIP: randomIP(),
                 clockOut: clockOutDate,
+                clockOutIP: randomIP(),
                 status: status,
                 lateMinutes: late,
                 isEarlyLeave: isEarlyLeave,
@@ -266,9 +275,9 @@ async function seedAttendance() {
                 overtimeApproved: overtimeHours > 0 ? (random < 0.8) : false, // 80% approved nếu có OT
               };
             } else if (random < 0.95) {
-              // 10% Early Leave
-              const clockIn = randomTime("07:45", "08:15");
-              const clockOut = randomTime("15:00", "16:30");
+              // 10% Early Leave (về sớm tối đa 30 phút: 16:30-17:00)
+              const clockIn = randomTime("08:00", "08:30"); // Đi muộn 0-30 phút
+              const clockOut = randomTime("16:30", "17:00"); // Về sớm 0-30 phút
               
               const late = calculateLateMinutes(clockIn);
               const earlyLeave = calculateEarlyLeaveMinutes(clockOut);
@@ -289,7 +298,9 @@ async function seedAttendance() {
                 userId: employee._id,
                 date: date,
                 clockIn: clockInDate,
+                clockInIP: randomIP(),
                 clockOut: clockOutDate,
+                clockOutIP: randomIP(),
                 status: status,
                 lateMinutes: late,
                 isEarlyLeave: true,
