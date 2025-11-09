@@ -44,10 +44,23 @@ const SendNotificationModal = ({ isOpen, onClose }) => {
 
       const response = await sendNotification(payload);
 
-      const recipientCount =
-        typeof response.affectedUsers === "string"
-          ? response.affectedUsers
-          : `${response.affectedUsers.length} người`;
+      // Xử lý hiển thị số người nhận
+      let recipientCount;
+      if (typeof response.affectedUsers === "string") {
+        // Backend trả về string trực tiếp (ví dụ: "50 users")
+        recipientCount = response.affectedUsers;
+      } else if (Array.isArray(response.affectedUsers)) {
+        // Backend trả về mảng
+        if (response.affectedUsers.length === 1 && typeof response.affectedUsers[0] === "string" && response.affectedUsers[0].includes("users")) {
+          // Trường hợp: ["50 users (tất cả Manager và Employee)"]
+          recipientCount = response.affectedUsers[0];
+        } else {
+          // Trường hợp: ["User 1", "User 2", ...] - mảng tên người dùng
+          recipientCount = `${response.affectedUsers.length} người`;
+        }
+      } else {
+        recipientCount = "nhiều người";
+      }
 
       toast.success(`✅ Gửi thông báo thành công đến ${recipientCount}`);
 
