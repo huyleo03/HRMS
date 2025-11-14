@@ -582,6 +582,7 @@ requestSchema.post("save", async function(doc) {
     // Chỉ xử lý khi Request type = Overtime và status = Approved
     if (doc.type === "Overtime" && doc.status === "Approved") {
       const Attendance = mongoose.model("Attendance");
+      const Payroll = mongoose.model("Payroll");
       
       // Lấy startDate và endDate từ request
       const startDate = new Date(doc.startDate);
@@ -619,6 +620,40 @@ requestSchema.post("save", async function(doc) {
         );
         
         console.log(`✅ Updated ${attendanceRecords.length} attendance record(s) with approved OT for Request ${doc.requestId}`);
+        
+        // ===== RECALCULATE PAYROLL FOR THE AFFECTED MONTH(S) =====
+        const monthsToRecalculate = new Set();
+        attendanceRecords.forEach(att => {
+          const attDate = new Date(att.date);
+          const monthKey = `${attDate.getFullYear()}-${attDate.getMonth() + 1}`;
+          monthsToRecalculate.add(monthKey);
+        });
+        
+        // Recalculate payroll for each affected month
+        for (const monthKey of monthsToRecalculate) {
+          const [year, month] = monthKey.split('-').map(Number);
+          
+          // Find existing payroll
+          const existingPayroll = await Payroll.findOne({
+            employeeId: doc.submittedBy,
+            month: month,
+            year: year
+          });
+          
+          if (existingPayroll) {
+            console.log(`🔄 Recalculating payroll for ${year}-${month} after OT approval...`);
+            
+            // Trigger recalculation by calling PayrollController's calculatePayroll
+            // Note: We need to import and call it properly
+            try {
+              const PayrollController = require('../controller/PayrollController');
+              await PayrollController.recalculatePayrollForEmployee(doc.submittedBy, month, year);
+              console.log(`✅ Recalculated payroll for ${year}-${month}`);
+            } catch (recalcError) {
+              console.error(`❌ Error recalculating payroll for ${year}-${month}:`, recalcError.message);
+            }
+          }
+        }
       }
     }
   } catch (error) {

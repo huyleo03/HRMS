@@ -1,5 +1,6 @@
 /**
- * Script để tạo dữ liệu attendance cho tháng 10 và 11/2025
+ * Script để tạo dữ liệu attendance cho tháng 10 và 1-14/11/2025 (45 ngày)
+ * Bao gồm tự động tạo đơn OT khi có overtime
  * Chạy: node scripts/seedAttendanceOctNov.js
  */
 
@@ -7,6 +8,8 @@ const mongoose = require("mongoose");
 const Attendance = require("../src/models/Attendance");
 const User = require("../src/models/User");
 const Holiday = require("../src/models/Holiday");
+const Request = require("../src/models/Request");
+const Payroll = require("../src/models/Payroll"); // Import to prevent "Schema not registered" error
 require("dotenv").config();
 
 // Connect to MongoDB
@@ -96,9 +99,19 @@ function calculateEarlyLeaveMinutes(clockOut, expectedOut = "17:00") {
   return Math.max(0, expMinutes - outMinutes);
 }
 
+// Helper: Generate unique request ID
+function generateRequestId() {
+  const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let part1 = "";
+  let part2 = "";
+  for (let i = 0; i < 8; i++) part1 += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 4; i++) part2 += chars[Math.floor(Math.random() * chars.length)];
+  return `REQ-${part1}-${part2}`;
+}
+
 async function seedAttendance() {
   try {
-    console.log("🌱 Starting attendance seeding for Oct & Nov 2025...");
+    console.log("🌱 Starting attendance seeding for Oct + Nov 1-14, 2025 (45 days)...");
 
     // 1. Get all employees
     const employees = await User.find({ role: { $in: ["Employee", "Manager"] } });
@@ -108,38 +121,58 @@ async function seedAttendance() {
     }
     console.log(`✅ Found ${employees.length} employees`);
 
-    // 2. Get holidays
+    // 2. Get holidays for Oct-Nov 2025
     const holidays = await Holiday.find({
       date: {
         $gte: new Date("2025-10-01"),
-        $lte: new Date("2025-10-31"),
+        $lte: new Date("2025-11-14"),
       },
     });
     const holidayDates = holidays.map((h) => h.date.toISOString().split("T")[0]);
     console.log(`✅ Found ${holidays.length} holidays:`, holidayDates);
 
-    // 3. Delete existing attendance for Oct & Nov 2025
-    const deleteResult = await Attendance.deleteMany({
+    // 3. Delete existing attendance for Oct-Nov 1-14, 2025
+    const deleteAttendanceResult = await Attendance.deleteMany({
       date: {
         $gte: new Date("2025-10-01T00:00:00.000Z"),
-        $lte: new Date("2025-11-30T23:59:59.999Z"),
+        $lte: new Date("2025-11-14T23:59:59.999Z"),
       },
     });
-    console.log(`🗑️  Cleared ${deleteResult.deletedCount} existing Oct & Nov 2025 attendance records`);
+    console.log(`🗑️  Cleared ${deleteAttendanceResult.deletedCount} existing Oct-Nov 14, 2025 attendance records`);
 
-    // 4. Generate attendance for each employee
+    // 4. Delete existing OT requests for Oct-Nov 1-14, 2025
+    const deleteRequestResult = await Request.deleteMany({
+      type: "Overtime",
+      startDate: {
+        $gte: new Date("2025-10-01T00:00:00.000Z"),
+        $lte: new Date("2025-11-14T23:59:59.999Z"),
+      },
+    });
+    console.log(`🗑️  Cleared ${deleteRequestResult.deletedCount} existing OT requests`);
+
+    // 5. Generate attendance for each employee
     let totalRecords = 0;
-    const months = [
-      { month: 10, year: 2025, days: 31 }
+    let totalOTRequests = 0;
+    const periods = [
+      { month: 10, year: 2025, startDay: 1, endDay: 31 }, // October
+      { month: 11, year: 2025, startDay: 1, endDay: 14 }, // Nov 1-14
     ];
 
     for (const employee of employees) {
       console.log(`\n📝 Creating attendance for ${employee.full_name} (${employee.employeeId})`);
 
-      for (const { month, year, days } of months) {
-        for (let day = 1; day <= days; day++) {
-          // Tạo date ở đầu ngày UTC để đảm bảo consistency
-          const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      // Lấy thông tin manager để approve OT
+      let manager = null;
+      if (employee.manager_id) {
+        manager = await User.findById(employee.manager_id);
+      }
+
+      for (const period of periods) {
+        const { month, year, startDay, endDay } = period;
+      
+        for (let day = startDay; day <= endDay; day++) {
+        // Tạo date ở đầu ngày UTC để đảm bảo consistency
+        const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
           const dayOfWeek = date.getUTCDay(); // 0=Sunday, 6=Saturday
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
           const dateStr = date.toISOString().split("T")[0];
@@ -151,6 +184,7 @@ async function seedAttendance() {
           // Random patterns for realistic data
           const random = Math.random();
           let attendanceData = null;
+          let shouldCreateOTRequest = false; // Track if need to create OT request
 
           if (isHoliday) {
             // HOLIDAY: 70% không đi, 30% đi làm
@@ -174,6 +208,7 @@ async function seedAttendance() {
                 clockOut = randomTime("18:30", "20:00");
                 workHours = calculateWorkHours(clockIn, clockOut);
                 overtimeHours = calculateOvertimeHours(clockOut, true);
+                shouldCreateOTRequest = overtimeHours > 0;
               }
               
               // Tạo Date object - giữ nguyên timezone local (VN)
@@ -223,6 +258,7 @@ async function seedAttendance() {
                 clockOut = randomTime("17:30", "19:00");
                 workHours = calculateWorkHours(clockIn, clockOut);
                 overtimeHours = calculateOvertimeHours(clockOut, true);
+                shouldCreateOTRequest = overtimeHours > 0;
               }
               // 10% làm thêm nhiều (ra rất muộn)
               else {
@@ -231,6 +267,7 @@ async function seedAttendance() {
                 clockOut = randomTime("19:00", "21:00");
                 workHours = calculateWorkHours(clockIn, clockOut);
                 overtimeHours = calculateOvertimeHours(clockOut, true);
+                shouldCreateOTRequest = overtimeHours > 0;
               }
               
               const late = calculateLateMinutes(clockIn);
@@ -333,6 +370,53 @@ async function seedAttendance() {
             try {
               await Attendance.create(attendanceData);
               totalRecords++;
+
+              // Tạo OT request nếu có overtime
+              if (shouldCreateOTRequest && attendanceData.overtimeHours > 0 && manager) {
+                const otRequest = {
+                  requestId: generateRequestId(),
+                  submittedBy: employee._id,
+                  submittedByName: employee.full_name,
+                  submittedByEmail: employee.email,
+                  submittedByAvatar: employee.avatar,
+                  department: employee.department,
+                  type: "Overtime",
+                  subject: `OT ${attendanceData.overtimeHours}h - ${dateStr}`,
+                  reason: `Làm thêm ${attendanceData.overtimeHours} giờ vào ngày ${dateStr}`,
+                  startDate: date,
+                  endDate: date,
+                  hour: attendanceData.overtimeHours,
+                  attachments: [],
+                  status: attendanceData.overtimeApproved ? "Approved" : "Pending",
+                  priority: "Normal",
+                  approvalFlow: [
+                    {
+                      level: 1,
+                      approverId: manager._id,
+                      approverName: manager.full_name,
+                      approverEmail: manager.email,
+                      role: "Approver",
+                      status: attendanceData.overtimeApproved ? "Approved" : "Pending",
+                      isRead: attendanceData.overtimeApproved,
+                      ...(attendanceData.overtimeApproved && {
+                        approvedAt: new Date(year, month - 1, day, 18, 0, 0, 0),
+                        comment: "Approved",
+                      }),
+                    },
+                  ],
+                  cc: [],
+                  senderStatus: { isDeleted: false },
+                  history: [],
+                  sentAt: new Date(year, month - 1, day, 17, 30, 0, 0),
+                  created_at: new Date(year, month - 1, day, 17, 30, 0, 0),
+                  updated_at: attendanceData.overtimeApproved
+                    ? new Date(year, month - 1, day, 18, 0, 0, 0)
+                    : new Date(year, month - 1, day, 17, 30, 0, 0),
+                };
+
+                await Request.create(otRequest);
+                totalOTRequests++;
+              }
             } catch (err) {
               if (err.code === 11000) {
                 console.log(`⚠️  Skipped duplicate: ${employee.full_name} on ${dateStr}`);
@@ -346,12 +430,14 @@ async function seedAttendance() {
     }
 
     console.log(`\n✅ Successfully created ${totalRecords} attendance records!`);
+    console.log(`✅ Successfully created ${totalOTRequests} OT requests!`);
     console.log("\n📊 Summary:");
     console.log(`   - Employees: ${employees.length}`);
-    console.log(`   - Months: October & November 2025`);
-    console.log(`   - Total records: ${totalRecords}`);
+    console.log(`   - Period: October 2025 (31 days) + Nov 1-14, 2025 (14 days) = 45 days`);
+    console.log(`   - Total attendance: ${totalRecords}`);
+    console.log(`   - Total OT requests: ${totalOTRequests}`);
     console.log(`   - Holidays: ${holidays.length}`);
-    console.log("\n💡 Tip: Now you can run payroll calculation for Oct & Nov 2025!");
+    console.log("\n💡 Tip: Now you can run payroll calculation for Oct-Nov 2025!");
 
   } catch (error) {
     console.error("❌ Error seeding attendance:", error);

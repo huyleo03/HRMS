@@ -1126,56 +1126,54 @@ const AdminPayroll = () => {
                   <span>Overtime:</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <strong>{formatCurrency(selectedPayroll.overtimeAmount)}</strong>
-                    {selectedPayroll.overtimeAmount > 0 && (
-                      <button
-                        onClick={async () => {
-                          try {
-                            // Sử dụng endpoint employee-overtime (không cần Admin role)
-                            const token = localStorage.getItem('auth_token');
-                            const response = await fetch(
-                              `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999'}/api/requests/employee-overtime?employeeId=${selectedPayroll.employeeId._id}&month=${selectedPayroll.month}&year=${selectedPayroll.year}&status=Approved`,
-                              {
-                                headers: {
-                                  'Authorization': `Bearer ${token}`
-                                }
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Sử dụng endpoint employee-overtime (không cần Admin role)
+                          const token = localStorage.getItem('auth_token');
+                          const response = await fetch(
+                            `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:9999'}/api/requests/employee-overtime?employeeId=${selectedPayroll.employeeId._id}&month=${selectedPayroll.month}&year=${selectedPayroll.year}&status=Approved`,
+                            {
+                              headers: {
+                                'Authorization': `Bearer ${token}`
                               }
-                            );
-                            
-                            if (!response.ok) {
-                              throw new Error('Không thể tải dữ liệu');
                             }
-                            
-                            const data = await response.json();
-                            console.log('OT Requests:', data);
-                            setOTRequests(data.data || data.requests || []);
-                            setShowOTDetailModal(true);
-                          } catch (error) {
-                            console.error('Error fetching OT requests:', error);
-                            toast.error('Không thể tải thông tin đơn tăng ca');
+                          );
+                          
+                          if (!response.ok) {
+                            throw new Error('Không thể tải dữ liệu');
                           }
-                        }}
-                        style={{
-                          padding: '4px 8px',
-                          background: '#3b82f6',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseOver={(e) => e.target.style.background = '#2563eb'}
-                        onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-                        title="Xem chi tiết đơn tăng ca đã duyệt"
-                      >
-                        <span>📋</span>
-                        <span>Chi tiết</span>
-                      </button>
-                    )}
+                          
+                          const data = await response.json();
+                          console.log('OT Requests:', data);
+                          setOTRequests(data.data || data.requests || []);
+                          setShowOTDetailModal(true);
+                        } catch (error) {
+                          console.error('Error fetching OT requests:', error);
+                          toast.error('Không thể tải thông tin đơn tăng ca');
+                        }
+                      }}
+                      style={{
+                        padding: '4px 8px',
+                        background: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => e.target.style.background = '#2563eb'}
+                      onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+                      title="Xem chi tiết đơn tăng ca đã duyệt"
+                    >
+                      <span>📋</span>
+                      <span>Chi tiết</span>
+                    </button>
                   </div>
                 </div>
                 

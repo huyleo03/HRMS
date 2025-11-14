@@ -19,14 +19,12 @@ async function getOrCreateConfig() {
       overtime: {
         otMinimumMinutes: 30,
         otRateWeekday: 1.5,
-        otRateWeekend: 2.0,
         otRateHoliday: 3.0,
         requireApproval: true,
       },
       network: {
         allowedIPs: ["::1", "127.0.0.1", "::ffff:127.0.0.1"],
         allowRemoteCheckIn: false,
-        requireVPN: false,
       },
       faceRecognition: {
         enabled: true,
@@ -279,14 +277,12 @@ exports.resetToDefault = async (req, res) => {
       overtime: {
         otMinimumMinutes: 30,
         otRateWeekday: 1.5,
-        otRateWeekend: 2.0,
         otRateHoliday: 3.0,
         requireApproval: true,
       },
       network: {
         allowedIPs: ["::1", "127.0.0.1", "::ffff:127.0.0.1"],
         allowRemoteCheckIn: false,
-        requireVPN: false,
       },
       faceRecognition: {
         enabled: true,

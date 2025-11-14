@@ -83,7 +83,7 @@ const payrollSchema = new mongoose.Schema(
       },
       weekend: {
         type: Number,
-        default: 2.0,
+        default: 1.5, // T7/CN dùng hệ số giống weekday
       },
       holiday: {
         type: Number,
@@ -96,7 +96,7 @@ const payrollSchema = new mongoose.Schema(
       min: 0,
     },
     
-    // ===== TĂNG CA CHỜ DUYỆT (OVERTIME PENDING APPROVAL) =====
+    // ===== TĂNG CA CHờI DUYỆT (OVERTIME PENDING APPROVAL) =====
     overtimePending: {
       weekday: {
         type: Number,
@@ -113,22 +113,6 @@ const payrollSchema = new mongoose.Schema(
         default: 0,
         min: 0,
       },
-    },
-    
-    // ===== PHỤ CẤP (ALLOWANCES) - REMOVED (không dùng) =====
-    // allowances: [],
-    totalAllowances: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    
-    // ===== THƯỞNG (BONUSES) - REMOVED (không dùng) =====
-    // bonuses: [],
-    totalBonuses: {
-      type: Number,
-      default: 0,
-      min: 0,
     },
     
     // ===== KHẤU TRỪ (DEDUCTIONS) - CHỈ GIỮ: Đi muộn, Về sớm, Vắng mặt =====
@@ -210,42 +194,6 @@ const payrollSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    
-    // ===== MANAGER REJECTION TRACKING =====
-    rejectedByManager: {
-      type: Boolean,
-      default: false,
-      index: true,
-    },
-    managerRejectionHistory: [
-      {
-        rejectedBy: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        rejectedByName: {
-          type: String,
-        },
-        rejectedAt: {
-          type: Date,
-          default: Date.now,
-        },
-        reason: {
-          type: String,
-          required: true,
-        },
-        resolvedAt: {
-          type: Date,
-        },
-        resolvedBy: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        resolvedAction: {
-          type: String, // "Admin đã chỉnh sửa thủ công" hoặc "Admin đã duyệt (Override)"
-        },
-      },
-    ],
     
     // ===== DAILY BREAKDOWN =====
     dailyBreakdown: [
@@ -354,14 +302,10 @@ payrollSchema.virtual("periodDisplay").get(function () {
 
 // ===== PRE-SAVE: Auto Calculate Totals =====
 payrollSchema.pre("save", function (next) {
-  // Allowances và Bonuses đã bị xóa - set về 0
-  this.totalAllowances = 0;
-  this.totalBonuses = 0;
-  
   // Calculate total deductions
   this.totalDeductions = this.deductions.reduce((sum, item) => sum + item.amount, 0);
   
-  // Calculate gross salary (chỉ gồm: baseSalary + overtime)
+  // Calculate gross salary (baseSalary + overtime)
   this.grossSalary = 
     this.actualBaseSalary + 
     this.overtimeAmount;

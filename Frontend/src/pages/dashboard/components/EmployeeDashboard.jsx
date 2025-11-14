@@ -63,10 +63,14 @@ const EmployeeDashboard = () => {
 
       // Fetch request stats
       try {
-        const requestRes = await getMyRequests({ limit: 100 });
-        const requests = Array.isArray(requestRes.data) ? requestRes.data : [];
+        const requestRes = await getMyRequests({ box: "sent", limit: 100 });
+        console.log("📊 Request response:", requestRes);
+        
+        const requests = requestRes.data?.requests || [];
+        console.log("📋 Requests array:", requests);
+        
         setRequestStats({
-          pending: requests.filter((r) => r.status === "Pending").length,
+          pending: requests.filter((r) => r.status === "Pending" || r.status === "Manager_Approved").length,
           approved: requests.filter((r) => r.status === "Approved").length,
           rejected: requests.filter((r) => r.status === "Rejected").length,
         });

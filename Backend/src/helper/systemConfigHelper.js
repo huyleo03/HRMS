@@ -20,7 +20,6 @@ async function getSystemConfig() {
       return {
         overtime: {
           otRateWeekday: 1.5,
-          otRateWeekend: 2.0,
           otRateHoliday: 3.0,
         },
         workSchedule: {
@@ -41,7 +40,6 @@ async function getSystemConfig() {
     return {
       overtime: {
         otRateWeekday: 1.5,
-        otRateWeekend: 2.0,
         otRateHoliday: 3.0,
       },
       workSchedule: {

@@ -55,6 +55,23 @@ const Settings = () => {
     fetchCurrentIP();
   }, []);
 
+  // Calculate working hours between two times (excluding 1 hour lunch break)
+  const calculateWorkingHours = (startTime, endTime) => {
+    if (!startTime || !endTime) return 0;
+    
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    
+    const startInMinutes = startHour * 60 + startMin;
+    const endInMinutes = endHour * 60 + endMin;
+    
+    // Total hours - 1 hour lunch break
+    const totalMinutes = endInMinutes - startInMinutes;
+    const workingHours = (totalMinutes / 60) - 1; // Trừ 1 tiếng nghỉ trưa
+    
+    return workingHours;
+  };
+
   // Handle input change
   const handleChange = (section, field, value) => {
     setConfig((prev) => ({
@@ -71,6 +88,21 @@ const Settings = () => {
   const handleSave = async () => {
     if (!hasChanges) {
       toast.info("Không có thay đổi nào để lưu");
+      return;
+    }
+
+    // Validate work schedule before saving
+    const workingHours = calculateWorkingHours(
+      config.workSchedule.workStartTime,
+      config.workSchedule.workEndTime
+    );
+    
+    if (workingHours !== 8) {
+      toast.error(
+        `⚠️ Thời gian làm việc phải là 8 tiếng!\n` +
+        `Hiện tại: ${workingHours.toFixed(1)} tiếng\n` +
+        `Ví dụ hợp lệ: 08:00-17:00, 07:00-16:00, 07:30-16:30`
+      );
       return;
     }
 
@@ -431,21 +463,6 @@ const Settings = () => {
                     value={config.overtime.otRateWeekday}
                     onChange={(e) =>
                       handleChange("overtime", "otRateWeekday", parseFloat(e.target.value))
-                    }
-                  />
-                </div>
-
-                <div className="setting-item">
-                  <label className="setting-label">Hệ số OT cuối tuần</label>
-                  <input
-                    type="number"
-                    className="setting-input"
-                    min="1"
-                    max="5"
-                    step="0.1"
-                    value={config.overtime.otRateWeekend}
-                    onChange={(e) =>
-                      handleChange("overtime", "otRateWeekend", parseFloat(e.target.value))
                     }
                   />
                 </div>

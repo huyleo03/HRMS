@@ -148,12 +148,24 @@ attendanceSchema.methods.recalculate = function (config) {
 
   const workMs = new Date(this.clockOut) - new Date(this.clockIn);
   const workMinutes = Math.floor(workMs / 60000);
-  this.workHours = +(workMinutes / 60).toFixed(2);
+  
+  // Trừ 1h nghỉ trưa nếu làm >= 6h
+  const lunchBreak = workMinutes >= 360 ? 60 : 0;
+  const actualWorkMinutes = workMinutes - lunchBreak;
+  this.workHours = +(actualWorkMinutes / 60).toFixed(2);
 
-  const overtimeMinutes = Math.max(
-    0,
-    workMinutes - config.standardWorkHours * 60
-  );
+  // ✅ FIX: Tính OT từ giờ tan ca (17:00), KHÔNG phải từ tổng giờ làm
+  // Logic: Chỉ tính từ SAU workEndTime (17:00)
+  const clockOutTime = new Date(this.clockOut);
+  const [endHour, endMinute] = config.workEndTime.split(":").map(Number);
+  
+  const scheduledEnd = new Date(clockOutTime);
+  scheduledEnd.setHours(endHour, endMinute, 0, 0);
+  
+  // OT = thời gian từ workEndTime đến clockOut
+  const overtimeMs = Math.max(0, clockOutTime - scheduledEnd);
+  const overtimeMinutes = Math.floor(overtimeMs / 60000);
+  
   this.overtimeHours =
     overtimeMinutes >= config.otMinimumMinutes
       ? +(overtimeMinutes / 60).toFixed(2)

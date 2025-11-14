@@ -134,7 +134,7 @@ async function calculateEmployeeSalary(employeeId, month, year, calculatedBy) {
   const systemConfig = await getSystemConfig();
   const otRates = {
     weekday: systemConfig.overtime.otRateWeekday || 1.5,
-    weekend: systemConfig.overtime.otRateWeekend || 2.0,
+    weekend: systemConfig.overtime.otRateWeekday || 1.5, // T7/CN dùng hệ số weekday
     holiday: systemConfig.overtime.otRateHoliday || 3.0,
   };
 
@@ -639,20 +639,6 @@ const updatePayroll = async (req, res) => {
       }
     });
 
-    // ✅ Khi Admin edit thủ công → Xóa flag rejection
-    // Vì Admin đã xử lý vấn đề mà Manager báo
-    if (payroll.rejectedByManager) {
-      payroll.rejectedByManager = false;
-      // Giữ history để audit, nhưng đánh dấu đã resolved
-      const lastRejection = payroll.managerRejectionHistory[payroll.managerRejectionHistory.length - 1];
-      if (lastRejection) {
-        lastRejection.resolvedAt = new Date();
-        lastRejection.resolvedBy = updatedBy;
-        lastRejection.resolvedAction = "Admin đã chỉnh sửa thủ công";
-      }
-    }
-
-    payroll.updatedBy = updatedBy;
     await payroll.save();
 
     await payroll.populate("employeeId", "full_name email employeeId department");
@@ -687,17 +673,6 @@ const approvePayroll = async (req, res) => {
         success: false,
         message: "Payroll đã được duyệt trước đó",
       });
-    }
-
-    // ✅ Nếu Admin approve phiếu bị Manager reject → Mark as resolved (Override)
-    if (payroll.rejectedByManager) {
-      payroll.rejectedByManager = false;
-      const lastRejection = payroll.managerRejectionHistory[payroll.managerRejectionHistory.length - 1];
-      if (lastRejection) {
-        lastRejection.resolvedAt = new Date();
-        lastRejection.resolvedBy = approvedBy;
-        lastRejection.resolvedAction = "Admin đã duyệt (Override Manager rejection)";
-      }
     }
 
     payroll.status = "Đã duyệt";
@@ -959,183 +934,34 @@ const getMyPayrolls = async (req, res) => {
   }
 };
 
-// Get department payrolls (for manager)
-const getDepartmentPayrolls = async (req, res) => {
+
+
+// ===== HELPER: Recalculate payroll for a specific employee/month (called from Request model hook) =====
+const recalculatePayrollForEmployee = async (employeeId, month, year) => {
   try {
-    const managerId = req.user._id;
-    const { month, year, status, page = 1, limit = 10 } = req.query;
-
-    // Find manager's user record to get department
-    const manager = await User.findById(managerId).select("department");
-    if (!manager || !manager.department) {
-      return res.status(403).json({
-        success: false,
-        message: "Bạn chưa được gán phòng ban",
-      });
-    }
-
-    // Build query for employees in same department
-    const employeeQuery = { department: manager.department };
-    const employees = await User.find(employeeQuery).select("_id");
-    const employeeIds = employees.map((e) => e._id);
-
-    // Build payroll query
-    const query = { employeeId: { $in: employeeIds } };
-
-    if (month && year) {
-      query.month = parseInt(month);
-      query.year = parseInt(year);
-    } else if (year) {
-      query.year = parseInt(year);
-    }
-
-    if (status) {
-      query.status = status;
-    }
-
-    // Pagination
-    const skip = (page - 1) * limit;
-    const total = await Payroll.countDocuments(query);
-
-    const payrolls = await Payroll.find(query)
-      .populate("employeeId", "full_name employeeId email avatar department")
-      .sort({ year: -1, month: -1, createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    res.status(200).json({
-      success: true,
-      data: payrolls,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// Approve payroll (for manager)
-const managerApprovePayroll = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const managerId = req.user._id;
-    const { notes } = req.body;
-
-    // Get payroll
-    const payroll = await Payroll.findById(id).populate("employeeId", "department");
-    if (!payroll) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy phiếu lương" });
-    }
-
-    // Verify manager's department
-    const manager = await User.findById(managerId).select("department");
-    if (!manager || !manager.department) {
-      return res.status(403).json({ success: false, message: "Bạn chưa được gán phòng ban" });
-    }
-
-    if (payroll.employeeId.department.toString() !== manager.department.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Bạn chỉ có thể duyệt lương của nhân viên trong phòng ban mình",
-      });
-    }
-
-    // Manager can ONLY approve Draft → Pending (pre-approval)
-    if (payroll.status === "Nháp") {
-      payroll.status = "Chờ duyệt";
-      payroll.notes = notes || "Đã duyệt bởi Manager";
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "Manager chỉ có thể duyệt phiếu lương ở trạng thái Draft. Phiếu lương này cần Admin duyệt cuối.",
-      });
-    }
-
-    await payroll.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Đã duyệt phiếu lương (chờ Admin phê duyệt cuối)",
-      data: payroll,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// Reject payroll (for manager)
-const managerRejectPayroll = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const managerId = req.user._id;
-    const { reason } = req.body;
-
-    if (!reason || reason.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Vui lòng nhập lý do từ chối",
-      });
-    }
-
-    // Get payroll
-    const payroll = await Payroll.findById(id).populate("employeeId", "department");
-    if (!payroll) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy phiếu lương" });
-    }
-
-    // Verify manager's department
-    const manager = await User.findById(managerId).select("department");
-    if (!manager || !manager.department) {
-      return res.status(403).json({ success: false, message: "Bạn chưa được gán phòng ban" });
-    }
-
-    if (payroll.employeeId.department.toString() !== manager.department.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Bạn chỉ có thể từ chối lương của nhân viên trong phòng ban mình",
-      });
-    }
-
-    // Manager can only reject Draft (send back for recalculation)
-    if (payroll.status !== "Nháp") {
-      return res.status(400).json({
-        success: false,
-        message: "Manager chỉ có thể từ chối phiếu lương ở trạng thái Draft",
-      });
-    }
-
-    // ✅ PHƯƠNG ÁN 2: Trả về Draft + Đánh dấu đã bị reject
-    payroll.status = "Nháp"; // Giữ nguyên Draft để Admin có thể sửa/tính lại
-    payroll.rejectedByManager = true;
+    console.log(`🔄 Recalculating payroll for employee ${employeeId}, month ${month}/${year}...`);
     
-    // Lấy thông tin Manager để lưu vào history
-    const managerInfo = await User.findById(managerId).select("full_name");
-    
-    // Thêm vào rejection history
-    payroll.managerRejectionHistory.push({
-      rejectedBy: managerId,
-      rejectedByName: managerInfo?.full_name || "Manager",
-      rejectedAt: new Date(),
-      reason: reason,
+    // Find existing payroll
+    const existingPayroll = await Payroll.findOne({
+      employeeId: employeeId,
+      month: month,
+      year: year
     });
     
-    // Cập nhật notes để Admin biết
-    const previousNotes = payroll.notes ? `${payroll.notes}\n\n` : "";
-    payroll.notes = `${previousNotes}⚠️ Từ chối bởi Manager (${managerInfo?.full_name}): ${reason}`;
-
-    await payroll.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Đã từ chối phiếu lương. Admin có thể xem lại và tính lại nếu cần.",
-      data: payroll,
-    });
+    if (!existingPayroll) {
+      console.log(`⚠️ No existing payroll found for ${month}/${year}, skipping recalculation`);
+      return null;
+    }
+    
+    // Recalculate using the same calculatedBy user
+    const calculatedBy = existingPayroll.calculatedBy || existingPayroll.employeeId;
+    const updatedPayroll = await calculateEmployeeSalary(employeeId, month, year, calculatedBy);
+    
+    console.log(`✅ Payroll recalculated successfully for ${month}/${year}`);
+    return updatedPayroll;
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error(`❌ Error recalculating payroll:`, error.message);
+    throw error;
   }
 };
 
@@ -1151,7 +977,5 @@ module.exports = {
   deletePayroll,
   getPayrollAnalytics,
   getMyPayrolls,
-  getDepartmentPayrolls,
-  managerApprovePayroll,
-  managerRejectPayroll,
+  recalculatePayrollForEmployee, // Export helper for Request model
 };

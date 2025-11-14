@@ -820,17 +820,18 @@ exports.getEmployeeOvertimeRequests = async (req, res) => {
       query.status = "Approved"; // Mặc định lấy Approved
     }
 
-    // Filter by month/year if provided
+    // ✅ FIX: Filter by startDate (ngày làm OT) thay vì created_at (ngày tạo đơn)
+    // Vì có thể nhân viên tạo đơn OT sau khi đã làm OT
     if (month && year) {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59, 999);
-      query.created_at = { $gte: startDate, $lte: endDate };
+      query.startDate = { $gte: startDate, $lte: endDate };
     }
 
     const requests = await Request.find(query)
       .populate("submittedBy", "full_name email avatar")
       .populate("approvalFlow.approverId", "full_name email avatar role")
-      .sort({ created_at: -1 })
+      .sort({ startDate: -1 }) // Sort by OT date, not creation date
       .limit(100)
       .lean();
 

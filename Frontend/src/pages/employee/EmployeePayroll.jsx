@@ -285,7 +285,7 @@ const EmployeePayroll = () => {
                 
                 {/* OT Pending Warning */}
                 {selectedPayroll.overtimePending && 
-                 (selectedPayroll.overtimePending.weekday > 0 || 
+                (selectedPayroll.overtimePending.weekday > 0 || 
                   selectedPayroll.overtimePending.weekend > 0 || 
                   selectedPayroll.overtimePending.holiday > 0) && (
                   <div className="warning-box">

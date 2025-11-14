@@ -50,12 +50,6 @@ const systemConfigSchema = new mongoose.Schema(
         min: 1,
         max: 5,
       },
-      otRateWeekend: {
-        type: Number,
-        default: 2.0,
-        min: 1,
-        max: 5,
-      },
       otRateHoliday: {
         type: Number,
         default: 3.0,
@@ -81,10 +75,6 @@ const systemConfigSchema = new mongoose.Schema(
         },
       },
       allowRemoteCheckIn: {
-        type: Boolean,
-        default: false,
-      },
-      requireVPN: {
         type: Boolean,
         default: false,
       },
