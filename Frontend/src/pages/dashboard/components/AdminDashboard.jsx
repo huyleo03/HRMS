@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import DashboardService from '../../../service/DashboardService';
 import RequestsAnalysis from './RequestsAnalysis';
 import AttendanceTrendChart from './AttendanceTrendChart';
-import DepartmentComparison from './DepartmentComparison';
-import LateEmployeesTable from './LateEmployeesTable';
 import RecentRequestsTable from './RecentRequestsTable';
 import '../css/AdminDashboard.css';
 
@@ -271,12 +269,6 @@ const AdminDashboard = () => {
 
             {/* Attendance Trend Chart */}
             <AttendanceTrendChart />
-
-            {/* Department Comparison & Late Employees */}
-            <div className="dashboard-sections">
-                <DepartmentComparison />
-                <LateEmployeesTable />
-            </div>
 
             {/* Recent Requests */}
             {requestsDetails?.recentRequests && (

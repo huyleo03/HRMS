@@ -176,38 +176,6 @@ const DashboardService = {
         }
     },
 
-    /**
-     * Get department comparison
-     * @returns {Promise} Department comparison data
-     */
-    getDepartmentComparison: async () => {
-        try {
-            const data = await apiCall('/api/dashboard/stats/department-comparison', {
-                method: 'GET'
-            });
-            return data;
-        } catch (error) {
-            console.error('Error fetching department comparison:', error);
-            throw error;
-        }
-    },
-
-    /**
-     * Get late employees today
-     * @returns {Promise} Late employees data
-     */
-    getLateEmployeesToday: async () => {
-        try {
-            const data = await apiCall('/api/dashboard/stats/late-employees-today', {
-                method: 'GET'
-            });
-            return data;
-        } catch (error) {
-            console.error('Error fetching late employees:', error);
-            throw error;
-        }
-    },
-
     // ===== MANAGER DASHBOARD SERVICES =====
 
     /**
@@ -256,22 +224,6 @@ const DashboardService = {
             return data;
         } catch (error) {
             console.error('Error fetching manager attendance trend:', error);
-            throw error;
-        }
-    },
-
-    /**
-     * Get late employees in Manager's department today
-     * @returns {Promise} Manager late employees data
-     */
-    getManagerLateEmployeesToday: async () => {
-        try {
-            const data = await apiCall('/api/dashboard/stats/manager-late-employees-today', {
-                method: 'GET'
-            });
-            return data;
-        } catch (error) {
-            console.error('Error fetching manager late employees:', error);
             throw error;
         }
     }

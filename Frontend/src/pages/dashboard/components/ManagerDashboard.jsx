@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import DashboardService from '../../../service/DashboardService';
 import RequestsAnalysis from './RequestsAnalysis';
 import AttendanceTrendChart from './AttendanceTrendChart';
-import LateEmployeesTable from './LateEmployeesTable';
 import RecentRequestsTable from './RecentRequestsTable';
 import '../css/ManagerDashboard.css';
 
@@ -272,11 +271,6 @@ const ManagerDashboard = () => {
 
             {/* Attendance Trend Chart */}
             <AttendanceTrendChart isManager={true} />
-
-            {/* Late Employees Table */}
-            <div className="manager-dashboard-sections">
-                <LateEmployeesTable isManager={true} />
-            </div>
 
             {/* Recent Requests */}
             {requestsDetails?.recentRequests && (

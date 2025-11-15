@@ -4,12 +4,9 @@ const {
   getOverviewStats,
   getRequestsDetails,
   getAttendanceTrend,
-  getDepartmentComparison,
-  getLateEmployeesToday,
   getManagerOverview,
   getManagerRequestsDetails,
   getManagerAttendanceTrend,
-  getManagerLateEmployeesToday,
 } = require("../controller/DashboardController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 
@@ -50,30 +47,6 @@ router.get(
   getAttendanceTrend
 );
 
-/**
- * @route   GET /api/dashboard/stats/department-comparison
- * @desc    Compare departments by attendance, requests, payroll
- * @access  Admin only
- */
-router.get(
-  "/stats/department-comparison",
-  authenticate,
-  authorize("Admin"),
-  getDepartmentComparison
-);
-
-/**
- * @route   GET /api/dashboard/stats/late-employees-today
- * @desc    Get list of employees who are late today
- * @access  Admin only
- */
-router.get(
-  "/stats/late-employees-today",
-  authenticate,
-  authorize("Admin"),
-  getLateEmployeesToday
-);
-
 // ===== MANAGER DASHBOARD ROUTES =====
 
 /**
@@ -111,18 +84,6 @@ router.get(
   authenticate,
   authorize("Manager"),
   getManagerAttendanceTrend
-);
-
-/**
- * @route   GET /api/dashboard/stats/manager-late-employees-today
- * @desc    Get late employees in Manager's department today
- * @access  Manager only
- */
-router.get(
-  "/stats/manager-late-employees-today",
-  authenticate,
-  authorize("Manager"),
-  getManagerLateEmployeesToday
 );
 
 module.exports = router;
