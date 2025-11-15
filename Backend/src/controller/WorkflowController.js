@@ -36,7 +36,8 @@ exports.getWorkflowById = async (req, res) => {
     const workflow = await Workflow.findById(id)
       .populate("createdBy", "full_name email role")
       .populate("applicableDepartments", "department_name code")
-      .populate("approvalFlow.approverId", "full_name email role");
+      .populate("approvalFlow.approverId", "full_name email role")
+      .populate("approvalFlow.departmentId", "department_name code");
 
     if (!workflow) {
       return res.status(404).json({

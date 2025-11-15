@@ -17,7 +17,16 @@ function Icon({ name }) {
     filter: "M3 5h18l-7 8v6l-4-2v-4L3 5z",
   };
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d={paths[name]} />
     </svg>
   );
@@ -165,14 +174,18 @@ export default function DepartmentMembers() {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => { setDebouncedQ(q.trim()); setPage(1); }, 300);
+    const t = setTimeout(() => {
+      setDebouncedQ(q.trim());
+      setPage(1);
+    }, 300);
     return () => clearTimeout(t);
   }, [q]);
 
   useEffect(() => {
     let abort = false;
     (async () => {
-      setLoading(true); setErr("");
+      setLoading(true);
+      setErr("");
       try {
         const res = await getDepartmentById(id, token);
         if (abort) return;
@@ -184,14 +197,16 @@ export default function DepartmentMembers() {
         if (!abort) setLoading(false);
       }
     })();
-    return () => { abort = true; };
+    return () => {
+      abort = true;
+    };
   }, [id, token]);
 
   // LỌC và SẮP XẾP (Manager lên đầu)
   const filtered = useMemo(() => {
     const term = debouncedQ.toLowerCase();
     let result = allMembers;
-    
+
     // Lọc theo search term
     if (term) {
       result = allMembers.filter((u) => {
@@ -204,10 +219,16 @@ export default function DepartmentMembers() {
           (typeof u?.department === "string" ? u.department : "") ||
           ""
         ).toLowerCase();
-        return name.includes(term) || empId.includes(term) || job.includes(term) || role.includes(term) || deptName.includes(term);
+        return (
+          name.includes(term) ||
+          empId.includes(term) ||
+          job.includes(term) ||
+          role.includes(term) ||
+          deptName.includes(term)
+        );
       });
     }
-    
+
     // Lọc theo filters
     if (filters.status) {
       result = result.filter((u) => u.status === filters.status);
@@ -215,13 +236,13 @@ export default function DepartmentMembers() {
     if (filters.role) {
       result = result.filter((u) => u.role === filters.role);
     }
-    
+
     // Sắp xếp: Manager lên đầu, sau đó theo tên
     return result.sort((a, b) => {
       // Manager luôn lên đầu
       if (a.role === "Manager" && b.role !== "Manager") return -1;
       if (a.role !== "Manager" && b.role === "Manager") return 1;
-      
+
       // Nếu cùng role, sắp xếp theo tên
       const nameA = (a.full_name || "").toLowerCase();
       const nameB = (b.full_name || "").toLowerCase();
@@ -249,23 +270,27 @@ export default function DepartmentMembers() {
 
   return (
     <div className="dm">
-
-
       {/* Card */}
       <section className="dm-card">
-              {/* Breadcrumb (đặt trên card, sát header) */}
-      <div className="dm-crumb">
-        <button type="button" className="dm-crumb__link" onClick={() => navigate("/departments")}>
-          Department
-        </button>
-        <span className="dm-crumb__sep">›</span>
-        <span className="dm-crumb__current">
-          {department?.department_name || "Department"}
-        </span>
-      </div>
+        {/* Breadcrumb (đặt trên card, sát header) */}
+        <div className="dm-crumb">
+          <button
+            type="button"
+            className="dm-crumb__link"
+            onClick={() => navigate("/departments")}
+          >
+            Department
+          </button>
+          <span className="dm-crumb__sep">›</span>
+          <span className="dm-crumb__current">
+            {department?.department_name || "Department"}
+          </span>
+        </div>
         <div className="dm-card__head">
           <div className="dm-search">
-            <span className="dm-search__icon"><Icon name="search" /></span>
+            <span className="dm-search__icon">
+              <Icon name="search" />
+            </span>
             <input
               className="dm-search__input"
               placeholder="Search by name, ID, department, job title"
@@ -275,14 +300,18 @@ export default function DepartmentMembers() {
           </div>
           <div className="dm__actions">
             <button className="btn" onClick={() => setFilterOpen(true)}>
-              <span className="btn__icon"><Icon name="filter" /></span>
+              <span className="btn__icon">
+                <Icon name="filter" />
+              </span>
               Filter
             </button>
           </div>
         </div>
 
         <div className="dm-card__subhead">
-          <h3 className="dm-card__title">{department?.department_name || "Department"}</h3>
+          <h3 className="dm-card__title">
+            {department?.department_name || "Department"}
+          </h3>
         </div>
 
         <div className="dm-table__scroll">
@@ -298,48 +327,80 @@ export default function DepartmentMembers() {
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan="6" className="dm-empty">Đang tải dữ liệu...</td></tr>}
-              {!loading && err && <tr><td colSpan="6" className="dm-empty">Lỗi: {err}</td></tr>}
-
-              {!loading && !err && pageRows.map((u) => (
-                <tr key={u._id || u.employeeId}>
-                  <td>{u.employeeId || "—"}</td>
-                  <td>
-                    <div className="dm-person" onClick={() => goToEmployeeProfile(u)} style={{cursor:"pointer"}}>
-                      {u.avatar && u.avatar !== "https://i.pravatar.cc/150" ? (
-                        <img className="dm-person__avatar" src={u.avatar} alt={u.full_name} />
-                      ) : (
-                        <div
-                          className="dm-person__avatar"
-                          style={{
-                            background: "#eef",
-                            color: "#334",
-                            display: "grid",
-                            placeItems: "center",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {getInitials(u.full_name)}
-                        </div>
-                      )}
-                      <span className="dm-person__name">{u.full_name}</span>
-                    </div>
-                  </td>
-                  <td>{u?.role || "—"}</td>
-                  <td>{u.jobTitle || "—"}</td>
-                  <td><span className="badge">{u.status || "Active"}</span></td>
-                  <td>
-                    <div className="dm-actions">
-                      <button title="View" onClick={() => goToEmployeeProfile(u)}><Icon name="eye" /></button>
-                      <button title="Edit"><Icon name="edit" /></button>
-                      <button title="Delete" className="danger"><Icon name="trash" /></button>
-                    </div>
+              {loading && (
+                <tr>
+                  <td colSpan="6" className="dm-empty">
+                    Đang tải dữ liệu...
                   </td>
                 </tr>
-              ))}
+              )}
+              {!loading && err && (
+                <tr>
+                  <td colSpan="6" className="dm-empty">
+                    Lỗi: {err}
+                  </td>
+                </tr>
+              )}
+
+              {!loading &&
+                !err &&
+                pageRows.map((u) => (
+                  <tr key={u._id || u.employeeId}>
+                    <td>{u.employeeId || "—"}</td>
+                    <td>
+                      <div
+                        className="dm-person"
+                        onClick={() => goToEmployeeProfile(u)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {u.avatar &&
+                        u.avatar !== "https://i.pravatar.cc/150" ? (
+                          <img
+                            className="dm-person__avatar"
+                            src={u.avatar}
+                            alt={u.full_name}
+                          />
+                        ) : (
+                          <div
+                            className="dm-person__avatar"
+                            style={{
+                              background: "#eef",
+                              color: "#334",
+                              display: "grid",
+                              placeItems: "center",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {getInitials(u.full_name)}
+                          </div>
+                        )}
+                        <span className="dm-person__name">{u.full_name}</span>
+                      </div>
+                    </td>
+                    <td>{u?.role || "—"}</td>
+                    <td>{u.jobTitle || "—"}</td>
+                    <td>
+                      <span className="badge">{u.status || "Active"}</span>
+                    </td>
+                    <td>
+                      <div className="dm-actions">
+                        <button
+                          title="View"
+                          onClick={() => goToEmployeeProfile(u)}
+                        >
+                          <Icon name="eye" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
 
               {!loading && !err && pageRows.length === 0 && (
-                <tr><td colSpan="6" className="dm-empty">No employees found.</td></tr>
+                <tr>
+                  <td colSpan="6" className="dm-empty">
+                    No employees found.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -350,7 +411,10 @@ export default function DepartmentMembers() {
             <label>Showing</label>
             <select
               value={limit}
-              onChange={(e) => { setLimit(parseInt(e.target.value, 10)); setPage(1); }}
+              onChange={(e) => {
+                setLimit(parseInt(e.target.value, 10));
+                setPage(1);
+              }}
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -359,13 +423,26 @@ export default function DepartmentMembers() {
           </div>
 
           <div className="dm-foot__center">
-            Showing {total ? start + 1 : 0} to {Math.min(current * limit, total)} out of {total} records
+            Showing {total ? start + 1 : 0} to{" "}
+            {Math.min(current * limit, total)} out of {total} records
           </div>
 
           <div className="dm-foot__right">
-            <button className="circle" disabled={current === 1} onClick={() => setPage(p => Math.max(1, p - 1))}><Icon name="chevL" /></button>
+            <button
+              className="circle"
+              disabled={current === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <Icon name="chevL" />
+            </button>
             <span className="page-indicator">{current}</span>
-            <button className="circle" disabled={current === pages} onClick={() => setPage(p => Math.min(pages, p + 1))}><Icon name="chevR" /></button>
+            <button
+              className="circle"
+              disabled={current === pages}
+              onClick={() => setPage((p) => Math.min(pages, p + 1))}
+            >
+              <Icon name="chevR" />
+            </button>
           </div>
         </div>
       </section>
